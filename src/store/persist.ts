@@ -1,5 +1,6 @@
 import { get, set, del } from 'idb-keyval'
 import type { AppStore } from './index'
+import { STATE_NAMES } from '@/types/project'
 
 // v2: switched from localStorage (data-URL Blob, ~5MB quota) to IndexedDB
 // via idb-keyval. IndexedDB stores Blobs natively via structured clone
@@ -25,11 +26,37 @@ export async function loadStore(): Promise<Partial<PersistedShape> | null> {
       try { localStorage.removeItem(LEGACY_LOCALSTORAGE_KEY) } catch { /* ignore */ }
     }
     const data = await get<PersistedShape>(STORAGE_KEY)
-    return data ?? null
+    if (!data) return null
+    return migrate(data)
   } catch (e) {
     console.error('persist load failed', e)
     return null
   }
+}
+
+/**
+ * Forward-compat migration for projects saved by older versions of the app
+ * before new fields existed (e.g. transform, backdropDark, rawSheet).
+ * Fills missing fields with defaults so React doesn't crash on undefined
+ * access when reading e.g. state.transform.scale.
+ */
+function migrate(data: Partial<PersistedShape>): Partial<PersistedShape> {
+  if (!data.project) return data
+  const project = data.project as any
+  // Project-level fields
+  if (project.backdropDark === undefined) project.backdropDark = null
+  if (project.backdropLight === undefined) project.backdropLight = null
+  // SpriteState fields
+  if (project.states) {
+    for (const name of STATE_NAMES) {
+      const s = project.states[name] as any
+      if (!s) continue
+      if (s.transform === undefined) s.transform = { scale: 1, offsetX: 0, offsetY: 0 }
+      if (s.rawSheet === undefined) s.rawSheet = null
+      if (s.rawStaticBase === undefined) s.rawStaticBase = null
+    }
+  }
+  return data
 }
 
 export async function clearStore(): Promise<void> {

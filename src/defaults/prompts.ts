@@ -224,8 +224,38 @@ NO EMPTY CELLS — STRICTLY ENFORCED
 ═══════════════════════════════════════════════════════════════════
 
 ALL 16 cells of the 4×4 grid MUST contain a full character. NO cell may be
-empty, transparent (chroma-only), partially-drawn, or cropped. Every cell
-has: full head, full body, full limbs visible, character centered.
+empty, transparent (chroma-only), partially-drawn, or cropped.
+
+═══════════════════════════════════════════════════════════════════
+PER-CELL COMPOSITION — IDENTICAL FRAMING ACROSS ALL 16 CELLS
+═══════════════════════════════════════════════════════════════════
+
+Each 256×256 cell is a small portrait of the character. Compose every
+single cell with these EXACT same rules:
+
+  Vertical placement:
+  ✅ HEAD visible at TOP of cell, with ~20-30 px of empty space ABOVE the
+     hair (don't let hair touch the top edge of the cell).
+  ✅ BODY (torso + arms) in the MIDDLE.
+  ✅ BOTH FEET fully visible at the BOTTOM of cell, with ~10-20 px of
+     empty space BELOW the feet (don't crop the toes / shoes).
+
+  Size: character should be ~200-220 px tall in each 256 px cell. NOT
+  bigger (cropping happens), NOT smaller (looks lost).
+
+  Horizontal: character roughly CENTERED in each cell, with some lateral
+  space on both sides (~20-40 px) so limbs can swing without clipping.
+
+  ❌ NO cell may show only head / only torso / only legs — every cell
+     shows the COMPLETE figure from hair-top to feet-bottom.
+  ❌ NO cell may have the character's head pushed down into the lower
+     half of the cell (head ALWAYS in the top third).
+  ❌ NO cell may have feet cut off, hidden, or out-of-frame.
+
+Identical framing across all 16 cells means: if you draw a line at
+y=50 (top of head) and y=230 (bottom of feet) in cell 1, the character
+in cells 2-16 should hit those same lines. Only LIMBS and BODY TILT
+change between cells — head height and foot height stay constant.
 
 CHARACTER CONTEXT (what walking means for this character):
 {{state_semantics}}
@@ -246,9 +276,20 @@ For each step (8 frames):
   • Frame 7: new front leg planting, body at LOWEST bob point
   • Frame 8: planted, ready for next cycle to begin
 
-Arms swing in COUNTER-PHASE to legs (right arm forward when left leg forward).
+Arms swing in COUNTER-PHASE to legs (right arm forward when left leg forward,
+left arm forward when right leg forward). Arm swing must be VISIBLE — not
+hands hidden behind body, not arms held still at sides. At each frame the
+arms are in a DIFFERENT position:
+  • Frame 1 (left leg fwd): right arm fwd / left arm back at ~30° angle
+  • Frame 4 (passing): both arms near vertical (mid-swing-through)
+  • Frame 8 (right leg fwd): left arm fwd / right arm back at ~30° angle
+  • Frames 9-16 mirror this for the second step
+If you draw all 16 frames with arms in the SAME position, you have FAILED
+the task — arms MUST visibly swing across cells just like legs do.
+
 Body BOBS up/down 2-4 px (high during leg-swing-through, low at step-plant).
-Hair / accessories trail slightly behind motion.
+Hair / accessories trail slightly behind motion (hair sweeps backward when
+body bobs up, settles when body bobs down).
 
 ═══════════════════════════════════════════════════════════════════
 IDENTITY LOCK (NON-NEGOTIABLE across all 16 cells):

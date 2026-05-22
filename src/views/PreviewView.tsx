@@ -298,6 +298,12 @@ function FloatingWidgetMockup({
         style={{
           width: STAGE_PX, height: STAGE_PX,
           borderRadius: SHAPE_RADIUS[shape],
+          // 1 px outline that works on both light & dark wallpapers — same
+          // outline that mori-desktop's XShape clip leaves visible at the
+          // window edge after the shape mask is applied.
+          boxShadow: osTheme === 'light'
+            ? 'inset 0 0 0 1px rgba(0,0,0,0.18)'
+            : 'inset 0 0 0 1px rgba(255,255,255,0.22)',
         }}
       >
         {/* Layer 1: backdrop (only when backplate=logo) */}

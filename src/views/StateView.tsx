@@ -197,7 +197,23 @@ export function StateView({ name }: { name: StateName }) {
         </Section>
 
         {/* Right column: sheet + animation */}
-        <Section title="Sprite Sheet" subtitle="點任一格選取,可寫 frame note 或重生" icon={<Grid3x3 {...ICON_PROPS} />}>
+        <Section
+          title="Sprite Sheet"
+          subtitle="點任一格選取,可寫 frame note 或重生"
+          icon={<Grid3x3 {...ICON_PROPS} />}
+          action={state.sheet && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={downloadRawSheet}
+              className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              title="下載原始 1024×1024 4×4 sheet 來檢查 AI 真實輸出"
+            >
+              <Download size={14} strokeWidth={1.75} />
+              raw sheet
+            </Button>
+          )}
+        >
           <div className="flex flex-col xl:flex-row gap-6 items-start">
             <SpriteSheetPreview
               sheet={state.sheet}

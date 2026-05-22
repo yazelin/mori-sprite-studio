@@ -35,3 +35,30 @@ A 5th path — **BYOG** (Bring Your Own Generation) — lets you copy the prompt
 ## Spec / Design
 
 See [`docs/superpowers/specs/2026-05-22-mori-sprite-studio-design.md`](docs/superpowers/specs/2026-05-22-mori-sprite-studio-design.md).
+
+## Deployment to Vercel
+
+```bash
+vercel link    # one-time, links to your Vercel scope
+vercel --prod  # deploy to production
+```
+
+Set these env vars in Vercel Dashboard → Settings → Environment Variables:
+
+| Variable | Required | Example |
+|---|---|---|
+| `AUTHOR_FALLBACK_PROVIDER` | yes | `vertex-gemini` or `google-gemini` |
+| `AUTHOR_API_KEY` | yes | (the API key for the chosen provider) |
+| `AUTHOR_MODEL` | no | `gemini-3-pro-image-preview` (default for vertex) |
+| `AUTHOR_IMAGE_SIZE` | no | `1K` (default) |
+
+**Important:** `AUTHOR_MODEL` must match `AUTHOR_FALLBACK_PROVIDER` — Vertex-only models like `gemini-3-pro-image-preview` will 502 if used with `google-gemini` provider, and vice versa.
+
+## Architecture summary
+
+- **Pure frontend** (Vite + React) + 1 Vercel Function (`api/generate.ts`) for the Author Fallback proxy
+- **Per-state animation preview** uses CSS animation matching mori-desktop's `floating.css` exactly
+- **Background removal** uses chroma-key (AI generates with green/magenta solid bg → client-side pixel removal) since gpt-image-2 and Gemini both lack native transparent output
+- **5 image paths**: Codex-Image / Vertex Gemini / Google Gemini Direct / Author Fallback / BYOG (Bring Your Own Generation: copy prompt, run elsewhere, upload result)
+
+See `docs/superpowers/specs/2026-05-22-mori-sprite-studio-design.md` for the full design rationale.

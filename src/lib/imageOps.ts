@@ -66,6 +66,67 @@ export async function buildPlaceholderSheetWithChromaBg(
 }
 
 /**
+ * Erode the outer N pixels of every cell in a 4×4 sprite sheet to fully
+ * transparent. Use after chroma key to wipe any residual edge spill that
+ * the chroma threshold couldn't catch (e.g. a 1-2 px halo of dim magenta
+ * around the character outline that's too dark to score above threshold
+ * but still visible against a light background).
+ *
+ * Applies cell-by-cell — each of the 16 cells gets its own 2 px border
+ * erased independently, so character pixels in the centre stay intact.
+ */
+export async function erodeCellEdges(
+  sheet: Blob,
+  erosionPx = 2,
+  cellsPerSide = 4,
+): Promise<Blob> {
+  const bmp = await createImageBitmap(sheet)
+  const canvas = new OffscreenCanvas(bmp.width, bmp.height)
+  const ctx = canvas.getContext('2d')!
+  ctx.drawImage(bmp as unknown as CanvasImageSource, 0, 0)
+  const cellW = Math.floor(bmp.width / cellsPerSide)
+  const cellH = Math.floor(bmp.height / cellsPerSide)
+  for (let r = 0; r < cellsPerSide; r++) {
+    for (let c = 0; c < cellsPerSide; c++) {
+      eraseOuterBorder(ctx, c * cellW, r * cellH, cellW, cellH, erosionPx)
+    }
+  }
+  return await canvas.convertToBlob({ type: 'image/png' })
+}
+
+/**
+ * Erode the outer N pixels of a single cell (e.g. 256×256) to transparent.
+ * Used after D regenerates a single cell, before pasting it into the sheet.
+ */
+export async function erodeSingleCellEdges(cell: Blob, erosionPx = 2): Promise<Blob> {
+  const bmp = await createImageBitmap(cell)
+  const canvas = new OffscreenCanvas(bmp.width, bmp.height)
+  const ctx = canvas.getContext('2d')!
+  ctx.drawImage(bmp as unknown as CanvasImageSource, 0, 0)
+  eraseOuterBorder(ctx, 0, 0, bmp.width, bmp.height, erosionPx)
+  return await canvas.convertToBlob({ type: 'image/png' })
+}
+
+function eraseOuterBorder(
+  ctx: OffscreenCanvasRenderingContext2D,
+  x: number, y: number, w: number, h: number,
+  borderPx: number,
+): void {
+  if (borderPx <= 0) return
+  const img = ctx.getImageData(x, y, w, h)
+  for (let py = 0; py < h; py++) {
+    const inBorderY = py < borderPx || py >= h - borderPx
+    for (let px = 0; px < w; px++) {
+      const inBorderX = px < borderPx || px >= w - borderPx
+      if (inBorderX || inBorderY) {
+        img.data[(py * w + px) * 4 + 3] = 0
+      }
+    }
+  }
+  ctx.putImageData(img, x, y)
+}
+
+/**
  * Take a transparent-bg cell and re-stamp it on a solid chroma background.
  * Same purpose as buildPlaceholderSheetWithChromaBg but for single cells
  * (used by D's reference building so each reference cell carries an

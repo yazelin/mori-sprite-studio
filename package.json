@@ -24,6 +24,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "file-saver": "^2.0.5",
+    "gifenc": "^1.0.3",
     "idb-keyval": "^6.2.4",
     "jszip": "^3.10.1",
     "lucide-react": "^1.16.0",

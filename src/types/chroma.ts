@@ -4,6 +4,14 @@ export type ChromaTolerance = 'conservative' | 'balanced' | 'aggressive'
 export interface ChromaState {
   key: ChromaKeyName
   tolerance: ChromaTolerance
+  /**
+   * Post-chroma edge erosion in pixels. After chroma key removes the
+   * background, each of the 16 cells has its outer N-pixel border zeroed
+   * to fully transparent. Kills lingering chroma spill at edges that
+   * the chroma threshold couldn't catch. Range 0-10 px. Character body
+   * is centered so erosion 1-3 px is safe; bump higher if leak persists.
+   */
+  edgeErosionPx: number
 }
 
 export const CHROMA_COLORS = {

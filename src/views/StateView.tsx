@@ -10,7 +10,11 @@ import { AnimationPreview } from '@/components/AnimationPreview'
 import { PromptEditorModal, type PromptEditorContext } from '@/components/PromptEditorModal'
 import { runGeneration, runGenerationWithPrompt, buildPromptContext, reapplyChromaToState } from '@/lib/generationFlow'
 import { buildAPNG, downloadBlob } from '@/lib/apngExport'
-import { Eraser } from 'lucide-react'
+import { buildGIF, buildWebM } from '@/lib/gifExport'
+import { Eraser, ChevronDown } from 'lucide-react'
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -89,6 +93,32 @@ export function StateView({ name }: { name: StateName }) {
     }
   }
 
+  async function downloadGif() {
+    if (!state.sheet) return
+    setError(null); setEncodingApng(true)
+    try {
+      const blob = await buildGIF(state.sheet, state.loopDurationMs, state.loopMode)
+      downloadBlob(blob, `mori-${name}.gif`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setEncodingApng(false)
+    }
+  }
+
+  async function downloadWebm() {
+    if (!state.sheet) return
+    setError(null); setEncodingApng(true)
+    try {
+      const blob = await buildWebM(state.sheet, state.loopDurationMs)
+      downloadBlob(blob, `mori-${name}.webm`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setEncodingApng(false)
+    }
+  }
+
   function downloadRawSheet() {
     if (!state.sheet) return
     downloadBlob(state.sheet, `${name}-raw-4x4-sheet.png`)
@@ -143,17 +173,35 @@ export function StateView({ name }: { name: StateName }) {
             <Eraser size={16} strokeWidth={1.75} />
             重新去背
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={downloadApng}
-            disabled={!state.sheet || encodingApng}
-            className="h-10 gap-2"
-            title={state.status !== 'animated' ? '生動畫後才能下載真實 loop' : '下載成 APNG(透明 / 循環)'}
-          >
-            <Download size={16} strokeWidth={1.75} />
-            {encodingApng ? '打包中…' : '下載 APNG'}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!state.sheet || encodingApng}
+                className="h-10 gap-2"
+                title={state.status !== 'animated' ? '生動畫後才能下載真實 loop' : '下載動畫(多種格式)'}
+              >
+                <Download size={16} strokeWidth={1.75} />
+                {encodingApng ? '打包中…' : '下載動畫'}
+                <ChevronDown size={14} strokeWidth={1.75} className="opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-72">
+              <DropdownMenuItem onClick={downloadApng} className="flex-col items-start gap-0.5 py-2.5">
+                <div className="font-medium text-sm">APNG（.png）</div>
+                <div className="text-[11px] text-muted-foreground">透明 + 循環。瀏覽器 / LINE / Discord 會動;本機 viewer 多半只第 1 格</div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={downloadGif} className="flex-col items-start gap-0.5 py-2.5">
+                <div className="font-medium text-sm">GIF（.gif）</div>
+                <div className="text-[11px] text-muted-foreground">1-bit 透明(邊緣稍粗)+ 循環。Mac Preview / Windows Photos 都會動,最廣相容</div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={downloadWebm} className="flex-col items-start gap-0.5 py-2.5">
+                <div className="font-medium text-sm">WebM 影片（.webm）</div>
+                <div className="text-[11px] text-muted-foreground">VP9 + alpha。錄製 3 個 loop。QuickTime / 瀏覽器會動,OBS 直接拿來用</div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 

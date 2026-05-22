@@ -1,5 +1,6 @@
 import { useAppStore } from '@/store'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { ChromaKeyName, ChromaTolerance } from '@/types/chroma'
@@ -48,6 +49,26 @@ export function ChromaConfig() {
             <SelectItem value="aggressive">aggressive(吃更多 chroma,可能誤刪角色)</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="grid grid-cols-[100px_1fr] items-start gap-3 pt-1">
+        <Label className="text-sm pt-2">Edge erosion</Label>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-3">
+            <Input
+              type="range" min={0} max={10} step={1}
+              value={chroma.edgeErosionPx}
+              onChange={(e) => set({ edgeErosionPx: parseInt(e.target.value, 10) })}
+              className="accent-emerald-600 flex-1"
+            />
+            <span className="text-sm font-mono tabular-nums w-12 text-right">
+              {chroma.edgeErosionPx} px
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            chroma 後再把每格外圍 N 像素強制透明 — 清掉 tolerance 沒抓乾淨的細邊殘留。預設 2 px;粉/綠光暈嚴重就調高(3-5 px)。0 = 關閉。
+          </p>
+        </div>
       </div>
     </div>
   )

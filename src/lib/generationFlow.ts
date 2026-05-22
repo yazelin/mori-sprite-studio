@@ -14,6 +14,8 @@ import {
   fillBgWithChroma,
   pasteIntoSheet,
   cropCell,
+  erodeCellEdges,
+  erodeSingleCellEdges,
 } from './imageOps'
 import { render, renderCellNotesBlock, renderStateDescriptions } from './promptRenderer'
 import { appendChromaSuffix } from './promptBuilder'
@@ -160,8 +162,10 @@ export async function applyResult(
   }
 
   if (templateKey === 'C') {
-    // 1024×1024 sheet, use as-is
-    store.updateState(stateName, { sheet: cleanedBlob, status: 'animated' })
+    // 1024×1024 sheet, erode each cell's outer border to kill chroma spill
+    const erodePx = store.chroma.edgeErosionPx
+    const eroded = erodePx > 0 ? await erodeCellEdges(cleanedBlob, erodePx) : cleanedBlob
+    store.updateState(stateName, { sheet: eroded, status: 'animated' })
     return
   }
 
@@ -169,7 +173,9 @@ export async function applyResult(
     if (cellIndex === undefined) throw new Error('cellIndex required')
     const currentSheet = store.project.states[stateName].sheet
     if (!currentSheet) throw new Error(`${stateName} has no sheet`)
-    const newCell = await cropToSize(cleanedBlob, 256, 256)
+    const erodePx = store.chroma.edgeErosionPx
+    const rawCell = await cropToSize(cleanedBlob, 256, 256)
+    const newCell = erodePx > 0 ? await erodeSingleCellEdges(rawCell, erodePx) : rawCell
     const newSheet = await pasteIntoSheet(currentSheet, newCell, cellIndex)
     store.updateState(stateName, { sheet: newSheet })
     return
@@ -189,8 +195,13 @@ export async function reapplyChromaToState(stateName: StateName): Promise<void> 
   if (!state.sheet && !state.staticBase) {
     throw new Error(`${stateName} has no sheet or static base`)
   }
-  const cleanedSheet = state.sheet ? await applyChroma(state.sheet) : null
-  const cleanedStatic = state.staticBase ? await applyChroma(state.staticBase) : null
+  const erodePx = store.chroma.edgeErosionPx
+  let cleanedSheet = state.sheet ? await applyChroma(state.sheet) : null
+  let cleanedStatic = state.staticBase ? await applyChroma(state.staticBase) : null
+  if (erodePx > 0) {
+    if (cleanedSheet) cleanedSheet = await erodeCellEdges(cleanedSheet, erodePx)
+    if (cleanedStatic) cleanedStatic = await erodeSingleCellEdges(cleanedStatic, erodePx)
+  }
   store.updateState(stateName, {
     ...(cleanedSheet ? { sheet: cleanedSheet } : {}),
     ...(cleanedStatic ? { staticBase: cleanedStatic } : {}),

@@ -24,6 +24,17 @@ export async function buildPackBlob(project: Project): Promise<Blob> {
     sprites.file(`${name}.png`, buf)
   }
 
+  // Optional backdrops at zip root (per mori-desktop PR #107):
+  // mori-desktop's floating widget reads backdrop-{dark,light}.png from
+  // the character pack root if present, falling back to user global or
+  // built-in default. Manifest schema unchanged — just drop the files.
+  if (project.backdropLight) {
+    zip.file('backdrop-light.png', await project.backdropLight.arrayBuffer())
+  }
+  if (project.backdropDark) {
+    zip.file('backdrop-dark.png', await project.backdropDark.arrayBuffer())
+  }
+
   return zip.generateAsync({ type: 'blob' })
 }
 

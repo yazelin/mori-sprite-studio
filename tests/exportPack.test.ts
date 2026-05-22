@@ -15,6 +15,8 @@ async function makeProjectWithSheets(): Promise<Project> {
     states[n] = {
       staticBase: null,
       sheet: await makePngBlob(),
+      rawSheet: null, rawStaticBase: null,
+      transform: { scale: 1, offsetX: 0, offsetY: 0 },
       poseNote: '', notes: Array(16).fill(''),
       loopMode: DEFAULT_LOOP_MODES[n],
       loopDurationMs: DEFAULT_LOOP_DURATIONS_MS[n],
@@ -27,6 +29,7 @@ async function makeProjectWithSheets(): Promise<Project> {
       packageName: 'mori', displayName: 'Mori', version: '1.0.0',
       author: 'y', license: 'MIT', description: '', tags: ['t'],
     },
+    backdropDark: null, backdropLight: null,
   }
 }
 

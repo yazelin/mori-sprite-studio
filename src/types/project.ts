@@ -60,4 +60,19 @@ export interface Project {
   characterRef: Blob | null
   states: Record<StateName, SpriteState>
   metadata: ProjectMetadata
+  /**
+   * Optional per-character backdrop images, packaged at the .moripack
+   * zip root as backdrop-{dark,light}.png. mori-desktop's floating widget
+   * uses these in 'logo' backplate mode (per mori-desktop PR #107):
+   *
+   *   3-tier fallback chain:
+   *     1. character pack's backdrop-{dark,light}.png (these)
+   *     2. user's global ~/.mori/floating/backplate-{dark,light}.png
+   *     3. built-in plain gradient
+   *
+   * Typical size: 160×160 or 200×200 PNG with alpha. Shape can be any —
+   * common designs are a soft circular halo / silhouette behind the sprite.
+   */
+  backdropDark: Blob | null
+  backdropLight: Blob | null
 }

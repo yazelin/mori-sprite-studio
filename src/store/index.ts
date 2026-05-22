@@ -36,6 +36,8 @@ function initialProject(): Project {
     characterRef: null,
     states,
     metadata: { ...DEFAULT_METADATA, tags: [...DEFAULT_METADATA.tags] },
+    backdropDark: null,
+    backdropLight: null,
   }
 }
 
@@ -46,7 +48,7 @@ function initialPrompts(): PromptsState {
   }
 }
 
-export type View = { kind: 'project' } | { kind: 'state'; name: StateName } | { kind: 'export' }
+export type View = { kind: 'project' } | { kind: 'state'; name: StateName } | { kind: 'backdrop' } | { kind: 'export' }
 
 interface UIState {
   view: View
@@ -63,6 +65,7 @@ export interface AppStore {
   setView: (view: View) => void
   selectCell: (cell: number | null) => void
   setCharacterRef: (blob: Blob | null) => void
+  setBackdrop: (which: 'dark' | 'light', blob: Blob | null) => void
   updateMetadata: (patch: Partial<Project['metadata']>) => void
   updateState: (name: StateName, patch: Partial<SpriteState>) => void
   setStateNote: (name: StateName, index: number, note: string) => void
@@ -89,6 +92,14 @@ export const useAppStore = create<AppStore>((set) => ({
 
   setCharacterRef: (blob) =>
     set((s) => ({ project: { ...s.project, characterRef: blob } })),
+
+  setBackdrop: (which, blob) =>
+    set((s) => ({
+      project: {
+        ...s.project,
+        ...(which === 'dark' ? { backdropDark: blob } : { backdropLight: blob }),
+      },
+    })),
 
   updateMetadata: (patch) =>
     set((s) => ({ project: { ...s.project, metadata: { ...s.project.metadata, ...patch } } })),

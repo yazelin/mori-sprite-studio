@@ -26,6 +26,17 @@ const SHAPE_RADIUS: Record<Shape, string> = {
   square:  '0',
 }
 
+// Real mori-desktop backdrop composition (copied from computed style at
+// runtime). Three CSS background layers stacked top → bottom:
+//   1) vignette (radial gradient, dark spot at bottom-right)
+//   2) backdrop PNG (the actual character backplate image)
+//   3) base gradient (linear, warm white / forest green)
+// Pre-CSS color tokens from the actual mori-desktop --c-page-bg / --c-surface-bg
+const VIGNETTE_LIGHT = 'radial-gradient(circle at 75% 80%, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.03) 40%, rgba(0,0,0,0) 70%)'
+const VIGNETTE_DARK  = 'radial-gradient(circle at 75% 80%, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.06) 40%, rgba(0,0,0,0) 70%)'
+const BASE_LIGHT     = 'linear-gradient(135deg, rgb(243,240,230) 0%, rgb(255,255,255) 100%)'
+const BASE_DARK      = 'linear-gradient(135deg, rgb(31,51,41) 0%, rgb(36,58,49) 100%)'
+
 /**
  * 桌面預覽 — what mori-desktop floating widget actually shows.
  *
@@ -291,6 +302,24 @@ function FloatingWidgetMockup({
                        backdropUrl ? `${appTheme} backdrop` :
                        '無背板上傳 · fallback'
 
+  // Build the 3-layer background that real mori-desktop renders
+  // (vignette + backdrop PNG + base gradient), stacked top → bottom.
+  // Each layer has its own size so the PNG covers but gradients stay flexible.
+  const vignette = appTheme === 'light' ? VIGNETTE_LIGHT : VIGNETTE_DARK
+  const baseGradient = appTheme === 'light' ? BASE_LIGHT : BASE_DARK
+  const backdropLayers: string[] = []
+  const backdropSizes: string[] = []
+  const backdropPositions: string[] = []
+  const backdropRepeats: string[] = []
+  if (showBackdrop) {
+    // top → bottom order matches CSS background-image (first = topmost)
+    backdropLayers.push(vignette);              backdropSizes.push('100% 100%'); backdropPositions.push('center'); backdropRepeats.push('no-repeat')
+    if (backdropUrl) {
+      backdropLayers.push(`url("${backdropUrl}")`); backdropSizes.push('cover'); backdropPositions.push('center'); backdropRepeats.push('no-repeat')
+    }
+    backdropLayers.push(baseGradient);          backdropSizes.push('100% 100%'); backdropPositions.push('center'); backdropRepeats.push('no-repeat')
+  }
+
   return (
     <div className={`rounded-2xl p-4 ${envClass} flex flex-col items-center gap-2`}>
       <div
@@ -298,23 +327,21 @@ function FloatingWidgetMockup({
         style={{
           width: STAGE_PX, height: STAGE_PX,
           borderRadius: SHAPE_RADIUS[shape],
-          // 1 px outline that works on both light & dark wallpapers — same
-          // outline that mori-desktop's XShape clip leaves visible at the
-          // window edge after the shape mask is applied.
+          // Real mori-desktop's 3-layer backdrop composition (when backplate=logo):
+          //   vignette → backdrop PNG → base gradient (top → bottom)
+          backgroundImage:    backdropLayers.join(', ') || undefined,
+          backgroundSize:     backdropSizes.join(', ') || undefined,
+          backgroundPosition: backdropPositions.join(', ') || undefined,
+          backgroundRepeat:   backdropRepeats.join(', ') || undefined,
+          // 1 px outline that mori-desktop's XShape clip leaves visible at
+          // the window edge. Tone flips with OS theme so it shows on both
+          // light and dark simulated wallpapers.
           boxShadow: osTheme === 'light'
             ? 'inset 0 0 0 1px rgba(0,0,0,0.18)'
             : 'inset 0 0 0 1px rgba(255,255,255,0.22)',
         }}
       >
-        {/* Layer 1: backdrop (only when backplate=logo) */}
-        {showBackdrop && backdropUrl && (
-          <img
-            src={backdropUrl}
-            alt={`${appTheme} backdrop`}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        )}
-        {/* Layer 2: sprite — 124×124 centered + drop shadow */}
+        {/* Sprite — 130×130 centered + drop shadow */}
         <div
           className="absolute"
           style={{

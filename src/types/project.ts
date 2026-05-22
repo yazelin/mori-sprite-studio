@@ -7,6 +7,17 @@ export const STATE_NAMES: readonly StateName[] = [
 
 export type SheetStatus = 'pending' | 'placeholder' | 'animated'
 
+export interface CellTransform {
+  /** Uniform scale factor applied to character pixels. 1.0 = unchanged. */
+  scale: number
+  /** X offset in pixels (positive = right). 0 = no shift. */
+  offsetX: number
+  /** Y offset in pixels (positive = down). 0 = no shift. */
+  offsetY: number
+}
+
+export const IDENTITY_TRANSFORM: CellTransform = { scale: 1.0, offsetX: 0, offsetY: 0 }
+
 export interface SpriteState {
   staticBase: Blob | null
   sheet: Blob | null
@@ -19,6 +30,15 @@ export interface SpriteState {
   rawSheet: Blob | null
   /** Raw AI-returned static base BEFORE chroma + erosion (same reason). */
   rawStaticBase: Blob | null
+  /**
+   * Per-state transform to align character size/position across states.
+   * Applied at render time (preview + export) on top of the cleaned sheet —
+   * the underlying sheet pixels are NOT modified. Defaults to identity
+   * (no transform). Set globally via "Normalize 尺寸" or per-state via
+   * the sliders in StateView. Required for cross-state visual consistency
+   * since AI generates each state independently and bbox size varies.
+   */
+  transform: CellTransform
   poseNote: string
   notes: string[]
   loopMode: 'loop' | 'one-shot'

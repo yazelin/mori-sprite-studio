@@ -127,6 +127,60 @@ function eraseOuterBorder(
 }
 
 /**
+ * Bake a per-cell transform (scale + offset) into a sheet — produces a
+ * new 1024×1024 sheet where each cell has been scaled around its centre
+ * and offset by the requested amounts. Used at export time so APNG /
+ * GIF / WebM / raw-sheet download / .moripack all carry the alignment
+ * the user sees in Loop Preview.
+ */
+export async function bakeTransformIntoSheet(
+  sheet: Blob,
+  transform: { scale: number; offsetX: number; offsetY: number },
+  cellsPerSide = 4,
+): Promise<Blob> {
+  if (transform.scale === 1 && transform.offsetX === 0 && transform.offsetY === 0) {
+    return sheet
+  }
+  const bmp = await createImageBitmap(sheet)
+  const cellW = Math.floor(bmp.width / cellsPerSide)
+  const cellH = Math.floor(bmp.height / cellsPerSide)
+  const canvas = new OffscreenCanvas(bmp.width, bmp.height)
+  const ctx = canvas.getContext('2d')!
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  for (let r = 0; r < cellsPerSide; r++) {
+    for (let c = 0; c < cellsPerSide; c++) {
+      const dx = c * cellW, dy = r * cellH
+      ctx.save()
+      ctx.translate(dx + cellW / 2 + transform.offsetX, dy + cellH / 2 + transform.offsetY)
+      ctx.scale(transform.scale, transform.scale)
+      ctx.drawImage(bmp as unknown as CanvasImageSource, c * cellW, r * cellH, cellW, cellH, -cellW / 2, -cellH / 2, cellW, cellH)
+      ctx.restore()
+    }
+  }
+  return await canvas.convertToBlob({ type: 'image/png' })
+}
+
+/** Same as bakeTransformIntoSheet but for a single cell (e.g. 256×256 staticBase). */
+export async function bakeTransformIntoCell(
+  cell: Blob,
+  transform: { scale: number; offsetX: number; offsetY: number },
+): Promise<Blob> {
+  if (transform.scale === 1 && transform.offsetX === 0 && transform.offsetY === 0) {
+    return cell
+  }
+  const bmp = await createImageBitmap(cell)
+  const canvas = new OffscreenCanvas(bmp.width, bmp.height)
+  const ctx = canvas.getContext('2d')!
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  ctx.translate(bmp.width / 2 + transform.offsetX, bmp.height / 2 + transform.offsetY)
+  ctx.scale(transform.scale, transform.scale)
+  ctx.drawImage(bmp as unknown as CanvasImageSource, -bmp.width / 2, -bmp.height / 2)
+  return await canvas.convertToBlob({ type: 'image/png' })
+}
+
+/**
  * Take a transparent-bg cell and re-stamp it on a solid chroma background.
  * Same purpose as buildPlaceholderSheetWithChromaBg but for single cells
  * (used by D's reference building so each reference cell carries an

@@ -3,6 +3,7 @@ import { saveAs } from 'file-saver'
 import type { Project, StateName } from '@/types/project'
 import { STATE_NAMES } from '@/types/project'
 import { buildManifest } from './manifest'
+import { bakeTransformIntoSheet } from './imageOps'
 
 export async function buildPackBlob(project: Project): Promise<Blob> {
   const zip = new JSZip()
@@ -13,9 +14,13 @@ export async function buildPackBlob(project: Project): Promise<Blob> {
   if (!sprites) throw new Error('failed to create sprites/ folder in zip')
 
   for (const name of STATE_NAMES as readonly StateName[]) {
-    const sheet = project.states[name].sheet
-    if (!sheet) continue
-    const buf = await sheet.arrayBuffer()
+    const state = project.states[name]
+    if (!state.sheet) continue
+    // Bake the per-state transform (scale + offset) into the exported sheet
+    // so .moripack consumers (mori-desktop) get the cross-state-aligned
+    // version the user sees in Loop Preview.
+    const baked = await bakeTransformIntoSheet(state.sheet, state.transform)
+    const buf = await baked.arrayBuffer()
     sprites.file(`${name}.png`, buf)
   }
 

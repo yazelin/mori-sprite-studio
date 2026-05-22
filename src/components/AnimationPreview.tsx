@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
+import type { CellTransform } from '@/types/project'
+import { IDENTITY_TRANSFORM } from '@/types/project'
 
 interface Props {
   sheet: Blob | null
   durationMs: number
   size?: number
   paused?: boolean
+  /** Per-state transform (scale + offset) baked into render. Defaults to identity. */
+  transform?: CellTransform
+  /** Show horizontal/vertical reference guides for alignment tuning. */
+  showGuides?: boolean
 }
 
 /**
@@ -20,9 +26,17 @@ interface Props {
  * Frame timing matches mori-desktop's loop_durations_ms convention:
  * durationMs = total time for full 16-frame loop.
  */
-export function AnimationPreview({ sheet, durationMs, size = 256, paused = false }: Props) {
+export function AnimationPreview({
+  sheet, durationMs, size = 256, paused = false,
+  transform = IDENTITY_TRANSFORM,
+  showGuides = false,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [hasSheet, setHasSheet] = useState(false)
+  const transformRef = useRef(transform)
+  transformRef.current = transform
+  const showGuidesRef = useRef(showGuides)
+  showGuidesRef.current = showGuides
 
   useEffect(() => {
     setHasSheet(!!sheet)
@@ -45,6 +59,7 @@ export function AnimationPreview({ sheet, durationMs, size = 256, paused = false
       if (canvas && bitmap) {
         const ctx = canvas.getContext('2d')
         if (ctx) {
+          const t = transformRef.current
           const elapsed = paused ? 0 : (now - start) % durationMs
           const frameIdx = Math.floor(elapsed / frameDuration) % 16
           const col = frameIdx % 4
@@ -54,11 +69,40 @@ export function AnimationPreview({ sheet, durationMs, size = 256, paused = false
           ctx.clearRect(0, 0, canvas.width, canvas.height)
           ctx.imageSmoothingEnabled = true
           ctx.imageSmoothingQuality = 'high'
+
+          // Apply transform: scale around canvas centre + offset
+          // offsetX/Y are in source-pixel units (cellW=256), scale to canvas dest
+          const offsetScaleFactor = canvas.width / cellW
+          ctx.save()
+          ctx.translate(
+            canvas.width / 2 + t.offsetX * offsetScaleFactor,
+            canvas.height / 2 + t.offsetY * offsetScaleFactor,
+          )
+          ctx.scale(t.scale, t.scale)
           ctx.drawImage(
             bitmap,
             col * cellW, row * cellH, cellW, cellH,
-            0, 0, canvas.width, canvas.height,
+            -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height,
           )
+          ctx.restore()
+
+          // Reference guides overlay
+          if (showGuidesRef.current) {
+            ctx.save()
+            ctx.strokeStyle = 'rgba(16, 185, 129, 0.45)' // emerald
+            ctx.setLineDash([4, 3])
+            ctx.lineWidth = 1
+            const w = canvas.width, h = canvas.height
+            // Vertical center
+            ctx.beginPath(); ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h); ctx.stroke()
+            // Horizontal center
+            ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke()
+            // Upper third (~ "eye line" target)
+            ctx.beginPath(); ctx.moveTo(0, h / 3); ctx.lineTo(w, h / 3); ctx.stroke()
+            // Lower third (~ "chin / body bottom" target)
+            ctx.beginPath(); ctx.moveTo(0, h * 2 / 3); ctx.lineTo(w, h * 2 / 3); ctx.stroke()
+            ctx.restore()
+          }
         }
       }
       rafId = requestAnimationFrame(tick)

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Image, FileText, Pencil, Wand2, Eraser } from 'lucide-react'
+import { Image, FileText, Pencil, Wand2, Eraser, Maximize2 } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { UploadDropzone } from '@/components/UploadDropzone'
 import { MetadataForm } from '@/components/MetadataForm'
 import { StateSemanticsTable } from '@/components/StateSemanticsTable'
 import { ProviderConfig } from '@/components/ProviderConfig'
 import { ChromaConfig } from '@/components/ChromaConfig'
+import { NormalizeConfig } from '@/components/NormalizeConfig'
 import { GenerateButton } from '@/components/GenerateButton'
 import { Section } from '@/components/Section'
 import { PromptEditorModal, type PromptEditorContext } from '@/components/PromptEditorModal'
@@ -125,6 +126,14 @@ export function ProjectView() {
         icon={<Eraser {...ICON_PROPS} />}
       >
         <ChromaConfig />
+      </Section>
+
+      <Section
+        title="Normalize 跨 state 尺寸"
+        subtitle="每 state 獨立生成,角色大小/位置會微飄。一鍵掃描算出每 state 的 transform,讓 mori-desktop 切 state 時不跳。"
+        icon={<Maximize2 {...ICON_PROPS} />}
+      >
+        <NormalizeConfig />
       </Section>
 
       <PromptEditorModal

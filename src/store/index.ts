@@ -20,6 +20,7 @@ function emptyState(name: StateName): SpriteState {
     sheet: null,
     rawSheet: null,
     rawStaticBase: null,
+    transform: { scale: 1.0, offsetX: 0, offsetY: 0 },
     poseNote: '',
     notes: Array(16).fill(''),
     loopMode: DEFAULT_LOOP_MODES[name],

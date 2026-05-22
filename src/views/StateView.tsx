@@ -44,6 +44,7 @@ export function StateView({ name }: { name: StateName }) {
   const [modalContext, setModalContext] = useState<PromptEditorContext | null>(null)
   const [pendingKey, setPendingKey] = useState<TemplateKey | null>(null)
   const [encodingApng, setEncodingApng] = useState(false)
+  const [showGuides, setShowGuides] = useState(false)
   const sheetUploadRef = useRef<HTMLInputElement | null>(null)
   const staticUploadRef = useRef<HTMLInputElement | null>(null)
 
@@ -82,11 +83,19 @@ export function StateView({ name }: { name: StateName }) {
     finally { setGenerating(false) }
   }
 
+  // Helper: bake state.transform into a fresh sheet (used by every export path).
+  async function bakedSheet(): Promise<Blob | null> {
+    if (!state.sheet) return null
+    const { bakeTransformIntoSheet } = await import('@/lib/imageOps')
+    return bakeTransformIntoSheet(state.sheet, state.transform)
+  }
+
   async function downloadApng() {
     if (!state.sheet) return
     setError(null); setEncodingApng(true)
     try {
-      const blob = await buildAPNG(state.sheet, state.loopDurationMs, state.loopMode)
+      const baked = await bakedSheet()
+      const blob = await buildAPNG(baked!, state.loopDurationMs, state.loopMode)
       downloadBlob(blob, `mori-${name}.png`)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -99,7 +108,8 @@ export function StateView({ name }: { name: StateName }) {
     if (!state.sheet) return
     setError(null); setEncodingApng(true)
     try {
-      const blob = await buildGIF(state.sheet, state.loopDurationMs, state.loopMode)
+      const baked = await bakedSheet()
+      const blob = await buildGIF(baked!, state.loopDurationMs, state.loopMode)
       downloadBlob(blob, `mori-${name}.gif`)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -112,7 +122,8 @@ export function StateView({ name }: { name: StateName }) {
     if (!state.sheet) return
     setError(null); setEncodingApng(true)
     try {
-      const blob = await buildWebM(state.sheet, state.loopDurationMs)
+      const baked = await bakedSheet()
+      const blob = await buildWebM(baked!, state.loopDurationMs)
       downloadBlob(blob, `mori-${name}.webm`)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -121,9 +132,10 @@ export function StateView({ name }: { name: StateName }) {
     }
   }
 
-  function downloadRawSheet() {
+  async function downloadRawSheet() {
     if (!state.sheet) return
-    downloadBlob(state.sheet, `${name}-raw-4x4-sheet.png`)
+    const baked = await bakedSheet()
+    downloadBlob(baked!, `${name}-sheet.png`)
   }
 
   async function rechroma() {
@@ -365,9 +377,26 @@ export function StateView({ name }: { name: StateName }) {
               />
               <div className="space-y-4 min-w-[224px]">
                 <div>
-                  <Label className="text-xs font-medium text-stone-700 block mb-1.5">Loop preview</Label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <Label className="text-xs font-medium text-stone-700">Loop preview</Label>
+                    <label className="text-[11px] text-muted-foreground flex items-center gap-1 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={showGuides}
+                        onChange={(e) => setShowGuides(e.target.checked)}
+                        className="accent-emerald-600 w-3 h-3"
+                      />
+                      參考線
+                    </label>
+                  </div>
                   <div className="rounded-xl border border-border tx-checker p-2">
-                    <AnimationPreview sheet={state.sheet} durationMs={state.loopDurationMs} size={224} />
+                    <AnimationPreview
+                      sheet={state.sheet}
+                      durationMs={state.loopDurationMs}
+                      size={224}
+                      transform={state.transform}
+                      showGuides={showGuides}
+                    />
                   </div>
                   <p className="text-xs text-muted-foreground mt-1.5 max-w-[224px]">
                     {state.status === 'animated'
@@ -376,6 +405,54 @@ export function StateView({ name }: { name: StateName }) {
                         ? '16 格 = 同張靜態,看不出動'
                         : '尚未生成'}
                   </p>
+                </div>
+
+                {/* Per-state transform: scale + offset for cross-state alignment. */}
+                <div className="space-y-2 pt-2 border-t border-border/60">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-medium text-stone-700">角色尺寸 / 位置</Label>
+                    {(state.transform.scale !== 1 || state.transform.offsetX !== 0 || state.transform.offsetY !== 0) && (
+                      <button
+                        type="button"
+                        onClick={() => updateState(name, { transform: { scale: 1, offsetX: 0, offsetY: 0 } })}
+                        className="text-[11px] text-muted-foreground hover:text-foreground"
+                      >
+                        reset
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-[11px] font-normal text-muted-foreground w-12">Scale</Label>
+                      <Input
+                        type="range" min={0.5} max={1.5} step={0.01}
+                        value={state.transform.scale}
+                        onChange={(e) => updateState(name, { transform: { ...state.transform, scale: parseFloat(e.target.value) } })}
+                        className="accent-emerald-600 flex-1"
+                      />
+                      <span className="text-[11px] font-mono tabular-nums w-10 text-right">{state.transform.scale.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-[11px] font-normal text-muted-foreground w-12">X</Label>
+                      <Input
+                        type="range" min={-50} max={50} step={1}
+                        value={state.transform.offsetX}
+                        onChange={(e) => updateState(name, { transform: { ...state.transform, offsetX: parseInt(e.target.value, 10) } })}
+                        className="accent-emerald-600 flex-1"
+                      />
+                      <span className="text-[11px] font-mono tabular-nums w-10 text-right">{state.transform.offsetX}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-[11px] font-normal text-muted-foreground w-12">Y</Label>
+                      <Input
+                        type="range" min={-50} max={50} step={1}
+                        value={state.transform.offsetY}
+                        onChange={(e) => updateState(name, { transform: { ...state.transform, offsetY: parseInt(e.target.value, 10) } })}
+                        className="accent-emerald-600 flex-1"
+                      />
+                      <span className="text-[11px] font-mono tabular-nums w-10 text-right">{state.transform.offsetY}</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Loop config — animation-only properties, so they live next to the

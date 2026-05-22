@@ -8,7 +8,7 @@ export function render(template: string, vars: Record<string, string>): string {
 }
 
 export function renderCellNotesBlock(notes: string[]): string {
-  return notes.map((n, i) => `  Frame ${i + 1}: ${n || '(AI fills in)'}`).join('\n')
+  return notes.map((n, i) => `  Frame ${i + 1}: ${n || '(hold the same position as the previous frame; minimal change only)'}`).join('\n')
 }
 
 // 3×2 grid cell labels (ported from line-sticker-studio convention).

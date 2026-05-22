@@ -39,9 +39,16 @@ OUTPUT RULES:
 - Character must be recognizably the same as the reference (same hair, clothes, face features, proportions).
 - No drop shadows, no ground plane, no scenery.`,
 
-  C: `Create a single 4-row × 4-column grid sprite sheet (1024×1024 total, each cell 256×256) showing a 16-frame animation of state "{{state_name}}" for the same character as the reference.
+  C: `Create a single 4-row × 4-column grid sprite sheet (1024×1024 total, each cell exactly 256×256) showing a tiny 16-frame animation loop of state "{{state_name}}" for the same character as the reference.
 
-LAYOUT — each cell is one animation frame; cells are read in row-major order (left-to-right, top-to-bottom):
+THIS IS A SPRITE-SHEET ANIMATION, NOT 16 DIFFERENT ILLUSTRATIONS.
+Think of it like a flipbook: the character barely moves between adjacent
+cells. Most pixels in cell N should be IDENTICAL to cell N+1 — only a
+small region (hair drift, eyelid for blink, chest for breath, hand for
+gesture) changes by a few pixels at a time.
+
+LAYOUT — cells read in row-major order (left-to-right, top-to-bottom),
+each cell is one animation frame:
 
 \`\`\`
 +----+----+----+----+
@@ -57,20 +64,36 @@ LAYOUT — each cell is one animation frame; cells are read in row-major order (
 
 State pose: {{pose_note}}
 Loop mode: {{loop_mode}}
-  - If "loop": frame 1 and frame 16 must connect seamlessly (subtle position so the loop is invisible)
-  - If "one-shot": frame 16 is the final stopping pose
+  - "loop": frame 16 must smoothly connect back to frame 1 (no visible jump)
+  - "one-shot": frame 16 is the final pose, frames 1-16 progress toward it
 
-FRAME-BY-FRAME HINTS (empty entries = AI fills with smooth in-between interpolation):
+CRITICAL POSITIONAL LOCK — every cell must match these:
+- Character's HEAD CENTER at the SAME (x,y) position inside each cell
+- Character's FEET / SEAT at the SAME (x,y) position inside each cell
+- IDENTICAL overall scale (head size, body size, total silhouette area)
+- IDENTICAL crop / framing — what's inside frame stays inside frame
+- IDENTICAL hair length, identical clothing, identical color palette
+- IDENTICAL facing direction (do NOT mirror)
+
+Only these things may change between adjacent frames:
+- Eyelids open/closed (blink — usually 1-2 frames closed in the loop)
+- Chest position by 2-4 px (breath in/out)
+- Hair tip drift by 1-3 px (idle sway)
+- Single hand/finger micro-gesture for "{{state_name}}"-specific motion
+
+EVERYTHING ELSE STAYS IDENTICAL. The animation should look subtle — if
+you flipped through the cells fast, the character would APPEAR STILL with
+only quiet motion (breath / blink). It should NOT look like 16 different
+character poses.
+
+FRAME-BY-FRAME HINTS (empty entries = hold steady; AI fills with the
+smallest possible interpolation between neighboring frames):
 {{cell_notes_block}}
-
-CHARACTER IDENTITY (persists across all 16 frames):
-Same character as the reference — identical hair, clothes, proportions, color palette. Only subtle pose / breath / blink / gesture changes between frames.
 
 OUTPUT RULES — strictly enforced:
 - Final image is ONE seamless 4×4 grid. NO visible borders, gutters, dividers, lines, frames, separators, or numbers between cells. NO frame labels (1..16) drawn on the image. The grid diagram above is for YOU as instructions, NOT to be painted.
-- Each cell is the SAME framing (don't zoom in/out across frames). Character centered, identical scale.
-- Frame-to-frame changes are SMALL (this is an animation loop, not 16 different poses).
-- No drop shadows, no ground plane, no scenery, no extra props that change between frames.`,
+- No drop shadows, no ground plane, no scenery, no extra props.
+- Character pixel position must vary by less than 8 pixels across all 16 frames (this is an animation hold, not a re-staging).`,
 
   D: `A single 256×256 frame showing the reference character in state "{{state_name}}", positioned as an intermediate pose between the previous and next frames provided.
 

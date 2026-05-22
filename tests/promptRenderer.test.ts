@@ -19,8 +19,8 @@ describe('promptRenderer', () => {
     const out = renderCellNotesBlock(notes)
     expect(out).toContain('Frame 1: start')
     expect(out).toContain('Frame 16: end')
-    // Empty notes get a placeholder so AI knows it's free to fill
-    expect(out).toContain('Frame 2: (AI fills in)')
+    // Empty notes get a "hold steady" placeholder so AI doesn't re-stage
+    expect(out).toContain('Frame 2: (hold the same position')
   })
 
   it('renderStateDescriptions uses letter-coded cells with position names', () => {

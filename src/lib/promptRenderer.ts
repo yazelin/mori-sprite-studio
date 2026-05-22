@@ -8,9 +8,26 @@ export function render(template: string, vars: Record<string, string>): string {
 }
 
 export function renderCellNotesBlock(notes: string[]): string {
-  return notes.map((n, i) => `  Frame ${i + 1}: ${n}`).join('\n')
+  return notes.map((n, i) => `  Frame ${i + 1}: ${n || '(AI fills in)'}`).join('\n')
 }
 
+// 3×2 grid cell labels (ported from line-sticker-studio convention).
+// Cell letter + position name keeps the AI from drifting / swapping cells.
+const CELL_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const
+const CELL_POSITIONS = [
+  'top-left',  'top-centre',  'top-right',
+  'bottom-left','bottom-centre','bottom-right',
+] as const
+
+/**
+ * Build the per-cell pose assignment block for the B1 6-state grid prompt.
+ * Uses letter coding + position name + explicit state semantic so the model
+ * has no excuse to merge / swap / shrink cells.
+ */
 export function renderStateDescriptions(semantics: Record<StateName, string>): string {
-  return STATE_NAMES.map((s, i) => `  Cell ${i + 1} (${s}): ${semantics[s]}`).join('\n')
+  return STATE_NAMES.map((s, i) => {
+    const letter = CELL_LETTERS[i]
+    const pos = CELL_POSITIONS[i]
+    return `  [${letter}] ${pos} cell — state "${s}":\n      POSE: ${semantics[s]}`
+  }).join('\n')
 }

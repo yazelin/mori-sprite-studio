@@ -104,17 +104,16 @@ export async function buildReferences(
   }
   if (templateKey === 'W' || templateKey === 'Dr') {
     // Walking / Dragging:  STANDALONE pipeline (no pre-tiling).
-    // Keep references MINIMAL — too many refs (we tried 8) makes AI
-    // synthesize a 'compromise' character that drifts identity. Just two:
-    //   1. character ref (canonical identity source-of-truth)
-    //   2. own state static base if it exists (pose anchor for this state)
+    // CRITICAL — pass ONLY the character ref, NOT the static base.
+    // The static base shows ONE specific pose (e.g. right foot forward);
+    // including it as a reference anchors AI to that single pose, and AI
+    // generates 16 cells all with right-foot-forward + jitter, instead
+    // of the proper alternating gait cycle. Without a pose anchor, AI
+    // must design the cycle from scratch per the W/Dr template's cell-
+    // by-cell instructions, allowing actual leg alternation.
     if (!project.characterRef) throw new Error('character ref required')
     if (!stateName) throw new Error('stateName required')
-    const chromaHex = CHROMA_COLORS[store.chroma.key].hex
-    const refs: Blob[] = [project.characterRef]
-    const ownSb = project.states[stateName].staticBase
-    if (ownSb) refs.push(await fillBgWithChroma(ownSb, chromaHex))
-    return refs
+    return [project.characterRef]
   }
   if (templateKey === 'C') {
     if (!stateName) throw new Error('stateName required for C')

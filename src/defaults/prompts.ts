@@ -268,13 +268,35 @@ Frames 1-8  = ONE complete step (e.g. left leg lifts, swings forward, plants).
 Frames 9-16 = SECOND complete step (right leg lifts, swings forward, plants).
 Frame 16 → Frame 1 must connect seamlessly so the gait loops cleanly.
 
-For each step (8 frames):
-  • Frame 1 of step: weight planted on one leg, OTHER leg fully forward + planting heel
-  • Frames 2-3: weight shifts forward, back leg starts to lift
-  • Frame 4 (passing-through): legs cross at middle, body at HIGHEST bob point
-  • Frames 5-6: back leg now in front, weight shifts onto it
-  • Frame 7: new front leg planting, body at LOWEST bob point
-  • Frame 8: planted, ready for next cycle to begin
+EXPLICIT 16-FRAME GAIT CYCLE (THIS IS NON-NEGOTIABLE):
+
+The CRITICAL property of a walking cycle is that the FOOT IN FRONT
+ALTERNATES. If your output has the same foot in front in all 16 cells,
+you have FAILED the task.
+
+  Cell 1:  LEFT foot fully forward (heel planting), RIGHT foot back
+  Cell 2:  LEFT foot planted, RIGHT foot lifting off behind
+  Cell 3:  RIGHT foot mid-swing forward, LEFT foot planted (mid-passing)
+  Cell 4:  RIGHT foot passing LEFT, both legs near vertical (highest bob)
+  Cell 5:  RIGHT foot ahead of LEFT, swinging forward
+  Cell 6:  RIGHT foot nearly forward, beginning to plant
+  Cell 7:  RIGHT foot fully forward (heel planting), LEFT foot back
+  Cell 8:  RIGHT foot planted, LEFT foot lifting off behind
+
+  Cell 9:  LEFT foot mid-swing forward, RIGHT foot planted (mid-passing)
+  Cell 10: LEFT foot passing RIGHT, both legs near vertical (highest bob)
+  Cell 11: LEFT foot ahead of RIGHT, swinging forward
+  Cell 12: LEFT foot nearly forward, beginning to plant
+  Cell 13: LEFT foot fully forward (back at cell-1-equivalent pose)
+  Cell 14: similar to cell 2 (left planted, right lifting)
+  Cell 15: similar to cell 3 (right mid-swing)
+  Cell 16: similar to cell 4 (passing), connects smoothly back to cell 1
+
+This is symmetric: cells 1-8 = full LEFT-leads step → RIGHT-leads step.
+Cells 9-16 = the reverse half of the cycle.
+
+DO NOT keep the same foot in front for many cells in a row. Each cell
+visibly differs from neighbors in WHICH leg is forward.
 
 Arms swing in COUNTER-PHASE to legs (right arm forward when left leg forward,
 left arm forward when right leg forward). Arm swing must be VISIBLE — not

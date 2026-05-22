@@ -3,6 +3,7 @@ import { Home, Download, Leaf, ImagePlus } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { STATE_NAMES, type StateName, type SheetStatus } from '@/types/project'
 import { cn } from '@/lib/utils'
+import { QuotaIndicator } from '@/components/QuotaIndicator'
 
 const STATE_LABEL: Record<StateName, string> = {
   idle:      'Idle',
@@ -99,8 +100,9 @@ export function Sidebar() {
         />
       </div>
 
-      {/* Footer — Buy Me a Coffee + GitHub */}
+      {/* Footer — quota + Buy Me a Coffee + GitHub */}
       <div className="mt-auto px-3 py-3 border-t border-border space-y-2 text-xs">
+        <QuotaIndicator />
         <a
           href="https://buymeacoffee.com/yazelin"
           target="_blank" rel="noreferrer"

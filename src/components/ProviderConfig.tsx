@@ -36,13 +36,14 @@ export function ProviderConfig() {
               <div className="ml-6 space-y-2 p-3 bg-slate-50 rounded-md">
                 {name === 'author-fallback' && (
                   <div className="text-xs text-slate-600 space-y-1">
-                    <p>使用作者的 API key(server-side env var,你不用設定)。免費直接用。</p>
+                    <p>使用 yazelin 的 API key(server-side env var,你不用設定)。我自掏腰包暫時開放給大家試用。</p>
                     <p className="text-amber-700">
-                      ⚠ 目前為 MVP,**沒有 rate limit**。 多人用 + 大量呼叫會把作者的 quota 燒光。
-                      未來會加 per-IP rate limit + daily cap 保護額度。如果你會大量用,建議切其他 provider 自帶 key。
+                      ⚠ 每 IP 每日上限 100 次 · 同時並行 1 張。
+                      <br />
+                      **錢花完就會關掉**,不是長期承諾,只是讓陌生人也能試一下這個工具。如果你會大量用,建議切其他 provider 自帶 key。
                     </p>
                     <p>
-                      喜歡這個工具? 請我喝杯咖啡{' '}
+                      想讓它繼續開著?{' '}
                       <a
                         href="https://buymeacoffee.com/yazelin"
                         target="_blank" rel="noreferrer"
@@ -50,7 +51,7 @@ export function ProviderConfig() {
                       >
                         ☕ buymeacoffee.com/yazelin
                       </a>{' '}
-                      讓我可以買更多 API quota 給大家用 ♥
+                      補一點咖啡錢,我才能繼續把 quota 加進來。
                     </p>
                   </div>
                 )}
@@ -98,6 +99,32 @@ export function ProviderConfig() {
                 )}
                 {(name === 'vertex-gemini' || name === 'google-gemini') && (
                   <>
+                    {name === 'vertex-gemini' && (
+                      <p className="text-xs text-slate-600">
+                        Vertex AI Express key,於{' '}
+                        <a
+                          href="https://console.cloud.google.com/vertex-ai/express"
+                          target="_blank" rel="noreferrer"
+                          className="underline text-emerald-700"
+                        >
+                          console.cloud.google.com/vertex-ai/express
+                        </a>{' '}
+                        建立。免費試用 quota 通常夠跑 30-50 張圖。
+                      </p>
+                    )}
+                    {name === 'google-gemini' && (
+                      <p className="text-xs text-slate-600">
+                        AI Studio key,於{' '}
+                        <a
+                          href="https://aistudio.google.com/apikey"
+                          target="_blank" rel="noreferrer"
+                          className="underline text-emerald-700"
+                        >
+                          aistudio.google.com/apikey
+                        </a>{' '}
+                        建立。免費 tier 有 daily req 上限。
+                      </p>
+                    )}
                     <Field label="API Key">
                       <Input
                         type="password"
@@ -106,7 +133,7 @@ export function ProviderConfig() {
                           name === 'vertex-gemini' ? 'vertexGemini' : 'googleGemini',
                           { apiKey: e.target.value },
                         )}
-                        placeholder="AIza..."
+                        placeholder={name === 'vertex-gemini' ? 'AQ.AAAA...' : 'AIza...'}
                       />
                     </Field>
                     <Field label="Model">

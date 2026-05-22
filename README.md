@@ -109,7 +109,7 @@ You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG —
 3. Browse around, see how it works
 4. To make your own: clear data (or use incognito), upload your character ref, click 生 6 狀態靜態 → per-state 生動畫
 
-Author Fallback is on by default — no API key needed. ⚠ MVP no rate limit; ☕ [chip in](https://buymeacoffee.com/yazelin) so it stays free for everyone.
+Author Fallback uses yazelin's own API key — no setup needed. **I'm fronting the cost out of pocket so strangers can try the tool.** ⚠ Per-IP cap is 100 req/day + 1 concurrent. Quota counter lives in the sidebar footer. **When the budget runs out, it stops** — not a long-term promise, just letting people experience the tool. If you want it to stay available, ☕ [chip in](https://buymeacoffee.com/yazelin).
 
 ### Self-host
 
@@ -201,10 +201,10 @@ Building this is running on love + caffeine. If you find it useful:
 
 <a href="https://buymeacoffee.com/yazelin"><img src="https://img.shields.io/badge/Buy_me_a_coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy me a coffee" height="36"></a>
 
-Money goes toward:
-- API quota for the free Author Fallback path (so non-technical users can try without setting up their own keys)
-- Server / domain costs
-- Caffeine for me to keep adding features
+This is self-funded out of pocket. Coffee = direct support for:
+- More API quota in the Author Fallback bucket (so it doesn't run dry for newcomers)
+- Vercel / domain costs
+- Time + caffeine to keep building
 
 You can also ⭐ this repo + share with anyone building their own AI companion / desktop spirit.
 

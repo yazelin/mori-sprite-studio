@@ -300,6 +300,11 @@ export async function runGenerationWithPrompt(
   })
   const cleaned = await applyChroma(raw)
   await applyResult(templateKey, cleaned, stateName, cellIndex, raw)
+  // Notify any quota indicators / UI that a generation just finished
+  // so they can refresh their counters without waiting for poll interval.
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('generation-finished'))
+  }
 }
 
 export { OUTPUT_SIZE }

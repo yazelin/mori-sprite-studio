@@ -41,59 +41,100 @@ OUTPUT RULES:
 
   C: `Create a single 4-row × 4-column grid sprite sheet (1024×1024 total, each cell exactly 256×256) showing a tiny 16-frame animation loop of state "{{state_name}}" for the same character as the reference.
 
-THIS IS A SPRITE-SHEET ANIMATION, NOT 16 DIFFERENT ILLUSTRATIONS.
-Think of it like a flipbook: the character barely moves between adjacent
-cells. Most pixels in cell N should be IDENTICAL to cell N+1 — only a
-small region (hair drift, eyelid for blink, chest for breath, hand for
-gesture) changes by a few pixels at a time.
+MENTAL MODEL — THIS IS ONE CONTINUOUS ANIMATION, NOT 4 ROWS OF SCENES.
 
-LAYOUT — cells read in row-major order (left-to-right, top-to-bottom),
-each cell is one animation frame:
+Imagine a single camera locked on a tripod, looking at the character.
+The camera takes 16 photos in 3 seconds. The character barely moves —
+they breathe, they blink, their hair drifts. NOTHING ELSE CHANGES.
+
+The 4×4 layout is purely a STORAGE format (16 photos laid out in a
+grid so we can fit them in one PNG). It is NOT 4 different scenes
+stacked vertically. It is NOT 4 panels of a comic. There are no
+"chapters", no row breaks, no narrative pauses. All 16 cells are the
+SAME camera angle on the SAME stage capturing the SAME tiny loop.
+
+LAYOUT — cells read in row-major order (left-to-right, top-to-bottom):
 
 \`\`\`
 +----+----+----+----+
-|  1 |  2 |  3 |  4 |
+|  1 |  2 |  3 |  4 |   ← row 1 = first quarter of the loop
 +----+----+----+----+
-|  5 |  6 |  7 |  8 |
+|  5 |  6 |  7 |  8 |   ← row 2 = second quarter
 +----+----+----+----+
-|  9 | 10 | 11 | 12 |
+|  9 | 10 | 11 | 12 |   ← row 3 = third quarter
 +----+----+----+----+
-| 13 | 14 | 15 | 16 |
+| 13 | 14 | 15 | 16 |   ← row 4 = fourth quarter (connects back to 1)
 +----+----+----+----+
 \`\`\`
+
+Row 4 must visually pick up where row 1 left off — there is no
+"final scene" at the bottom and no "intro scene" at the top.
 
 State pose: {{pose_note}}
 Loop mode: {{loop_mode}}
-  - "loop": frame 16 must smoothly connect back to frame 1 (no visible jump)
+  - "loop": frame 16 → frame 1 must be seamless (no visible jump)
   - "one-shot": frame 16 is the final pose, frames 1-16 progress toward it
 
-CRITICAL POSITIONAL LOCK — every cell must match these:
-- Character's HEAD CENTER at the SAME (x,y) position inside each cell
-- Character's FEET / SEAT at the SAME (x,y) position inside each cell
-- IDENTICAL overall scale (head size, body size, total silhouette area)
-- IDENTICAL crop / framing — what's inside frame stays inside frame
-- IDENTICAL hair length, identical clothing, identical color palette
-- IDENTICAL facing direction (do NOT mirror)
+═══════════════════════════════════════════════════════════════════
+CRITICAL FRAMING LOCK — copy the reference photo's framing exactly:
+═══════════════════════════════════════════════════════════════════
 
-Only these things may change between adjacent frames:
-- Eyelids open/closed (blink — usually 1-2 frames closed in the loop)
-- Chest position by 2-4 px (breath in/out)
-- Hair tip drift by 1-3 px (idle sway)
-- Single hand/finger micro-gesture for "{{state_name}}"-specific motion
+The single reference image you receive is the FRAMING TEMPLATE.
+Whatever you can see of the character in that reference — that
+EXACT same amount must be visible in every one of the 16 cells.
 
-EVERYTHING ELSE STAYS IDENTICAL. The animation should look subtle — if
-you flipped through the cells fast, the character would APPEAR STILL with
-only quiet motion (breath / blink). It should NOT look like 16 different
-character poses.
+Reference shows head + shoulders only? Every cell shows head +
+shoulders only. Reference shows head-to-waist? Every cell shows
+head-to-waist. Do NOT zoom in. Do NOT zoom out. Do NOT pull the
+camera back to reveal more of the body in some cells. Do NOT crop
+closer in other cells.
 
-FRAME-BY-FRAME HINTS (empty entries = hold steady; AI fills with the
-smallest possible interpolation between neighboring frames):
+PIXEL-LEVEL ANCHORS (compare your cell to the reference):
+- HEAD SIZE: the head should occupy the SAME percentage of cell
+  height as in the reference (e.g. if head takes 45% of reference
+  height, head takes 45% of every cell's height — exact)
+- EYE SIZE: eyes are the same size as in the reference. NOT smaller,
+  NOT bigger. If eyes shrink, you zoomed out — STOP and re-frame.
+- FACE WIDTH: face fills the same horizontal width as the reference
+- BODY VISIBILITY: show the SAME body parts as the reference — no
+  more, no less. If the reference shows waist-up, every cell shows
+  waist-up. Don't suddenly include legs/feet in some cells.
+- VERTICAL POSITION: character's eyes at the same Y, chin at same Y,
+  shoulders at same Y as the reference
+
+COMMON FAILURE TO AVOID:
+The AI tends to "vary the camera distance" between cells to make the
+animation feel more dynamic — drawing row 1 zoomed-in (eyes big,
+head fills cell) then row 2 zoomed-out (smaller head, longer body
+visible, eyes look smaller). THIS IS WRONG. The camera is LOCKED on
+a tripod. Same focal length. Same distance. EVERY CELL.
+
+If the character's eyes look smaller in some cell, you zoomed out —
+redo that cell with the reference's exact head-fills-cell ratio.
+
+If the body looks longer in some cell, you're showing more of the
+body than the reference shows — crop tighter to match the reference.
+
+Identical hair length, identical clothing, identical palette,
+identical facing direction (DO NOT mirror).
+
+Only these things may change between cells:
+- Eyelids open/closed (blink — usually 1-2 cells closed in loop)
+- Chest expansion by 2-4 px (breath in/out)
+- Hair tip drift by 1-3 px (gentle sway)
+- One small accent like a finger twitch or single-eye glance for "{{state_name}}"
+
+FRAME-BY-FRAME HINTS (empty entries = hold steady from previous frame):
 {{cell_notes_block}}
 
-OUTPUT RULES — strictly enforced:
-- Final image is ONE seamless 4×4 grid. NO visible borders, gutters, dividers, lines, frames, separators, or numbers between cells. NO frame labels (1..16) drawn on the image. The grid diagram above is for YOU as instructions, NOT to be painted.
+OUTPUT RULES:
+- ONE seamless 4×4 grid. NO visible borders, gutters, dividers, lines,
+  frames, separators, or numbers between cells. NO frame labels (1..16)
+  painted on the output. The diagram above is for YOU, not for paint.
 - No drop shadows, no ground plane, no scenery, no extra props.
-- Character pixel position must vary by less than 8 pixels across all 16 frames (this is an animation hold, not a re-staging).`,
+- Character height variance across all 16 cells: less than 8 pixels.
+- If unsure between "draw two slightly different cells" vs "draw two
+  identical cells" — pick IDENTICAL. Less motion is better than jitter.`,
 
   D: `A single 256×256 frame showing the reference character in state "{{state_name}}", positioned as an intermediate pose between the previous and next frames provided.
 

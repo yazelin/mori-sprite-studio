@@ -48,7 +48,7 @@ function initialPrompts(): PromptsState {
   }
 }
 
-export type View = { kind: 'project' } | { kind: 'state'; name: StateName } | { kind: 'backdrop' } | { kind: 'export' }
+export type View = { kind: 'project' } | { kind: 'state'; name: StateName } | { kind: 'backdrop' } | { kind: 'preview' } | { kind: 'export' }
 
 interface UIState {
   view: View

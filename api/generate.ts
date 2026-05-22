@@ -23,7 +23,7 @@ interface RequestBody {
 //      (6 statics + 6 animations + 10-15 re-rolls), so 50/day = ~1.5
 //      characters per day per IP, plenty for legitimate use.
 
-const RATE_DAILY_CAP = 100
+const RATE_DAILY_CAP = 50
 const inFlight = new Set<string>()           // ip
 const dailyCount = new Map<string, { date: string; count: number }>()  // ip → today
 

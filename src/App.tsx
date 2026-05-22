@@ -3,6 +3,7 @@ import { Sidebar } from '@/components/Sidebar'
 import { ProjectView } from '@/views/ProjectView'
 import { StateView } from '@/views/StateView'
 import { BackdropView } from '@/views/BackdropView'
+import { PreviewView } from '@/views/PreviewView'
 import { ExportView } from '@/views/ExportView'
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
           {view.kind === 'project' && <ProjectView />}
           {view.kind === 'state' && <StateView name={view.name} />}
           {view.kind === 'backdrop' && <BackdropView />}
+          {view.kind === 'preview' && <PreviewView />}
           {view.kind === 'export' && <ExportView />}
         </div>
       </main>

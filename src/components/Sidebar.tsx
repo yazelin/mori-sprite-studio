@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Home, Download, Leaf, ImagePlus } from 'lucide-react'
+import { Home, Download, Leaf, ImagePlus, Eye } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { STATE_NAMES, type StateName, type SheetStatus } from '@/types/project'
 import { cn } from '@/lib/utils'
@@ -88,6 +88,13 @@ export function Sidebar() {
           onClick={() => setView({ kind: 'backdrop' })}
           icon={<ImagePlus size={16} strokeWidth={1.75} />}
           label="角色背板"
+        />
+
+        <Item
+          active={view.kind === 'preview'}
+          onClick={() => setView({ kind: 'preview' })}
+          icon={<Eye size={16} strokeWidth={1.75} />}
+          label="桌面預覽"
         />
 
         <SectionLabel>Output</SectionLabel>

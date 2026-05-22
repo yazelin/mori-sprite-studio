@@ -55,29 +55,31 @@ export function QuotaIndicator() {
     )
   }
 
-  const pct = Math.min(100, (quota.usedToday / quota.dailyCap) * 100)
+  // Countdown framing: remaining = bigger number = main display.
+  // Progress bar shows how much is LEFT (full bar = lots left, empty = none).
   const remaining = Math.max(0, quota.dailyCap - quota.usedToday)
+  const remainPct = (remaining / quota.dailyCap) * 100
   const tone =
-    pct >= 90 ? 'bg-red-50 border-red-200 text-red-900' :
-    pct >= 60 ? 'bg-amber-50 border-amber-200 text-amber-900' :
-                'bg-emerald-50 border-emerald-200 text-emerald-900'
+    remainPct <= 10 ? 'bg-red-50 border-red-200 text-red-900' :
+    remainPct <= 40 ? 'bg-amber-50 border-amber-200 text-amber-900' :
+                      'bg-emerald-50 border-emerald-200 text-emerald-900'
 
   return (
-    <div className={`px-2 py-2 rounded-lg border text-[11px] space-y-1 ${tone}`} title={`UTC date: ${quota.utcDate}`}>
+    <div className={`px-2 py-2 rounded-lg border text-[11px] space-y-1 ${tone}`} title={`UTC date: ${quota.utcDate} · 已用 ${quota.usedToday}`}>
       <div className="flex justify-between items-center">
-        <span className="font-medium">Author quota 今日</span>
-        <span className="font-mono tabular-nums">
-          {quota.usedToday} / {quota.dailyCap}
+        <span className="font-medium">Author quota 今日剩</span>
+        <span className="font-mono tabular-nums font-semibold">
+          {remaining} / {quota.dailyCap}
         </span>
       </div>
       <div className="h-1.5 rounded-full bg-white/50 overflow-hidden">
         <div
-          className={`h-full ${pct >= 90 ? 'bg-red-500' : pct >= 60 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-          style={{ width: `${pct}%` }}
+          className={`h-full transition-all ${remainPct <= 10 ? 'bg-red-500' : remainPct <= 40 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+          style={{ width: `${remainPct}%` }}
         />
       </div>
       <div className="text-[10px] opacity-80">
-        剩 {remaining} 次 · {quota.inFlight ? '🟢 1 張生成中' : '可送下一張'}
+        {quota.inFlight ? '🟢 1 張生成中' : '可呼叫下一張'}
       </div>
     </div>
   )

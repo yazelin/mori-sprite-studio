@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Image as ImageIcon, Grid3x3, Square } from 'lucide-react'
+import { Image as ImageIcon, Grid3x3, Square, Download } from 'lucide-react'
 import { useAppStore } from '@/store'
 import type { StateName, SheetStatus } from '@/types/project'
 import type { TemplateKey } from '@/types/prompts'
@@ -9,6 +9,7 @@ import { SpriteSheetPreview } from '@/components/SpriteSheetPreview'
 import { AnimationPreview } from '@/components/AnimationPreview'
 import { PromptEditorModal, type PromptEditorContext } from '@/components/PromptEditorModal'
 import { runGeneration, runGenerationWithPrompt, buildPromptContext } from '@/lib/generationFlow'
+import { buildAPNG, downloadBlob } from '@/lib/apngExport'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -37,6 +38,7 @@ export function StateView({ name }: { name: StateName }) {
   const [modalOpen, setModalOpen] = useState(false)
   const [modalContext, setModalContext] = useState<PromptEditorContext | null>(null)
   const [pendingKey, setPendingKey] = useState<TemplateKey | null>(null)
+  const [encodingApng, setEncodingApng] = useState(false)
 
   useEffect(() => {
     if (!state.staticBase) { setStaticUrl(null); return }
@@ -73,6 +75,19 @@ export function StateView({ name }: { name: StateName }) {
     finally { setGenerating(false) }
   }
 
+  async function downloadApng() {
+    if (!state.sheet) return
+    setError(null); setEncodingApng(true)
+    try {
+      const blob = await buildAPNG(state.sheet, state.loopDurationMs, state.loopMode)
+      downloadBlob(blob, `mori-${name}.png`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setEncodingApng(false)
+    }
+  }
+
   const pill = STATUS_PILL[state.status]
 
   return (
@@ -104,6 +119,17 @@ export function StateView({ name }: { name: StateName }) {
             disabled={!state.staticBase}
             generating={generating}
           />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={downloadApng}
+            disabled={!state.sheet || encodingApng}
+            className="h-10 gap-2"
+            title={state.status !== 'animated' ? '生動畫後才能下載真實 loop' : '下載成 APNG(透明 / 循環)'}
+          >
+            <Download size={16} strokeWidth={1.75} />
+            {encodingApng ? '打包中…' : '下載 APNG'}
+          </Button>
         </div>
       </header>
 

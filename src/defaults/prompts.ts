@@ -63,6 +63,23 @@ DO change (subtle, idle animation only):
 
 ⚠ EXCEPTION — cyclic locomotion states (walking, dragging):
 The "DO NOT change body pose" rule above is RELAXED for these states.
+
+🔒 BUT THE FOLLOWING RULES STILL APPLY STRICTLY (no exception):
+- Character design stays EXACTLY THE SAME in every cell:
+    same hair color, same hair style/length, same face features
+    same clothes (every garment, every color, every fold)
+    same skin tone, same ear shape, same eye color
+    same accessories (hairpiece, jewelry, items)
+    same art style — if reference is anime/chibi, output stays anime/chibi
+    (do NOT switch to pixel art, do NOT switch to a different art style,
+     do NOT redesign the character)
+- It is the SAME PERSON walking across 16 frames, just with their legs
+  in different positions. Imagine taking 16 photographs of one person
+  taking 2 steps — the person doesn't change, only their pose does.
+- The pre-tiled grid you receive IS the canonical character — match it
+  exactly for hair, clothes, face. Only redraw LIMBS that need to move.
+
+✅ WHAT THE EXCEPTION ACTUALLY RELAXES (these may change per-cell):
 For walking specifically:
 - You MUST redraw LEG positions across cells — that is the entire point
   of a gait cycle. If you keep legs identical in all 16 cells, you have
@@ -76,11 +93,14 @@ For walking specifically:
 - Head + torso CENTER stays at roughly the same canvas position in each
   cell (don't translate the whole character) — only the legs, arms, and
   body tilt change.
+- Camera angle / character facing direction stays CONSISTENT across all
+  16 cells (don't mix front-view and side-view in the same sheet — pick
+  ONE view that fits the walking semantic and hold it for all 16 cells).
 
 For dragging: you MAY swing the body left/right 5-8 px across cells
 (suspended swing), and the limbs MAY hang/swing freely — only the
 "feet on ground" constraint is broken (feet should be visibly off any
-surface in every cell).
+surface in every cell). Character identity + design rules still apply.
 
 State pose hint: {{pose_note}}
 Loop mode: {{loop_mode}}

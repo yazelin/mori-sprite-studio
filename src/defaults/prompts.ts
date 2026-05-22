@@ -62,26 +62,38 @@ DO change (subtle, idle animation only):
 - One small gesture appropriate to state "{{state_name}}" — within the existing character design, not new props
 
 State pose hint: {{pose_note}}
-Loop mode: {{loop_mode}} (for "loop": frame 16 → frame 1 must be seamless)
+Loop mode: {{loop_mode}}
+  - "loop" mode: frame 16 must connect seamlessly back to frame 1
+  - "one-shot" mode: frame 1 is start, frame 16 is final resting pose (no loop back)
 
-DEFAULT 16-FRAME IDLE PATTERN (anatomy-agnostic — interpret each beat appropriately for the character's actual form, whether humanoid, plant, slime, gem, robot, etc.):
+═══════════════════════════════════════════════════════════════════
+DEFAULT PATTERN — choose based on loop_mode:
+═══════════════════════════════════════════════════════════════════
+
+▼ IF loop_mode == "loop" (anatomy-agnostic idle pattern):
   • Frames 1-3:   character at resting baseline (all secondary features at rest)
-  • Frame 4:      primary silhouette begins a subtle 1-2 px expansion (the character's equivalent of "breath in" — for humanoid this is chest rise; for a plant it's leaves lifting; for a gem it's a faint glow; for a slime it's the body stretching upward)
-  • Frame 5:      expansion approaches peak; one prominent feature begins its closing/dimming moment if applicable (for a character with eyes this is the lid starting to drop; for a glowing character this is brightness peaking before fading; for a character with no closable feature, simply continue the silhouette expansion)
+  • Frame 4:      primary silhouette begins a subtle 1-2 px expansion (character's equivalent of "breath in" — for humanoid this is chest rise; for a plant it's leaves lifting; for a gem it's a faint glow; for a slime it's the body stretching upward)
+  • Frame 5:      expansion approaches peak; one prominent feature begins its closing/dimming moment if applicable (for a character with eyes this is the lid starting to drop; for a glowing character this is brightness peaking before fading)
   • Frame 6:      peak expansion + peak closure/dim moment (mid-"blink" equivalent — eyes fully closed if eyes exist, otherwise hold the peak silhouette)
   • Frame 7:      hold peak briefly (no new motion introduced)
-  • Frame 8:      reverse begins (silhouette starts shrinking back; closure starts opening / dim returns to bright)
+  • Frame 8:      reverse begins (silhouette starts shrinking back; closure starts opening)
   • Frames 9-10:  silhouette returns to baseline; closure fully reopens if applicable
-  • Frames 11-16: resting baseline; only allow 1-2 px drift of free-flowing features (hair tips, leaves, tail end, aura wisps — whatever the character has). NO head turning, NO gestures, NO accent moments, NO new motions introduced. These frames bridge the loop back to frame 1 with the smallest possible change.
+  • Frames 11-16: resting baseline; only allow 1-2 px drift of free-flowing features. NO head turning, NO gestures, NO accent moments, NO new motions introduced.
 
-CRITICAL — frames 11-16 are PURE HOLD with only ambient drift on already-flowing features. Do NOT introduce:
-- Head turns, head tilts, head movements of any kind
-- New gestures, hand movements, finger waves
-- New facial expressions
-- Body shifts or postural changes
-- Anything that looks like a "second beat" in the animation
+  CRITICAL — loop mode has exactly ONE active beat (frames 4-8). The rest is "alive but holding still". No head turns, no new expressions, no body shifts after frame 10.
 
-The idle loop has exactly ONE active beat (the breath/blink in frames 4-8). The rest of the loop is "alive but holding still".
+▼ IF loop_mode == "one-shot" (motion arc, not a hold):
+  The character PROGRESSES through a brief motion. Frames are NOT mostly identical — they tell a short visual story from rest → peak → settle. Adjacent frames should differ by clear small amounts (not by tiny invisible amounts like loop mode), so that at the chosen playback speed (typically 1.5-2.5 seconds for 16 frames = ~100-150 ms per frame), each frame is visible and the motion reads smoothly without flicker.
+
+  • Frame 1:     starting pose (lower energy version of the {{state_name}} pose)
+  • Frames 2-4:  energy builds — character begins the gesture (arms rising, body leaning in, expression intensifying)
+  • Frames 5-7:  approach peak (gesture nearly complete, energy at max)
+  • Frame 8:     PEAK MOMENT (the most expressive instant of the {{state_name}} gesture — biggest smile, highest arms, brightest sparkles, etc.)
+  • Frames 9-11: peak held + small accent variation (slight bounce, sparkle pulse, gentle rocking)
+  • Frames 12-14:settle begins — energy easing down
+  • Frames 15-16:final resting pose (the character relaxes into a calmer version of the gesture; this is what's visible after the animation completes)
+
+  CRITICAL for one-shot: do NOT change FACIAL EXPRESSION dramatically between adjacent frames. Eyes stay open OR closed for runs of 3-4 frames, then transition smoothly. Same with mouth open/closed. Rapid expression flicker (eyes open / closed / open / closed across consecutive frames) looks like jitter, not animation. Choose ONE expression for frames 1-7, ONE for frames 8-11 (the peak), ONE for frames 12-16 (the settle) — within each group keep facial features identical.
 
 This pattern uses ABSTRACT motion descriptors. If the character has no eyes, skip the closure/blink beats — just continue the silhouette expansion. If the character has no flowing features, skip the drift entirely. Adapt every beat to the character's actual design (the pre-tiled grid you received shows you exactly what the character is — work within that).
 

@@ -9,9 +9,10 @@ import { SpriteSheetPreview } from '@/components/SpriteSheetPreview'
 import { AnimationPreview } from '@/components/AnimationPreview'
 import { PromptEditorModal, type PromptEditorContext } from '@/components/PromptEditorModal'
 import { runGeneration, runGenerationWithPrompt, buildPromptContext, reapplyChromaToState } from '@/lib/generationFlow'
+import { reverseCells, swapCells } from '@/lib/imageOps'
 import { buildAPNG, downloadBlob } from '@/lib/apngExport'
 import { buildGIF, buildWebM } from '@/lib/gifExport'
-import { Eraser, ChevronDown, Upload } from 'lucide-react'
+import { Eraser, ChevronDown, Upload, RotateCcw, ArrowLeftRight } from 'lucide-react'
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
@@ -45,6 +46,9 @@ export function StateView({ name }: { name: StateName }) {
   const [pendingKey, setPendingKey] = useState<TemplateKey | null>(null)
   const [encodingApng, setEncodingApng] = useState(false)
   const [showGuides, setShowGuides] = useState(false)
+  // Manual cell-reorder controls. When swap mode is active, the cell grid's
+  // click handler swaps cells instead of just selecting one for editing.
+  const [swapMode, setSwapMode] = useState(false)
   const sheetUploadRef = useRef<HTMLInputElement | null>(null)
   const staticUploadRef = useRef<HTMLInputElement | null>(null)
 
@@ -55,7 +59,48 @@ export function StateView({ name }: { name: StateName }) {
     return () => URL.revokeObjectURL(u)
   }, [state.staticBase])
 
-  useEffect(() => { selectCell(null) }, [name, selectCell])
+  useEffect(() => {
+    selectCell(null)
+    setSwapMode(false)  // exit swap mode when changing states
+  }, [name, selectCell])
+
+  /** Click handler for the 4×4 cell grid. Default: select cell for editing.
+   *  When swap mode is ON: first click selects a cell (visually via existing
+   *  selectedCell highlight), second click swaps the two cells and resets. */
+  async function handleCellClick(cellIdx: number) {
+    if (!swapMode) {
+      selectCell(cellIdx)
+      return
+    }
+    if (selectedCell === null) {
+      selectCell(cellIdx)
+      return
+    }
+    if (selectedCell === cellIdx) {
+      selectCell(null)  // clicking the same cell = deselect
+      return
+    }
+    // We have first + second cell → swap them
+    if (!state.sheet) return
+    try {
+      const swapped = await swapCells(state.sheet, selectedCell, cellIdx)
+      updateState(name, { sheet: swapped })
+    } catch (e) {
+      setError(`swap failed: ${e instanceof Error ? e.message : String(e)}`)
+    } finally {
+      selectCell(null)  // ready for next swap (mode stays on)
+    }
+  }
+
+  async function handleReverseCells() {
+    if (!state.sheet) return
+    try {
+      const reversed = await reverseCells(state.sheet)
+      updateState(name, { sheet: reversed })
+    } catch (e) {
+      setError(`reverse failed: ${e instanceof Error ? e.message : String(e)}`)
+    }
+  }
 
   async function runOp(key: TemplateKey, cellIdx?: number) {
     setError(null); setGenerating(true)
@@ -338,6 +383,34 @@ export function StateView({ name }: { name: StateName }) {
                 <Eraser size={14} strokeWidth={1.75} />
                 重新去背
               </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleReverseCells}
+                disabled={!state.sheet || generating}
+                className="h-9 gap-1.5 text-muted-foreground hover:text-foreground"
+                title="把 16 cells 順序反過來(cell 1 ↔ cell 16, 2 ↔ 15, ...)。動畫變成反向播放,有時可救一些 walking sheet 的方向感"
+              >
+                <RotateCcw size={14} strokeWidth={1.75} />
+                反向順序
+              </Button>
+              <Button
+                type="button"
+                variant={swapMode ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => { setSwapMode((m) => !m); selectCell(null) }}
+                disabled={!state.sheet || generating}
+                className={cn(
+                  'h-9 gap-1.5',
+                  swapMode ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                           : 'text-muted-foreground hover:text-foreground',
+                )}
+                title="開啟換位模式:點任一 cell A 再點 cell B,兩格內容互換。可用來手動排序 walking gait"
+              >
+                <ArrowLeftRight size={14} strokeWidth={1.75} />
+                {swapMode ? '換位模式 ON' : '換位模式'}
+              </Button>
               <div className="ml-auto">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -375,7 +448,7 @@ export function StateView({ name }: { name: StateName }) {
               <SpriteSheetPreview
                 sheet={state.sheet}
                 selectedCell={selectedCell}
-                onCellClick={selectCell}
+                onCellClick={handleCellClick}
                 size={384}
               />
               <div className="space-y-4 min-w-[224px]">

@@ -223,3 +223,57 @@ export async function cropCell(sheet: Blob, cellIndex: number): Promise<Blob> {
   ctx.drawImage(bitmap as any, col * 256, row * 256, 256, 256, 0, 0, 256, 256)
   return await canvas.convertToBlob({ type: 'image/png' })
 }
+
+/**
+ * Reorder 16 cells of a 1024×1024 4×4 sheet according to the given
+ * permutation. permutation[newIndex] = oldIndex. Output sheet has
+ * the cell that was at oldIndex now at newIndex.
+ *
+ * Example uses:
+ *   reverseCells(sheet) = reorderCells(sheet, [15, 14, ..., 1, 0])
+ *   swapCells(sheet, 3, 7) = reorderCells(sheet, [0,1,2,7,4,5,6,3,8..15])
+ */
+export async function reorderCells(sheet: Blob, permutation: readonly number[]): Promise<Blob> {
+  if (permutation.length !== 16) throw new Error(`expected 16 indices, got ${permutation.length}`)
+  const seen = new Set<number>()
+  for (const idx of permutation) {
+    if (idx < 0 || idx > 15) throw new Error(`permutation index out of range: ${idx}`)
+    if (seen.has(idx)) throw new Error(`duplicate permutation index: ${idx}`)
+    seen.add(idx)
+  }
+  const bitmap = await createImageBitmap(sheet)
+  if (bitmap.width !== 1024 || bitmap.height !== 1024) {
+    throw new Error(`expected 1024×1024 sheet, got ${bitmap.width}×${bitmap.height}`)
+  }
+  const canvas = new OffscreenCanvas(1024, 1024)
+  const ctx = canvas.getContext('2d')!
+  for (let newIdx = 0; newIdx < 16; newIdx++) {
+    const oldIdx = permutation[newIdx]
+    const srcRow = Math.floor(oldIdx / 4)
+    const srcCol = oldIdx % 4
+    const dstRow = Math.floor(newIdx / 4)
+    const dstCol = newIdx % 4
+    ctx.drawImage(
+      bitmap as any,
+      srcCol * 256, srcRow * 256, 256, 256,
+      dstCol * 256, dstRow * 256, 256, 256,
+    )
+  }
+  return await canvas.convertToBlob({ type: 'image/png' })
+}
+
+/** Reverse 16 cells in place — cell at index i becomes cell at index 15-i. */
+export async function reverseCells(sheet: Blob): Promise<Blob> {
+  const perm = Array.from({ length: 16 }, (_, i) => 15 - i)
+  return reorderCells(sheet, perm)
+}
+
+/** Swap two cells (a and b). All other cells stay in place. */
+export async function swapCells(sheet: Blob, a: number, b: number): Promise<Blob> {
+  if (a === b) return sheet  // no-op
+  if (a < 0 || a > 15 || b < 0 || b > 15) throw new Error(`indices out of range: ${a}, ${b}`)
+  const perm = Array.from({ length: 16 }, (_, i) => i)
+  perm[a] = b
+  perm[b] = a
+  return reorderCells(sheet, perm)
+}

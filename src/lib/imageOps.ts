@@ -65,6 +65,25 @@ export async function buildPlaceholderSheetWithChromaBg(
   return await canvas.convertToBlob({ type: 'image/png' })
 }
 
+/**
+ * Take a transparent-bg cell and re-stamp it on a solid chroma background.
+ * Same purpose as buildPlaceholderSheetWithChromaBg but for single cells
+ * (used by D's reference building so each reference cell carries an
+ * unambiguous chroma background).
+ */
+export async function fillBgWithChroma(
+  cellBlob: Blob,
+  chromaHex: string,
+): Promise<Blob> {
+  const bmp = await createImageBitmap(cellBlob)
+  const canvas = new OffscreenCanvas(bmp.width, bmp.height)
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = `#${chromaHex}`
+  ctx.fillRect(0, 0, bmp.width, bmp.height)
+  ctx.drawImage(bmp as any, 0, 0)
+  return await canvas.convertToBlob({ type: 'image/png' })
+}
+
 export async function pasteIntoSheet(sheet: Blob, cell: Blob, cellIndex: number): Promise<Blob> {
   if (cellIndex < 0 || cellIndex > 15) throw new Error(`cellIndex out of range: ${cellIndex}`)
   const sheetBitmap = await createImageBitmap(sheet)

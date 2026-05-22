@@ -11,6 +11,7 @@ import {
   cropToSize,
   buildPlaceholderSheet,
   buildPlaceholderSheetWithChromaBg,
+  fillBgWithChroma,
   pasteIntoSheet,
   cropCell,
 } from './imageOps'
@@ -95,9 +96,19 @@ export async function buildReferences(
     if (!stateName || cellIndex === undefined) throw new Error('stateName + cellIndex required for D')
     const state = project.states[stateName]
     if (!state.staticBase || !state.sheet) throw new Error(`${stateName} missing base or sheet`)
-    const refs: Blob[] = [state.staticBase]
-    if (cellIndex > 0) refs.push(await cropCell(state.sheet, cellIndex - 1))
-    if (cellIndex < 15) refs.push(await cropCell(state.sheet, cellIndex + 1))
+    // Same anti-chroma-leak treatment as C: pre-fill chroma BG behind every
+    // reference cell before sending. AI sees solid magenta/green where the
+    // BG is supposed to be, no ambiguity about transparent vs filled.
+    const chromaHex = CHROMA_COLORS[store.chroma.key].hex
+    const refs: Blob[] = [await fillBgWithChroma(state.staticBase, chromaHex)]
+    if (cellIndex > 0) {
+      const prevCell = await cropCell(state.sheet, cellIndex - 1)
+      refs.push(await fillBgWithChroma(prevCell, chromaHex))
+    }
+    if (cellIndex < 15) {
+      const nextCell = await cropCell(state.sheet, cellIndex + 1)
+      refs.push(await fillBgWithChroma(nextCell, chromaHex))
+    }
     return refs
   }
   throw new Error(`unknown templateKey: ${templateKey}`)

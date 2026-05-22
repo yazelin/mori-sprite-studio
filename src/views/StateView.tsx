@@ -88,6 +88,11 @@ export function StateView({ name }: { name: StateName }) {
     }
   }
 
+  function downloadRawSheet() {
+    if (!state.sheet) return
+    downloadBlob(state.sheet, `${name}-raw-4x4-sheet.png`)
+  }
+
   const pill = STATUS_PILL[state.status]
 
   return (

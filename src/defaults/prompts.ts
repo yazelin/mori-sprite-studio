@@ -39,90 +39,73 @@ OUTPUT RULES:
 - Character must be recognizably the same as the reference (same hair, clothes, face features, proportions).
 - No drop shadows, no ground plane, no scenery.`,
 
-  C: `Create a single 4-row × 4-column grid sprite sheet (1024×1024 total, each cell exactly 256×256) showing a tiny 16-frame animation loop of state "{{state_name}}" for the same character as the reference.
+  C: `This is a classic 2D game SPRITE ANIMATION SHEET for a desktop mascot / desktop pet character (think: Live2D rest animation, Stardew Valley NPC idle, Animal Crossing villager idle, Tamagotchi screen pet). Same convention as any retro game sprite sheet.
 
-MENTAL MODEL — THIS IS ONE CONTINUOUS ANIMATION, NOT 4 ROWS OF SCENES.
+OUTPUT: ONE 1024×1024 image arranged as a 4×4 grid of 256×256 cells. Each cell is one animation frame. 16 frames total, played in row-major order (left to right, top to bottom) to form a tiny idle-loop animation of state "{{state_name}}" for the reference character.
 
-Imagine a single camera locked on a tripod, looking at the character.
-The camera takes 16 photos in 3 seconds. The character barely moves —
-they breathe, they blink, their hair drifts. NOTHING ELSE CHANGES.
+KEY CONCEPT — sprite animation properties:
+- The character is FIXED IN POSITION in the cell. Like a Tamagotchi pet on a screen, they do not move around, they do not zoom in/out, they do not change camera angle. Only their tiny gestures animate.
+- Every cell shows the character at the IDENTICAL pose / position / size / framing as every other cell — they only differ by small animation details (blink, breath, hair drift).
+- This is NOT a comic strip. NOT a storyboard. NOT 16 different scenes. It is the same single drawing repeated 16 times with tiny per-frame variations.
 
-The 4×4 layout is purely a STORAGE format (16 photos laid out in a
-grid so we can fit them in one PNG). It is NOT 4 different scenes
-stacked vertically. It is NOT 4 panels of a comic. There are no
-"chapters", no row breaks, no narrative pauses. All 16 cells are the
-SAME camera angle on the SAME stage capturing the SAME tiny loop.
-
-LAYOUT — cells read in row-major order (left-to-right, top-to-bottom):
+LAYOUT (cells read in row-major order, but the rows have NO narrative meaning — they're just storage):
 
 \`\`\`
 +----+----+----+----+
-|  1 |  2 |  3 |  4 |   ← row 1 = first quarter of the loop
+|  1 |  2 |  3 |  4 |
 +----+----+----+----+
-|  5 |  6 |  7 |  8 |   ← row 2 = second quarter
+|  5 |  6 |  7 |  8 |
 +----+----+----+----+
-|  9 | 10 | 11 | 12 |   ← row 3 = third quarter
+|  9 | 10 | 11 | 12 |
 +----+----+----+----+
-| 13 | 14 | 15 | 16 |   ← row 4 = fourth quarter (connects back to 1)
+| 13 | 14 | 15 | 16 |
 +----+----+----+----+
 \`\`\`
-
-Row 4 must visually pick up where row 1 left off — there is no
-"final scene" at the bottom and no "intro scene" at the top.
 
 State pose: {{pose_note}}
 Loop mode: {{loop_mode}}
-  - "loop": frame 16 → frame 1 must be seamless (no visible jump)
-  - "one-shot": frame 16 is the final pose, frames 1-16 progress toward it
+  - "loop": frame 16 → frame 1 must be seamless
+  - "one-shot": frame 16 is the final pose
 
 ═══════════════════════════════════════════════════════════════════
-CRITICAL FRAMING LOCK — copy the reference photo's framing exactly:
+ABSOLUTE PIXEL ANCHORS — every one of the 16 cells must match these:
 ═══════════════════════════════════════════════════════════════════
 
-The single reference image you receive is the FRAMING TEMPLATE.
-Whatever you can see of the character in that reference — that
-EXACT same amount must be visible in every one of the 16 cells.
+Each cell is 256×256 pixels. Inside every cell, the character must be
+drawn so these pixel anchors are IDENTICAL in all 16 cells:
 
-Reference shows head + shoulders only? Every cell shows head +
-shoulders only. Reference shows head-to-waist? Every cell shows
-head-to-waist. Do NOT zoom in. Do NOT zoom out. Do NOT pull the
-camera back to reveal more of the body in some cells. Do NOT crop
-closer in other cells.
+  • Character's HEAD top edge at pixel y ≈ 30
+  • Character's EYE LINE at pixel y ≈ 100
+  • Character's CHIN at pixel y ≈ 160
+  • Character's SHOULDER LINE at pixel y ≈ 175
+  • Character's BOTTOM edge of drawing at pixel y ≈ 250
+  • Character's HORIZONTAL CENTER at pixel x ≈ 128
+  • Character's FACE WIDTH ≈ 100 pixels (eye-corner to eye-corner ≈ 70 px)
+  • Character's TOTAL silhouette HEIGHT ≈ 220 pixels
 
-PIXEL-LEVEL ANCHORS (compare your cell to the reference):
-- HEAD SIZE: the head should occupy the SAME percentage of cell
-  height as in the reference (e.g. if head takes 45% of reference
-  height, head takes 45% of every cell's height — exact)
-- EYE SIZE: eyes are the same size as in the reference. NOT smaller,
-  NOT bigger. If eyes shrink, you zoomed out — STOP and re-frame.
-- FACE WIDTH: face fills the same horizontal width as the reference
-- BODY VISIBILITY: show the SAME body parts as the reference — no
-  more, no less. If the reference shows waist-up, every cell shows
-  waist-up. Don't suddenly include legs/feet in some cells.
-- VERTICAL POSITION: character's eyes at the same Y, chin at same Y,
-  shoulders at same Y as the reference
+These are the SAME anchors as the reference image. The reference IS
+the framing template — match its proportions exactly in every cell.
 
-COMMON FAILURE TO AVOID:
-The AI tends to "vary the camera distance" between cells to make the
-animation feel more dynamic — drawing row 1 zoomed-in (eyes big,
-head fills cell) then row 2 zoomed-out (smaller head, longer body
-visible, eyes look smaller). THIS IS WRONG. The camera is LOCKED on
-a tripod. Same focal length. Same distance. EVERY CELL.
+If your cell drawing makes the head look smaller than the reference,
+the silhouette will violate the "head at y≈30 + chin at y≈160" anchor —
+that's WRONG. Re-do the cell so the head occupies the same vertical
+range as the reference image.
 
-If the character's eyes look smaller in some cell, you zoomed out —
-redo that cell with the reference's exact head-fills-cell ratio.
+If your cell drawing makes the body extend below y≈250, you have
+drawn MORE of the body than the reference shows — that's WRONG.
+Limit the drawing to what the reference shows.
 
-If the body looks longer in some cell, you're showing more of the
-body than the reference shows — crop tighter to match the reference.
+There is NO scenario where row 4 cells differ from row 1 cells in
+character size or character position. The reference photo's pose is
+copied 16 times with only these tiny variations:
 
-Identical hair length, identical clothing, identical palette,
-identical facing direction (DO NOT mirror).
+  • Eyelids open/closed (blink — 1-2 cells of the loop have eyes shut)
+  • Chest line shifts up by 1-3 px (breath in/out cycle)
+  • Hair tips drift by 1-2 px
+  • One subtle gesture for "{{state_name}}"
 
-Only these things may change between cells:
-- Eyelids open/closed (blink — usually 1-2 cells closed in loop)
-- Chest expansion by 2-4 px (breath in/out)
-- Hair tip drift by 1-3 px (gentle sway)
-- One small accent like a finger twitch or single-eye glance for "{{state_name}}"
+Identical hair length, identical clothing, identical color palette,
+identical facing direction (DO NOT mirror left-to-right).
 
 FRAME-BY-FRAME HINTS (empty entries = hold steady from previous frame):
 {{cell_notes_block}}

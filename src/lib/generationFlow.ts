@@ -74,9 +74,26 @@ export async function buildReferences(
   const store = useAppStore.getState()
   const { project } = store
 
-  if (templateKey === 'B1' || templateKey === 'B2') {
+  if (templateKey === 'B1') {
     if (!project.characterRef) throw new Error('character ref required')
     return [project.characterRef]
+  }
+  if (templateKey === 'B2') {
+    if (!project.characterRef) throw new Error('character ref required')
+    if (!stateName) throw new Error('stateName required for B2')
+    // Identity anchor: original characterRef (the source of truth for
+    // hair / clothes / face / proportions). PLUS every OTHER state's
+    // current staticBase so the AI sees the same character rendered in
+    // multiple poses — this constrains it from re-imagining the outfit
+    // when re-rolling a single state's static.
+    const chromaHex = CHROMA_COLORS[store.chroma.key].hex
+    const refs: Blob[] = [project.characterRef]
+    for (const name of STATE_NAMES) {
+      if (name === stateName) continue
+      const sb = project.states[name]?.staticBase
+      if (sb) refs.push(await fillBgWithChroma(sb, chromaHex))
+    }
+    return refs
   }
   if (templateKey === 'C') {
     if (!stateName) throw new Error('stateName required for C')

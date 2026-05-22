@@ -27,7 +27,18 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
   })
 }
 
-export async function dataUrlToBlob(url: string): Promise<Blob> {
-  const resp = await fetch(url)
-  return await resp.blob()
+export function dataUrlToBlob(url: string): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    try {
+      const [header, b64] = url.split(',', 2)
+      const mimeMatch = header.match(/data:([^;]+)/)
+      const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream'
+      const binary = atob(b64)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      resolve(new Blob([bytes], { type: mime }))
+    } catch (e) {
+      reject(e)
+    }
+  })
 }

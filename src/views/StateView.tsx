@@ -161,9 +161,10 @@ export function StateView({ name }: { name: StateName }) {
 
   return (
     <div className="space-y-8">
-      {/* Page header */}
+      {/* Page header — only identity + export. Generation buttons live in the
+          action ribbon below so the workflow reads top-down. */}
       <header className="flex items-start justify-between gap-6 flex-wrap">
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight capitalize text-stone-900">{name}</h1>
             <span className={cn('text-xs font-medium px-2.5 py-0.5 rounded-full border', pill.cls)}>
@@ -171,65 +172,72 @@ export function StateView({ name }: { name: StateName }) {
             </span>
           </div>
           <p className="text-sm text-muted-foreground max-w-prose">
-            這個 state 的 256×256 static base + 1024×1024 4×4 sprite sheet。先 [生靜態],再 [生動畫]。
+            這個 state 的 256×256 static base + 1024×1024 4×4 sprite sheet。
           </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!state.sheet || encodingApng}
+              className="h-10 gap-2"
+              title={state.status !== 'animated' ? '生動畫後才能下載真實 loop' : '下載動畫(多種格式)'}
+            >
+              <Download size={16} strokeWidth={1.75} />
+              {encodingApng ? '打包中…' : '下載動畫'}
+              <ChevronDown size={14} strokeWidth={1.75} className="opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-72">
+            <DropdownMenuItem onClick={downloadApng} className="flex-col items-start gap-0.5 py-2.5">
+              <div className="font-medium text-sm">APNG（.png）</div>
+              <div className="text-[11px] text-muted-foreground">透明 + 循環。瀏覽器 / LINE / Discord 會動;本機 viewer 多半只第 1 格</div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={downloadGif} className="flex-col items-start gap-0.5 py-2.5">
+              <div className="font-medium text-sm">GIF（.gif）</div>
+              <div className="text-[11px] text-muted-foreground">1-bit 透明(邊緣稍粗)+ 循環。Mac Preview / Windows Photos 都會動,最廣相容</div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={downloadWebm} className="flex-col items-start gap-0.5 py-2.5">
+              <div className="font-medium text-sm">WebM 影片（.webm）</div>
+              <div className="text-[11px] text-muted-foreground">VP9 + alpha。錄製 3 個 loop。QuickTime / 瀏覽器會動,OBS 直接拿來用</div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </header>
+
+      {/* Action ribbon — primary action front + center, secondary / utility to the side.
+          Reads as: "the thing you usually want to do" + "occasional touch-ups". */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <GenerateButton
+          label={`生 ${name} 動畫`}
+          onGenerate={() => runOp('C')}
+          onEditPrompt={() => openModal('C')}
+          disabled={!state.staticBase}
+          generating={generating}
+        />
+        <span className="text-xs text-muted-foreground select-none px-1">主要動作</span>
+        <div className="ml-auto flex items-center gap-1">
           <GenerateButton
-            label="重生此 state 靜態"
+            label="重生 base"
             onGenerate={() => runOp('B2')}
             onEditPrompt={() => openModal('B2')}
             generating={generating}
           />
-          <GenerateButton
-            label={`生 ${name} 動畫`}
-            onGenerate={() => runOp('C')}
-            onEditPrompt={() => openModal('C')}
-            disabled={!state.staticBase}
-            generating={generating}
-          />
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
+            size="sm"
             onClick={rechroma}
             disabled={!state.sheet || generating}
-            className="h-10 gap-2"
-            title="用當前 Chroma 設定(顏色 + tolerance)重新對 sheet / static base 去背"
+            className="h-9 gap-1.5 text-muted-foreground hover:text-foreground"
+            title="用當前 Chroma 設定(顏色 + tolerance + edge erosion)從原始 AI 輸出重跑去背"
           >
-            <Eraser size={16} strokeWidth={1.75} />
+            <Eraser size={14} strokeWidth={1.75} />
             重新去背
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!state.sheet || encodingApng}
-                className="h-10 gap-2"
-                title={state.status !== 'animated' ? '生動畫後才能下載真實 loop' : '下載動畫(多種格式)'}
-              >
-                <Download size={16} strokeWidth={1.75} />
-                {encodingApng ? '打包中…' : '下載動畫'}
-                <ChevronDown size={14} strokeWidth={1.75} className="opacity-60" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-72">
-              <DropdownMenuItem onClick={downloadApng} className="flex-col items-start gap-0.5 py-2.5">
-                <div className="font-medium text-sm">APNG（.png）</div>
-                <div className="text-[11px] text-muted-foreground">透明 + 循環。瀏覽器 / LINE / Discord 會動;本機 viewer 多半只第 1 格</div>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={downloadGif} className="flex-col items-start gap-0.5 py-2.5">
-                <div className="font-medium text-sm">GIF（.gif）</div>
-                <div className="text-[11px] text-muted-foreground">1-bit 透明(邊緣稍粗)+ 循環。Mac Preview / Windows Photos 都會動,最廣相容</div>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={downloadWebm} className="flex-col items-start gap-0.5 py-2.5">
-                <div className="font-medium text-sm">WebM 影片（.webm）</div>
-                <div className="text-[11px] text-muted-foreground">VP9 + alpha。錄製 3 個 loop。QuickTime / 瀏覽器會動,OBS 直接拿來用</div>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
-      </header>
+      </div>
 
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">

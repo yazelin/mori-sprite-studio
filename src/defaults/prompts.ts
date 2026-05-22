@@ -68,44 +68,48 @@ Loop mode: {{loop_mode}}
   - "one-shot": frame 16 is the final pose
 
 ═══════════════════════════════════════════════════════════════════
-ABSOLUTE PIXEL ANCHORS — every one of the 16 cells must match these:
+SILHOUETTE LOCK — character-anatomy-agnostic positional constraints:
 ═══════════════════════════════════════════════════════════════════
 
-Each cell is 256×256 pixels. Inside every cell, the character must be
-drawn so these pixel anchors are IDENTICAL in all 16 cells:
+The character may be ANY shape — humanoid, animal, plant, robot,
+blob, abstract creature, slime, gem, etc. Whatever the REFERENCE
+image shows is the source of truth. Do NOT add anatomy that isn't
+in the reference (no inventing a face on a faceless blob, no adding
+arms to a plant, etc.). Match the reference's design exactly.
 
-  • Character's HEAD top edge at pixel y ≈ 30
-  • Character's EYE LINE at pixel y ≈ 100
-  • Character's CHIN at pixel y ≈ 160
-  • Character's SHOULDER LINE at pixel y ≈ 175
-  • Character's BOTTOM edge of drawing at pixel y ≈ 250
-  • Character's HORIZONTAL CENTER at pixel x ≈ 128
-  • Character's FACE WIDTH ≈ 100 pixels (eye-corner to eye-corner ≈ 70 px)
-  • Character's TOTAL silhouette HEIGHT ≈ 220 pixels
+Per-cell positional rules (apply regardless of what the character is):
 
-These are the SAME anchors as the reference image. The reference IS
-the framing template — match its proportions exactly in every cell.
+  • The character's silhouette outline OCCUPIES THE SAME REGION of
+    the 256×256 cell in every one of the 16 cells. Imagine tracing
+    the silhouette of cell 1 on tracing paper — that trace should
+    overlap the silhouette of every other cell within a few pixels.
 
-If your cell drawing makes the head look smaller than the reference,
-the silhouette will violate the "head at y≈30 + chin at y≈160" anchor —
-that's WRONG. Re-do the cell so the head occupies the same vertical
-range as the reference image.
+  • The character's BOUNDING BOX (smallest rect enclosing all opaque
+    pixels) has the SAME size and the SAME position across all 16
+    cells. Width within ±3 px, height within ±3 px, centroid within
+    ±3 px.
 
-If your cell drawing makes the body extend below y≈250, you have
-drawn MORE of the body than the reference shows — that's WRONG.
-Limit the drawing to what the reference shows.
+  • The character's SCALE matches the reference. If the reference
+    is rendered at 60% cell coverage, every cell uses 60% coverage.
+    No "zoom in" cells. No "zoom out" cells.
 
-There is NO scenario where row 4 cells differ from row 1 cells in
-character size or character position. The reference photo's pose is
-copied 16 times with only these tiny variations:
+  • The character's FACING is the same direction in every cell.
+    Do NOT mirror left-to-right.
 
-  • Eyelids open/closed (blink — 1-2 cells of the loop have eyes shut)
-  • Chest line shifts up by 1-3 px (breath in/out cycle)
-  • Hair tips drift by 1-2 px
-  • One subtle gesture for "{{state_name}}"
+What MAY change between cells (only subtle motion appropriate to the
+character's form — if the character has no eyes, skip the blink; if
+it has no limbs, skip the gesture):
 
-Identical hair length, identical clothing, identical color palette,
-identical facing direction (DO NOT mirror left-to-right).
+  • Blink (only if the character has eyes — 1-2 cells closed)
+  • Breath / pulse / glow (a 1-3 px wobble of the silhouette, OR
+    a small color/glow intensity shift if the character is e.g.
+    a magic orb or glowing gem)
+  • Hair / leaves / antenna / cape / tail / aura drift by 1-3 px
+  • One small accent appropriate to "{{state_name}}" — e.g. a
+    tail wag, a leaf rustle, a finger twitch, a slight tilt
+
+Identical design, identical color palette, identical decorations.
+The animation is just the character "alive but staying in place".
 
 FRAME-BY-FRAME HINTS (empty entries = hold steady from previous frame):
 {{cell_notes_block}}

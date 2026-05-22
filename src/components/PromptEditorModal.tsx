@@ -34,6 +34,8 @@ const LAYOUT_LABEL: Record<TemplateKey, string> = {
   B2: '單一角色靜態姿勢',
   C:  '4×4 grid sprite sheet, 16-frame row-major animation',
   D:  '單一 frame(銜接前後)',
+  W:  '4×4 walking sprite sheet (獨立 pipeline,不 tile static)',
+  Dr: '4×4 dragging sprite sheet (獨立 pipeline,不 tile static)',
 }
 
 export function PromptEditorModal({ open, onClose, context, onGenerate }: Props) {

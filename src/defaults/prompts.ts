@@ -192,6 +192,132 @@ Output rules:
 - No shadows, no scenery, no extra props.
 - Solid magenta or green chroma background (per the auto-appended directive below) — clean fill, no patterns.`,
 
+  W: `Create a 1024×1024 PNG that is a 4×4 grid (16 cells of 256×256 each) showing the reference character WALKING. This is a fully designed walking animation cycle — you design ALL 16 frames freely from scratch (NOT animate-on-top of an existing tile).
+
+CHARACTER IDENTITY (from reference image you received):
+{{state_semantics}}
+
+═══════════════════════════════════════════════════════════════════
+WALKING CYCLE LAYOUT (16 cells, row-major top→bottom, left→right):
+═══════════════════════════════════════════════════════════════════
+
+Frames 1-8  = ONE complete step (e.g. left leg lifts, swings forward, plants).
+Frames 9-16 = SECOND complete step (right leg lifts, swings forward, plants).
+Frame 16 → Frame 1 must connect seamlessly so the gait loops cleanly.
+
+For each step (8 frames):
+  • Frame 1 of step: weight planted on one leg, OTHER leg fully forward + planting heel
+  • Frames 2-3: weight shifts forward, back leg starts to lift
+  • Frame 4 (passing-through): legs cross at middle, body at HIGHEST bob point
+  • Frames 5-6: back leg now in front, weight shifts onto it
+  • Frame 7: new front leg planting, body at LOWEST bob point
+  • Frame 8: planted, ready for next cycle to begin
+
+Arms swing in COUNTER-PHASE to legs (right arm forward when left leg forward).
+Body BOBS up/down 2-4 px (high during leg-swing-through, low at step-plant).
+Hair / accessories trail slightly behind motion.
+
+═══════════════════════════════════════════════════════════════════
+IDENTITY LOCK (NON-NEGOTIABLE across all 16 cells):
+═══════════════════════════════════════════════════════════════════
+
+Every one of the 16 cells must show the SAME PERSON:
+- Same hair color, length, style (every strand placement consistent)
+- Same face features (eyes, nose, mouth shape; same eye color)
+- Same skin tone, same ear shape (pointed elf ears if reference has them)
+- Same clothes: every garment, every color, every fold pattern
+- Same accessories (hairpiece, jewelry, belt, etc.)
+- Same art style (anime/chibi/realistic — whatever the reference is, STAY THERE)
+- Same character proportions (head-to-body ratio, limb length)
+
+Camera angle: pick ONE viewing angle that works for walking (side-profile RIGHT,
+or three-quarter view facing RIGHT) and HOLD that angle for all 16 cells. Do NOT
+mix front-view and side-view in the same sheet.
+
+Character should be FACING RIGHT in every cell. The engine flips horizontally
+via CSS scaleX(-1) for leftward motion, so design facing RIGHT only.
+
+═══════════════════════════════════════════════════════════════════
+CELL SIZE + POSITIONING:
+═══════════════════════════════════════════════════════════════════
+
+- Output is EXACTLY 1024×1024, divided into 4×4 grid of 256×256 cells.
+- Character CENTERED in each 256×256 cell with comfortable margin (head doesn't
+  touch top, feet don't touch bottom).
+- Character SIZE consistent across all 16 cells (~200 px tall body in each cell).
+- Character HEAD + TORSO CENTER stays at approximately the same canvas position
+  in each cell (don't translate the whole character horizontally — they're
+  walking on a treadmill, not across the canvas).
+
+Pose hint (additional guidance): {{pose_note}}
+
+═══════════════════════════════════════════════════════════════════
+OUTPUT RULES:
+═══════════════════════════════════════════════════════════════════
+
+- NO visible borders, grid lines, gutters, frame numbers, or separators between cells.
+- NO drop shadows, NO ground plane, NO scenery, NO platform under feet.
+- NO held items (no walking stick, no bag, no weapon).
+- All cells share the SAME magenta/green chroma background (per the auto-appended
+  directive below) — solid fill, no patterns.`,
+
+  Dr: `Create a 1024×1024 PNG that is a 4×4 grid (16 cells of 256×256 each) showing the reference character BEING LIFTED OFF THE GROUND AND SWINGING. The character is held by an invisible force (mouse cursor) from above, dangling in mid-air, with a slight sway across the 16 frames. You design ALL 16 frames freely from scratch.
+
+CHARACTER IDENTITY (from reference image you received):
+{{state_semantics}}
+
+═══════════════════════════════════════════════════════════════════
+DRAGGING (SUSPENDED SWING) CYCLE LAYOUT:
+═══════════════════════════════════════════════════════════════════
+
+The character swings left ↔ right across 16 frames in a complete oscillation:
+  • Frame 1:    body tilted slightly LEFT, swing apex (briefly stationary)
+  • Frames 2-4: swinging back toward center
+  • Frame 5:    body straight up vertical (passing-through middle of swing)
+  • Frames 6-8: continuing swing to the right
+  • Frame 9:    body tilted slightly RIGHT, swing apex (briefly stationary)
+  • Frames 10-12: swinging back toward center
+  • Frame 13:   body straight up vertical (passing-through middle again)
+  • Frames 14-16: continuing swing back to the left
+  • Frame 16 → Frame 1 connects seamlessly so the sway loops cleanly
+
+Body tilts ±5-8 px left/right at the apex frames. Hair / clothes / dangling
+limbs TRAIL the motion direction (hair sweeps right when body tilts left, etc.).
+
+═══════════════════════════════════════════════════════════════════
+FEET-OFF-GROUND RULE (NON-NEGOTIABLE):
+═══════════════════════════════════════════════════════════════════
+
+The character is LIFTED in every cell — feet must be visibly OFF any surface.
+NO ground, NO platform, NO floor visible. Feet dangle freely in empty space.
+Body is slightly STRETCHED downward by gravity (especially in frames near the
+swing extremes).
+
+Arms hang loose at sides OR slightly outstretched for balance (your call).
+Eyes wide and ROUND in pleasant surprise (not fearful — "oh, a ride!").
+Open small smile or "ah!" expression.
+
+═══════════════════════════════════════════════════════════════════
+IDENTITY LOCK (NON-NEGOTIABLE across all 16 cells):
+═══════════════════════════════════════════════════════════════════
+
+Every cell must show the SAME PERSON:
+- Same hair, face, skin, ears, clothes, accessories, art style
+- Camera angle: ONE consistent view (front-facing OR three-quarter), HOLD it
+- Character proportions consistent across all 16 cells
+
+Pose hint (additional guidance): {{pose_note}}
+
+═══════════════════════════════════════════════════════════════════
+OUTPUT RULES:
+═══════════════════════════════════════════════════════════════════
+
+- 1024×1024 PNG, 4×4 grid of 256×256 cells, row-major top→bottom, left→right.
+- NO visible borders, grid lines, frame numbers, or separators.
+- NO drop shadows under character (no ground = no shadow).
+- NO scenery, NO ropes/strings visible (the lift is invisible / off-canvas).
+- All cells share the SAME magenta/green chroma background — solid fill.`,
+
   D: `A single 256×256 frame showing the reference character in state "{{state_name}}", positioned as an intermediate pose between the previous and next frames provided.
 
 State semantics: {{state_semantics}}

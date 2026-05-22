@@ -3,8 +3,11 @@ import type { AppStore } from './index'
 import { STATE_NAMES, type SpriteState, type StateName } from '@/types/project'
 import {
   DEFAULT_LOOP_MODES, DEFAULT_LOOP_DURATIONS_MS,
-  DEFAULT_STATE_SEMANTICS,
+  DEFAULT_STATE_SEMANTICS, DEFAULT_TEMPLATES,
 } from '@/defaults'
+import type { TemplateKey } from '@/types/prompts'
+
+const ALL_TEMPLATE_KEYS: readonly TemplateKey[] = ['B1', 'B2', 'C', 'D', 'W', 'Dr'] as const
 
 // v2: switched from localStorage (data-URL Blob, ~5MB quota) to IndexedDB
 // via idb-keyval. IndexedDB stores Blobs natively via structured clone
@@ -60,15 +63,21 @@ function defaultSpriteState(name: StateName): SpriteState {
 }
 
 function migrate(data: Partial<PersistedShape>): Partial<PersistedShape> {
-  // Prompts: backfill stateSemantics for any state missing from persisted
-  // prompts (e.g. walking/dragging added after the user saved). Without
-  // this, the AI gets an empty pose hint for these states.
+  // Prompts: backfill stateSemantics + templates for keys missing from
+  // persisted prompts (e.g. walking/dragging semantics + W/Dr templates
+  // added after the user saved).
   if (data.prompts) {
     const prompts = data.prompts as any
     if (!prompts.stateSemantics) prompts.stateSemantics = {}
     for (const name of STATE_NAMES) {
       if (!prompts.stateSemantics[name] || typeof prompts.stateSemantics[name] !== 'string') {
         prompts.stateSemantics[name] = DEFAULT_STATE_SEMANTICS[name]
+      }
+    }
+    if (!prompts.templates) prompts.templates = {}
+    for (const key of ALL_TEMPLATE_KEYS) {
+      if (!prompts.templates[key] || typeof prompts.templates[key] !== 'string') {
+        prompts.templates[key] = DEFAULT_TEMPLATES[key]
       }
     }
   }

@@ -316,11 +316,14 @@ export function StateView({ name }: { name: StateName }) {
             {/* Primary actions for this column — generate animation + cleanup + download.
                 Sits directly under the thing it produces. */}
             <div className="flex items-center gap-2 flex-wrap">
+              {/* walking + dragging use standalone pipeline (W / Dr) — they
+                  don't reuse C's pre-tiled approach because cyclic locomotion
+                  needs free per-frame design. Other 6 states use C. */}
               <GenerateButton
                 label={`生 ${name} 動畫`}
-                onGenerate={() => runOp('C')}
-                onEditPrompt={() => openModal('C')}
-                disabled={!state.staticBase}
+                onGenerate={() => runOp(name === 'walking' ? 'W' : name === 'dragging' ? 'Dr' : 'C')}
+                onEditPrompt={() => openModal(name === 'walking' ? 'W' : name === 'dragging' ? 'Dr' : 'C')}
+                disabled={!state.staticBase && name !== 'walking' && name !== 'dragging'}
                 generating={generating}
               />
               <Button

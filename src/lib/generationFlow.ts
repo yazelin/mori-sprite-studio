@@ -25,6 +25,8 @@ const OUTPUT_SIZE: Record<TemplateKey, OutputSize> = {
   B2: '1024x1024',
   C:  '1024x1024',
   D:  '1024x1024',
+  W:  '1024x1024',
+  Dr: '1024x1024',
 }
 
 /** Build the render context for a given operation. */
@@ -55,6 +57,11 @@ export function buildPromptContext(
     vars.cell_notes_block = renderCellNotesBlock(state.notes)
     vars.loop_mode = state.loopMode
     return { vars, opLabel: `生 ${stateName} 動畫` }
+  }
+  if (templateKey === 'W' || templateKey === 'Dr') {
+    // Walking / Dragging share the C-style context but no cell_notes /
+    // loop_mode (the templates have hardcoded cycle structures).
+    return { vars, opLabel: `生 ${stateName} 動畫(獨立 pipeline)` }
   }
   if (templateKey === 'D') {
     if (cellIndex === undefined) throw new Error('cellIndex required for D')
@@ -93,6 +100,27 @@ export async function buildReferences(
       const sb = project.states[name]?.staticBase
       if (sb) refs.push(await fillBgWithChroma(sb, chromaHex))
     }
+    return refs
+  }
+  if (templateKey === 'W' || templateKey === 'Dr') {
+    // Walking / Dragging:  STANDALONE pipeline (no pre-tiling).
+    // Pass character ref + all available static bases of OTHER states as
+    // identity anchors. AI gets full freedom to design 16 frames from
+    // scratch — no 'paint variations on top of identical grid' constraint.
+    if (!project.characterRef) throw new Error('character ref required')
+    if (!stateName) throw new Error('stateName required')
+    const chromaHex = CHROMA_COLORS[store.chroma.key].hex
+    const refs: Blob[] = [project.characterRef]
+    // Include other states' static bases (chroma-filled) as identity anchors
+    for (const name of STATE_NAMES) {
+      if (name === stateName) continue
+      const sb = project.states[name]?.staticBase
+      if (sb) refs.push(await fillBgWithChroma(sb, chromaHex))
+    }
+    // Include THIS state's static base too if it exists (gives AI a baseline
+    // single-frame pose, but no pre-tiled grid forcing identical 16 cells).
+    const ownSb = project.states[stateName].staticBase
+    if (ownSb) refs.push(await fillBgWithChroma(ownSb, chromaHex))
     return refs
   }
   if (templateKey === 'C') {
@@ -198,8 +226,10 @@ export async function applyResult(
     return
   }
 
-  if (templateKey === 'C') {
-    // Store raw 1024×1024 + processed 1024×1024 separately
+  if (templateKey === 'C' || templateKey === 'W' || templateKey === 'Dr') {
+    // Same post-processing for all 'animation sheet' outputs.
+    // W (walking) and Dr (dragging) produce the same 1024×1024 4×4 sheet
+    // format as C, just via a different prompt/pipeline upstream.
     const eroded = erodePx > 0 ? await erodeCellEdges(cleanedBlob, erodePx) : cleanedBlob
     store.updateState(stateName, {
       sheet: eroded,

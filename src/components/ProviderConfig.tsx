@@ -38,7 +38,7 @@ export function ProviderConfig() {
                   <div className="text-xs text-slate-600 space-y-1">
                     <p>使用 yazelin 的 API key(server-side env var,你不用設定)。我自掏腰包暫時開放給大家試用。</p>
                     <p className="text-amber-700">
-                      ⚠ 每 IP 每日上限 100 次 · 同時並行 1 張。
+                      ⚠ 每 IP 每日上限 50 次 · 同時並行 1 張。
                       <br />
                       **錢花完就會關掉**,不是長期承諾,只是讓陌生人也能試一下這個工具。如果你會大量用,建議切其他 provider 自帶 key。
                     </p>

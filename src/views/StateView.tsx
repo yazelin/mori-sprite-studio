@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Image as ImageIcon, Grid3x3, Square, Download } from 'lucide-react'
 import { useAppStore } from '@/store'
 import type { StateName, SheetStatus } from '@/types/project'
@@ -11,7 +11,7 @@ import { PromptEditorModal, type PromptEditorContext } from '@/components/Prompt
 import { runGeneration, runGenerationWithPrompt, buildPromptContext, reapplyChromaToState } from '@/lib/generationFlow'
 import { buildAPNG, downloadBlob } from '@/lib/apngExport'
 import { buildGIF, buildWebM } from '@/lib/gifExport'
-import { Eraser, ChevronDown } from 'lucide-react'
+import { Eraser, ChevronDown, Upload } from 'lucide-react'
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
@@ -44,6 +44,8 @@ export function StateView({ name }: { name: StateName }) {
   const [modalContext, setModalContext] = useState<PromptEditorContext | null>(null)
   const [pendingKey, setPendingKey] = useState<TemplateKey | null>(null)
   const [encodingApng, setEncodingApng] = useState(false)
+  const sheetUploadRef = useRef<HTMLInputElement | null>(null)
+  const staticUploadRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     if (!state.staticBase) { setStaticUrl(null); return }
@@ -131,6 +133,30 @@ export function StateView({ name }: { name: StateName }) {
     finally { setGenerating(false) }
   }
 
+  async function uploadSheetFile(file: File) {
+    setError(null); setGenerating(true)
+    try {
+      const { processByogUpload } = await import('@/lib/byogPipeline')
+      await processByogUpload(file, 'C', false, name)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  async function uploadStaticBaseFile(file: File) {
+    setError(null); setGenerating(true)
+    try {
+      const { processByogUpload } = await import('@/lib/byogPipeline')
+      await processByogUpload(file, 'B2', false, name)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   const pill = STATUS_PILL[state.status]
 
   return (
@@ -213,7 +239,50 @@ export function StateView({ name }: { name: StateName }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 items-start">
         {/* Left column: static + config */}
-        <Section title="Static Base" subtitle="256×256 · AI 生成的代表姿勢" icon={<ImageIcon {...ICON_PROPS} />} className="lg:sticky lg:top-6">
+        <Section
+          title="Static Base"
+          subtitle="256×256 · AI 生成的代表姿勢"
+          icon={<ImageIcon {...ICON_PROPS} />}
+          className="lg:sticky lg:top-6"
+          action={(
+            <div className="flex gap-1">
+              <input
+                ref={staticUploadRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) void uploadStaticBaseFile(f)
+                  if (staticUploadRef.current) staticUploadRef.current.value = ''
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => staticUploadRef.current?.click()}
+                disabled={generating}
+                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                title="上傳一張 256×256 圖當這個 state 的 static base"
+              >
+                <Upload size={14} strokeWidth={1.75} />
+                上傳
+              </Button>
+              {state.staticBase && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => state.staticBase && downloadBlob(state.staticBase, `${name}-static-base.png`)}
+                  className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                  title="下載當前 256×256 static base"
+                >
+                  <Download size={14} strokeWidth={1.75} />
+                  下載
+                </Button>
+              )}
+            </div>
+          )}
+        >
           <div className="space-y-4">
             <div className="rounded-xl border border-border tx-checker overflow-hidden aspect-square w-full max-w-[212px]">
               {staticUrl
@@ -268,17 +337,43 @@ export function StateView({ name }: { name: StateName }) {
           title="Sprite Sheet"
           subtitle="點任一格選取,可寫 frame note 或重生"
           icon={<Grid3x3 {...ICON_PROPS} />}
-          action={state.sheet && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={downloadRawSheet}
-              className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-              title="下載原始 1024×1024 4×4 sheet 來檢查 AI 真實輸出"
-            >
-              <Download size={14} strokeWidth={1.75} />
-              raw sheet
-            </Button>
+          action={(
+            <div className="flex gap-1">
+              <input
+                ref={sheetUploadRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) void uploadSheetFile(f)
+                  if (sheetUploadRef.current) sheetUploadRef.current.value = ''
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => sheetUploadRef.current?.click()}
+                disabled={generating}
+                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                title="上傳一張 1024×1024 4×4 sheet 來覆蓋當前 sheet(會跑 chroma key + edge erosion)"
+              >
+                <Upload size={14} strokeWidth={1.75} />
+                上傳 sheet
+              </Button>
+              {state.sheet && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={downloadRawSheet}
+                  className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                  title="下載當前 1024×1024 4×4 sheet"
+                >
+                  <Download size={14} strokeWidth={1.75} />
+                  raw sheet
+                </Button>
+              )}
+            </div>
           )}
         >
           <div className="flex flex-col xl:flex-row gap-6 items-start">

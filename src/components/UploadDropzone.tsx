@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useId, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -22,7 +22,7 @@ export function UploadDropzone({
   previewSize = 256,
   variant = 'square',
 }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputId = useId()
   const [hover, setHover] = useState(false)
 
   function pickFiles(files: FileList | null) {
@@ -35,11 +35,11 @@ export function UploadDropzone({
   const wide = variant === 'wide'
 
   return (
-    <div
+    <label
+      htmlFor={inputId}
       onDragOver={(e) => { e.preventDefault(); setHover(true) }}
       onDragLeave={() => setHover(false)}
       onDrop={(e) => { e.preventDefault(); setHover(false); pickFiles(e.dataTransfer.files) }}
-      onClick={() => inputRef.current?.click()}
       className={cn(
         'relative group rounded-2xl border-2 border-dashed transition-all cursor-pointer overflow-hidden',
         'flex items-center justify-center bg-stone-50/60',
@@ -56,11 +56,11 @@ export function UploadDropzone({
       }
     >
       <input
-        ref={inputRef}
+        id={inputId}
         type="file"
         accept={accept}
         className="sr-only"
-        onChange={(e) => pickFiles(e.target.files)}
+        onChange={(e) => { pickFiles(e.target.files); e.target.value = '' }}
       />
       {preview ? (
         <>
@@ -78,7 +78,7 @@ export function UploadDropzone({
           </div>
         </div>
       )}
-    </div>
+    </label>
   )
 }
 

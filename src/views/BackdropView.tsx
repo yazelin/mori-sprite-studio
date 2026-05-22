@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ImagePlus, Sun, Moon, X } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Section } from '@/components/Section'
@@ -57,7 +57,7 @@ function BackdropSlot({ which }: { which: 'light' | 'dark' }) {
   const blob = useAppStore((s) => which === 'light' ? s.project.backdropLight : s.project.backdropDark)
   const setBackdrop = useAppStore((s) => s.setBackdrop)
   const [url, setUrl] = useState<string | null>(null)
-  const inputRef = useRef<HTMLInputElement | null>(null)
+  const inputId = `backdrop-input-${which}`
 
   useEffect(() => {
     if (!blob) { setUrl(null); return }
@@ -88,20 +88,19 @@ function BackdropSlot({ which }: { which: 'light' | 'dark' }) {
       </div>
 
       <input
-        ref={inputRef}
+        id={inputId}
         type="file"
         accept="image/png,image/jpeg,image/webp"
         className="sr-only"
         onChange={(e) => {
           const f = e.target.files?.[0]
           if (f) setBackdrop(which, f)
-          if (inputRef.current) inputRef.current.value = ''
+          e.target.value = ''
         }}
       />
 
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
+      <label
+        htmlFor={inputId}
         onDragOver={(e) => e.preventDefault()}
         onDrop={onDrop}
         className={`block w-full aspect-square rounded-xl border-2 border-dashed cursor-pointer overflow-hidden relative
@@ -110,16 +109,14 @@ function BackdropSlot({ which }: { which: 'light' | 'dark' }) {
         {url ? (
           <>
             <img src={url} alt={label} className="w-full h-full object-contain pointer-events-none" />
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={(e) => { e.stopPropagation(); setBackdrop(which, null) }}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setBackdrop(which, null) } }}
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setBackdrop(which, null) }}
               className="absolute top-2 right-2 h-7 w-7 rounded-md shadow-sm bg-white/95 hover:bg-white border border-border/60 flex items-center justify-center cursor-pointer"
               title="移除"
             >
               <X size={13} strokeWidth={1.75} />
-            </span>
+            </button>
           </>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground pointer-events-none">
@@ -128,7 +125,7 @@ function BackdropSlot({ which }: { which: 'light' | 'dark' }) {
             <span className="text-[10px]">(也可拖檔進來)</span>
           </div>
         )}
-      </button>
+      </label>
     </div>
   )
 }

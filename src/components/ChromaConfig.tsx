@@ -43,9 +43,9 @@ export function ChromaConfig() {
         >
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="conservative">conservative (hard=30, soft=60)</SelectItem>
-            <SelectItem value="balanced">balanced (hard=50, soft=100)</SelectItem>
-            <SelectItem value="aggressive">aggressive (hard=80, soft=160)</SelectItem>
+            <SelectItem value="conservative">conservative(留更多 chroma 但邊乾淨)</SelectItem>
+            <SelectItem value="balanced">balanced(預設,平衡)</SelectItem>
+            <SelectItem value="aggressive">aggressive(吃更多 chroma,可能誤刪角色)</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -1,5 +1,8 @@
 import '@testing-library/jest-dom'
 
+// Polyfill IndexedDB for jsdom (needed by idb-keyval-backed persistence)
+import 'fake-indexeddb/auto'
+
 // Polyfill OffscreenCanvas + createImageBitmap for jsdom using node-canvas.
 // node-canvas provides a full Canvas 2D API in Node, backed by Cairo.
 // We return the underlying node-canvas Image from createImageBitmap so that

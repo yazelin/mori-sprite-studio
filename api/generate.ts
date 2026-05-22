@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { kv } from '@vercel/kv'
 
 type Provider = 'vertex-gemini' | 'google-gemini'
 
@@ -10,9 +11,10 @@ interface RequestBody {
 
 // ─── Per-IP rate limiting ────────────────────────────────────────────────
 //
-// In-memory (per Vercel function instance). Multiple instances → each has
-// its own state, so limits are approximately per-IP-per-instance. Good
-// enough for MVP. For high-traffic, migrate to Upstash Redis / Vercel KV.
+// Persistent: uses Vercel KV (Redis) when KV_REST_API_URL env var is set —
+// counts survive function instance restarts. Falls back to in-memory Map
+// when KV not provisioned (so dev / pre-KV deploys still work, just with
+// non-persistent counts).
 //
 // Two limits:
 //   1) Concurrency: at most 1 request in-flight per IP. Prevents multi-
@@ -24,11 +26,21 @@ interface RequestBody {
 //      characters per day per IP, plenty for legitimate use.
 
 const RATE_DAILY_CAP = 50
-const inFlight = new Set<string>()           // ip
-const dailyCount = new Map<string, { date: string; count: number }>()  // ip → today
+const KV_ENABLED = !!process.env.KV_REST_API_URL
+
+// In-memory fallback (only used when KV not configured)
+const inFlightMem = new Set<string>()
+const dailyCountMem = new Map<string, { date: string; count: number }>()
 
 function todayUtc(): string {
   return new Date().toISOString().slice(0, 10)
+}
+
+function quotaKey(ip: string, date: string): string {
+  return `quota:${ip}:${date}`
+}
+function inflightKey(ip: string): string {
+  return `inflight:${ip}`
 }
 
 function getClientIp(req: VercelRequest): string {
@@ -46,49 +58,100 @@ interface RateCheck {
   current?: number
 }
 
-function rateLimitCheck(ip: string): RateCheck {
+/** Read current daily count for ip. */
+async function getDailyCount(ip: string): Promise<number> {
+  const today = todayUtc()
+  if (KV_ENABLED) {
+    try {
+      const v = await kv.get<number>(quotaKey(ip, today))
+      return v ?? 0
+    } catch (e) {
+      console.error('KV get failed, falling back to memory', e)
+    }
+  }
+  const entry = dailyCountMem.get(ip)
+  return entry && entry.date === today ? entry.count : 0
+}
+
+async function isInFlight(ip: string): Promise<boolean> {
+  if (KV_ENABLED) {
+    try {
+      const v = await kv.get(inflightKey(ip))
+      return v !== null
+    } catch (e) {
+      console.error('KV inflight check failed', e)
+    }
+  }
+  return inFlightMem.has(ip)
+}
+
+async function rateLimitCheck(ip: string): Promise<RateCheck> {
   // (1) concurrency
-  if (inFlight.has(ip)) {
+  if (await isInFlight(ip)) {
     return { ok: false, status: 429, retryAfterSec: 60, reason: 'concurrent' }
   }
   // (2) daily cap
-  const today = todayUtc()
-  const entry = dailyCount.get(ip)
-  if (entry && entry.date === today && entry.count >= RATE_DAILY_CAP) {
-    // until tomorrow UTC midnight
+  const count = await getDailyCount(ip)
+  if (count >= RATE_DAILY_CAP) {
+    const today = todayUtc()
     const nowMs = Date.now()
     const tomorrowMs = new Date(today + 'T00:00:00Z').getTime() + 86_400_000
     return {
       ok: false, status: 429,
       retryAfterSec: Math.max(1, Math.ceil((tomorrowMs - nowMs) / 1000)),
-      reason: 'daily_cap', current: entry.count,
+      reason: 'daily_cap', current: count,
     }
   }
   return { ok: true }
 }
 
-function rateLimitAcquire(ip: string): void {
-  inFlight.add(ip)
+/** Mark a request as in-flight + increment daily count atomically. */
+async function rateLimitAcquire(ip: string): Promise<void> {
   const today = todayUtc()
-  const entry = dailyCount.get(ip)
+  if (KV_ENABLED) {
+    try {
+      // Mark inflight with 5-min TTL (auto-expires if release() never runs
+      // due to crash / timeout, preventing perma-stuck locks)
+      await kv.set(inflightKey(ip), '1', { ex: 300 })
+      // Atomic increment + set TTL on first creation (2 days to handle
+      // UTC midnight rollovers gracefully — old keys auto-clean)
+      const key = quotaKey(ip, today)
+      const newCount = await kv.incr(key)
+      if (newCount === 1) {
+        await kv.expire(key, 172800)  // 2 days
+      }
+      return
+    } catch (e) {
+      console.error('KV acquire failed, falling back to memory', e)
+    }
+  }
+  // Memory fallback
+  inFlightMem.add(ip)
+  const entry = dailyCountMem.get(ip)
   if (!entry || entry.date !== today) {
-    dailyCount.set(ip, { date: today, count: 1 })
+    dailyCountMem.set(ip, { date: today, count: 1 })
   } else {
     entry.count++
   }
-  // Cleanup ancient entries to prevent unbounded memory growth.
-  // Only runs occasionally to amortize cost.
-  if (Math.random() < 0.01) cleanupOldEntries()
+  if (Math.random() < 0.01) cleanupOldEntriesMem()
 }
 
-function rateLimitRelease(ip: string): void {
-  inFlight.delete(ip)
+async function rateLimitRelease(ip: string): Promise<void> {
+  if (KV_ENABLED) {
+    try {
+      await kv.del(inflightKey(ip))
+      return
+    } catch (e) {
+      console.error('KV release failed', e)
+    }
+  }
+  inFlightMem.delete(ip)
 }
 
-function cleanupOldEntries(): void {
+function cleanupOldEntriesMem(): void {
   const today = todayUtc()
-  for (const [ip, entry] of dailyCount) {
-    if (entry.date !== today) dailyCount.delete(ip)
+  for (const [ip, entry] of dailyCountMem) {
+    if (entry.date !== today) dailyCountMem.delete(ip)
   }
 }
 
@@ -115,14 +178,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'GET') {
     const ip = getClientIp(req)
     const today = todayUtc()
-    const entry = dailyCount.get(ip)
-    const used = (entry && entry.date === today) ? entry.count : 0
+    const used = await getDailyCount(ip)
+    const inFlightNow = await isInFlight(ip)
     res.status(200).json({
-      ip: ip.split('.').slice(0, 2).join('.') + '.x.x',  // partial ip for logging only
+      ip: ip.split('.').slice(0, 2).join('.') + '.x.x',
       usedToday: used,
       dailyCap: RATE_DAILY_CAP,
-      inFlight: inFlight.has(ip),
+      inFlight: inFlightNow,
       utcDate: today,
+      backend: KV_ENABLED ? 'kv' : 'memory',
     })
     return
   }
@@ -134,7 +198,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Rate limit BEFORE anything else (cheap check, fail fast)
   const ip = getClientIp(req)
-  const rate = rateLimitCheck(ip)
+  const rate = await rateLimitCheck(ip)
   if (!rate.ok) {
     res.setHeader('Retry-After', String(rate.retryAfterSec ?? 60))
     res.status(rate.status!).json({
@@ -149,14 +213,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
     return
   }
-  rateLimitAcquire(ip)
+  await rateLimitAcquire(ip)
   try {
     await processGeneration(req, res)
   } finally {
     // CRITICAL: always release concurrency lock even if anything threw.
     // (Daily count stays incremented — by design: we DID consume an
     //  attempt even if it errored. Adjust later if 502s shouldn't count.)
-    rateLimitRelease(ip)
+    await rateLimitRelease(ip)
   }
 }
 

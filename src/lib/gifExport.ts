@@ -27,9 +27,8 @@ export async function buildGIF(
     throw new Error(`splitGrid 4×4 returned ${cells.length} cells (expected 16)`)
   }
 
-  // Extract RGBA per frame at target size + collect all pixels for global palette
+  // Extract RGBA per frame at target size
   const frames: Uint8Array[] = []
-  const allPixels: number[][] = []
   for (const cellBlob of cells) {
     const bmp = await createImageBitmap(cellBlob)
     const canvas = new OffscreenCanvas(frameSize, frameSize)
@@ -41,14 +40,12 @@ export async function buildGIF(
     const rgba = new Uint8Array(imgData.data.length)
     rgba.set(imgData.data)
     frames.push(rgba)
-    // Collect opaque pixels for palette quantization
-    for (let i = 0; i < rgba.length; i += 4) {
-      if (rgba[i + 3] >= 128) allPixels.push([rgba[i], rgba[i + 1], rgba[i + 2]])
-    }
   }
 
-  // Quantize a single global palette (max 255 colors + 1 transparent slot)
-  const palette = quantize(allPixels as unknown as Uint8Array | number[], 255, { format: 'rgb444' })
+  // Quantize a single global palette from frame 1's RGBA. All 16 frames share
+  // the same character so palette derived from one frame is sufficient.
+  // Reserve slot 0 for transparency.
+  const palette = quantize(frames[0], 255, { format: 'rgb444' })
 
   const gif = GIFEncoder()
   const perFrameDelay = Math.max(20, Math.round(durationMs / 16))

@@ -22,7 +22,7 @@ export const DEFAULT_STATE_SEMANTICS: Record<StateName, string> = {
     'one finger raised lightly to temple or forehead in a pondering gesture, eyes glancing up and to one side contemplatively, slight closed-mouth thoughtful expression, a few small sparkles or thought-marks floating around the head to suggest active thought',
 
   done:
-    'eyes closed in a joyful curve (^v^ closed-eye smile), wide open joyful smile, both hands clasped together in front of chest in a prayer-like or grateful gesture, relieved and content body language, slight forward tilt',
+    'CELEBRATION BURST — the user just finished a task and the character is genuinely thrilled for them. This is a ONE-SHOT animation: brief, intense, energetic, like "YAY you did it!!". Eyes closed in a wide joyful ^v^ curve, mouth wide open in a delighted shouting-with-joy smile, BOTH hands raised UP high in a victory / cheering / celebratory gesture (think kids cheering, arms up like fireworks bursting). Full-body joyful energy — small forward bounce, slight head tilt back in delight, optional small sparkles or confetti bursting around. This is NOT a calm prayer / NOT a quiet thank-you — it is enthusiastic celebration energy.',
 
   error:
     'soft worried concerned expression (heartfelt, not exaggerated), one hand raised to the cheek in a gentle worry gesture, eyes troubled and looking slightly down, eyebrows softly drawn together, body in a small natural pose — NOT cowering, NOT angry',

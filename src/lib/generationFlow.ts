@@ -104,16 +104,28 @@ export async function buildReferences(
   }
   if (templateKey === 'W' || templateKey === 'Dr') {
     // Walking / Dragging:  STANDALONE pipeline (no pre-tiling).
-    // CRITICAL — pass ONLY the character ref, NOT the static base.
-    // The static base shows ONE specific pose (e.g. right foot forward);
-    // including it as a reference anchors AI to that single pose, and AI
-    // generates 16 cells all with right-foot-forward + jitter, instead
-    // of the proper alternating gait cycle. Without a pose anchor, AI
-    // must design the cycle from scratch per the W/Dr template's cell-
-    // by-cell instructions, allowing actual leg alternation.
+    //
+    // References (in priority order):
+    //   1. character ref (canonical identity portrait)
+    //   2. idle static base (FULL-BODY NEUTRAL POSE — gives AI the right
+    //      body proportions, leg length, full outfit, with NO specific
+    //      gait pose anchoring it). Idle semantic default is "standing
+    //      front-facing, arms relaxed at sides" — exactly the neutral
+    //      reference walking/dragging need.
+    //
+    // CRITICAL — do NOT pass the W/Dr's OWN static base. That static
+    // shows ONE specific pose (e.g. right foot forward); including it
+    // as a reference anchors AI to that single pose, producing 16 cells
+    // all with right-foot-forward + jitter instead of the proper
+    // alternating gait cycle.
     if (!project.characterRef) throw new Error('character ref required')
     if (!stateName) throw new Error('stateName required')
-    return [project.characterRef]
+    const chromaHex = CHROMA_COLORS[store.chroma.key].hex
+    const refs: Blob[] = [project.characterRef]
+    // Use idle's static as the full-body neutral identity anchor
+    const idleSb = project.states.idle?.staticBase
+    if (idleSb) refs.push(await fillBgWithChroma(idleSb, chromaHex))
+    return refs
   }
   if (templateKey === 'C') {
     if (!stateName) throw new Error('stateName required for C')

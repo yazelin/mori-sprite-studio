@@ -19,3 +19,15 @@
   background-position: 0 0;
   background-size: 400% 400%;
 }
+
+/* Transparency checker — alternating tones so characters with light
+   clothes/skin still show contrast in preview boxes against the bg.
+*/
+.tx-checker {
+  background-color: #fafaf9;
+  background-image:
+    linear-gradient(45deg, #e7e5e4 25%, transparent 25%, transparent 75%, #e7e5e4 75%, #e7e5e4),
+    linear-gradient(45deg, #e7e5e4 25%, transparent 25%, transparent 75%, #e7e5e4 75%, #e7e5e4);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+}

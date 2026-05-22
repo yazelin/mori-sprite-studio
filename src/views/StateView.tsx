@@ -117,7 +117,7 @@ export function StateView({ name }: { name: StateName }) {
         {/* Left column: static + config */}
         <Section title="Static Base" subtitle="256×256 · AI 生成的代表姿勢" icon={<ImageIcon {...ICON_PROPS} />} className="lg:sticky lg:top-6">
           <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-[conic-gradient(at_top_left,_#f5f5f4_0%,_#fafaf9_50%,_#f5f5f4_100%)] overflow-hidden aspect-square w-full max-w-[212px]">
+            <div className="rounded-xl border border-border tx-checker overflow-hidden aspect-square w-full max-w-[212px]">
               {staticUrl
                 ? <img src={staticUrl} alt="static" className="w-full h-full object-contain p-2" />
                 : <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">(no static)</div>
@@ -177,7 +177,7 @@ export function StateView({ name }: { name: StateName }) {
             <div className="space-y-3">
               <div>
                 <Label className="text-xs font-medium text-stone-700 block mb-1.5">Loop preview</Label>
-                <div className="rounded-xl border border-border bg-[conic-gradient(at_top_left,_#f5f5f4_0%,_#fafaf9_50%,_#f5f5f4_100%)] p-2">
+                <div className="rounded-xl border border-border tx-checker p-2">
                   <AnimationPreview sheet={state.sheet} durationMs={state.loopDurationMs} size={224} />
                 </div>
               </div>

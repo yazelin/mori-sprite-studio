@@ -22,7 +22,7 @@ export function SpriteSheetPreview({ sheet, selectedCell, onCellClick, size = 38
 
   return (
     <div
-      className="relative inline-block rounded-xl border border-border overflow-hidden bg-[conic-gradient(at_top_left,_#f5f5f4_0%,_#fafaf9_50%,_#f5f5f4_100%)]"
+      className="relative inline-block rounded-xl border border-border overflow-hidden tx-checker"
       style={{ width: size, height: size }}
     >
       {url ? (

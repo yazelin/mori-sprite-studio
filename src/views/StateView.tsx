@@ -215,7 +215,7 @@ export function StateView({ name }: { name: StateName }) {
                   ref={staticUploadRef}
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
-                  className="hidden"
+                  className="sr-only"
                   onChange={(e) => {
                     const f = e.target.files?.[0]
                     if (f) void uploadStaticBaseFile(f)
@@ -279,7 +279,7 @@ export function StateView({ name }: { name: StateName }) {
                 ref={sheetUploadRef}
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
-                className="hidden"
+                className="sr-only"
                 onChange={(e) => {
                   const f = e.target.files?.[0]
                   if (f) void uploadSheetFile(f)

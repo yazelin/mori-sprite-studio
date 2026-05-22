@@ -59,7 +59,7 @@ export function UploadDropzone({
         ref={inputRef}
         type="file"
         accept={accept}
-        className="hidden"
+        className="sr-only"
         onChange={(e) => pickFiles(e.target.files)}
       />
       {preview ? (

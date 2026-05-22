@@ -207,6 +207,11 @@ function ProjectFileButtons() {
   const [report, setReport] = useState<string | null>(null)
   const inputId = 'project-file-load'
 
+  // Has the user done any work? (used to decide whether to warn on overwrite)
+  const hasWork = !!project.characterRef
+    || !!project.backdropLight || !!project.backdropDark
+    || Object.values(project.states).some((s) => s.staticBase || s.sheet)
+
   async function save() {
     setBusy(true); setReport(null)
     try {
@@ -219,11 +224,41 @@ function ProjectFileButtons() {
   }
 
   async function load(file: File) {
+    if (hasWork && !window.confirm(
+      '⚠ 載入專案檔會 **完全取代** 你目前的所有編輯內容(包括 6 個 state 的 sheet、static、設定、backdrop、character ref)。\n\n' +
+      '繼續嗎?\n\n' +
+      '(建議先點「⇩ 下載 .moriproject.zip」備份你目前的狀態)'
+    )) {
+      return
+    }
     setBusy(true); setReport(null)
     try {
       const { loadProjectFile } = await import('@/lib/projectFile')
       await loadProjectFile(file)
       setReport(`已載入 ${file.name}`)
+    } catch (e) {
+      setReport(`錯誤: ${e instanceof Error ? e.message : String(e)}`)
+    } finally { setBusy(false) }
+  }
+
+  async function loadMoriDemo() {
+    if (hasWork && !window.confirm(
+      '⚠ 載入 Mori 預設範本會 **完全取代** 你目前的所有編輯內容!\n\n' +
+      '會被覆蓋的:\n' +
+      '  • 6 個 state 的 sprite sheet 跟 static base\n' +
+      '  • 所有 transform / pose note / cell note 設定\n' +
+      '  • character ref + backdrop (若有上傳)\n' +
+      '  • 專案 metadata\n\n' +
+      '繼續嗎?\n\n' +
+      '(建議先點「⇩ 下載 .moriproject.zip」備份你目前的狀態)'
+    )) {
+      return
+    }
+    setBusy(true); setReport(null)
+    try {
+      const { loadDemoProject } = await import('@/lib/projectFile')
+      await loadDemoProject('/demo/mori.moriproject.zip')
+      setReport('已載入 Mori 預設範本')
     } catch (e) {
       setReport(`錯誤: ${e instanceof Error ? e.message : String(e)}`)
     } finally { setBusy(false) }
@@ -253,10 +288,19 @@ function ProjectFileButtons() {
         >
           ⇧ 載入 .moriproject.zip
         </label>
+        <button
+          type="button"
+          onClick={loadMoriDemo}
+          disabled={busy}
+          className="h-9 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-md disabled:opacity-50"
+          title="一鍵載入完整 Mori 範本(22 MB,含 6 動畫 + ref + 背板)。會覆蓋你當前所有資料,前面會跳確認對話框。"
+        >
+          ✦ 載入 Mori 預設範本
+        </button>
       </div>
       {report && <p className="text-xs text-muted-foreground">{report}</p>}
       <p className="text-xs text-muted-foreground">
-        提醒:**載入會完全取代當前所有資料**,先備份你目前的狀態再載新檔。
+        提醒:載入(任一種)會完全取代當前所有資料,所以**載入前**會先跳確認對話框問你。先「下載」備份再做最安全。
       </p>
     </div>
   )

@@ -49,8 +49,17 @@ Loop mode: {{loop_mode}} (for "loop": frame 16 → frame 1 must be seamless; for
 Frame-by-frame hints (empty = hold steady from previous frame):
 {{cell_notes_block}}
 
+CRITICAL — DO NOT apply any camera motion across the 16 frames:
+- NO camera zoom-in.
+- NO camera zoom-out.
+- NO camera dolly / pull-back / push-in.
+- NO change in focal length, perspective, or distance to subject.
+- NO making the character look bigger in some cells and smaller in others.
+- NO showing more of the body in some cells than others.
+The 16 frames are taken with a single locked-off shot at IDENTICAL distance and IDENTICAL crop. The ONLY thing the camera does is "stay still"; the only thing the character does is breathe / blink / drift slightly.
+
 Output rules:
-- Match the reference exactly in design / framing / scale / facing — do NOT zoom in/out or re-frame between cells.
+- Match the reference exactly in design / framing / scale / facing.
 - No visible borders or grid lines between cells. No frame numbers painted on the output.
 - No shadows, no scenery, no extra props.`,
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CheckCheck, Braces, Download, AlertTriangle, Info, Circle, CircleDot, CheckCircle2 } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 import { STATE_NAMES, type SheetStatus } from '@/types/project'
@@ -8,10 +9,12 @@ import { buildManifest } from '@/lib/manifest'
 import { downloadPack } from '@/lib/exportPack'
 import { cn } from '@/lib/utils'
 
-const STATUS_ROW: Record<SheetStatus, { icon: string; tone: string; label: string }> = {
-  pending:     { icon: '○', tone: 'text-stone-400',    label: '尚未生靜態' },
-  placeholder: { icon: '◐', tone: 'text-amber-600',    label: '靜態 OK,未動畫化' },
-  animated:    { icon: '◉', tone: 'text-emerald-600',  label: '已動畫化' },
+const ICON_PROPS = { size: 18, strokeWidth: 1.75 } as const
+
+const STATUS_ROW: Record<SheetStatus, { Icon: typeof Circle; tone: string; label: string }> = {
+  pending:     { Icon: Circle,        tone: 'text-stone-400',   label: '尚未生靜態' },
+  placeholder: { Icon: CircleDot,     tone: 'text-amber-500',   label: '靜態 OK,未動畫化' },
+  animated:    { Icon: CheckCircle2,  tone: 'text-emerald-600', label: '已動畫化' },
 }
 
 export function ExportView() {
@@ -43,18 +46,19 @@ export function ExportView() {
       <Section
         title="完成度"
         subtitle={`${animatedCount}/6 已動畫化,${placeholderCount}/6 還只是 placeholder`}
-        icon="✓"
+        icon={<CheckCheck {...ICON_PROPS} />}
       >
         <div className="space-y-1">
           {STATE_NAMES.map((n) => {
             const s = project.states[n]
             const row = STATUS_ROW[s.status]
+            const Icon = row.Icon
             return (
               <div
                 key={n}
                 className="grid grid-cols-[28px_120px_140px_1fr] gap-3 items-center py-2 px-2 rounded-md hover:bg-stone-50/80"
               >
-                <span className={cn('text-xl font-mono leading-none', row.tone)}>{row.icon}</span>
+                <Icon size={20} strokeWidth={1.75} className={row.tone} />
                 <span className="capitalize font-medium text-stone-800">{n}</span>
                 <span className={cn('text-xs px-2 py-0.5 rounded-full border w-fit',
                   s.status === 'animated' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' :
@@ -73,7 +77,7 @@ export function ExportView() {
       {validation.blocking.length > 0 && (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-5 space-y-2">
           <h3 className="text-sm font-semibold text-red-900 flex items-center gap-2">
-            <span>⚠</span> 阻擋匯出
+            <AlertTriangle size={16} strokeWidth={1.75} /> 阻擋匯出
           </h3>
           <ul className="list-disc list-inside text-sm text-red-800 space-y-0.5 pl-1">
             {validation.blocking.map((b, i) => <li key={i}>{b}</li>)}
@@ -84,7 +88,7 @@ export function ExportView() {
       {validation.warnings.length > 0 && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-2">
           <h3 className="text-sm font-semibold text-amber-900 flex items-center gap-2">
-            <span>!</span> 警告(仍可匯出)
+            <Info size={16} strokeWidth={1.75} /> 警告(仍可匯出)
           </h3>
           <ul className="list-disc list-inside text-sm text-amber-800 space-y-0.5 pl-1">
             {validation.warnings.map((w, i) => <li key={i}>{w}</li>)}
@@ -92,7 +96,7 @@ export function ExportView() {
         </div>
       )}
 
-      <Section title="manifest.json 預覽" subtitle="這個內容會放進 zip 的 root" icon="{}">
+      <Section title="manifest.json 預覽" subtitle="這個內容會放進 zip 的 root" icon={<Braces {...ICON_PROPS} />}>
         <pre className="text-xs font-mono bg-stone-50 border border-border rounded-lg p-4 overflow-auto max-h-[28rem] text-stone-800 leading-relaxed">
           {JSON.stringify(manifest, null, 2)}
         </pre>
@@ -109,7 +113,8 @@ export function ExportView() {
             'disabled:from-stone-300 disabled:to-stone-400 disabled:translate-y-0 disabled:shadow-none',
           )}
         >
-          {downloading ? '打包中…' : `⤓ 匯出 ${project.metadata.packageName}.moripack.zip`}
+          <Download size={18} strokeWidth={1.75} />
+          {downloading ? '打包中…' : `匯出 ${project.metadata.packageName}.moripack.zip`}
         </Button>
         {error && <p className="text-sm text-red-600">⚠ {error}</p>}
       </div>

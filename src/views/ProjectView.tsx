@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Image, FileText, Pencil, Wand2, Eraser } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { UploadDropzone } from '@/components/UploadDropzone'
 import { MetadataForm } from '@/components/MetadataForm'
@@ -9,6 +10,8 @@ import { GenerateButton } from '@/components/GenerateButton'
 import { Section } from '@/components/Section'
 import { PromptEditorModal, type PromptEditorContext } from '@/components/PromptEditorModal'
 import { runGeneration, runGenerationWithPrompt, buildPromptContext } from '@/lib/generationFlow'
+
+const ICON_PROPS = { size: 18, strokeWidth: 1.75 } as const
 
 export function ProjectView() {
   const characterRef = useAppStore((s) => s.project.characterRef)
@@ -56,7 +59,7 @@ export function ProjectView() {
       <Section
         title="Character Reference"
         subtitle="上傳一張你的角色圖。後續所有 state 都會以這張為基底生成。"
-        icon="🎴"
+        icon={<Image {...ICON_PROPS} />}
         action={
           <GenerateButton
             label="生 6 狀態靜態"
@@ -95,7 +98,7 @@ export function ProjectView() {
       <Section
         title="Metadata"
         subtitle="character-pack.md v1.0 必要欄位。匯出時會寫進 manifest.json。"
-        icon="📋"
+        icon={<FileText {...ICON_PROPS} />}
       >
         <MetadataForm />
       </Section>
@@ -103,7 +106,7 @@ export function ProjectView() {
       <Section
         title="State Semantics"
         subtitle="每個 state 的英文語意,給 AI 當每格姿勢的 hint。改完即時生效。"
-        icon="✎"
+        icon={<Pencil {...ICON_PROPS} />}
       >
         <StateSemanticsTable />
       </Section>
@@ -111,7 +114,7 @@ export function ProjectView() {
       <Section
         title="AI Provider"
         subtitle="預設 Author Fallback 免設定可直接用。其他 3 個自填 key。"
-        icon="✧"
+        icon={<Wand2 {...ICON_PROPS} />}
       >
         <ProviderConfig />
       </Section>
@@ -119,7 +122,7 @@ export function ProjectView() {
       <Section
         title="Background Removal"
         subtitle="AI 用純色背景生圖,瀏覽器這邊 chroma key 去背。角色含 chroma 同色會被誤刪,擇一避開。"
-        icon="🟢"
+        icon={<Eraser {...ICON_PROPS} />}
       >
         <ChromaConfig />
       </Section>

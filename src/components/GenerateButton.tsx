@@ -1,3 +1,4 @@
+import { Settings, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -33,7 +34,7 @@ export function GenerateButton({
         {generating ? (
           <Spinner />
         ) : (
-          <span aria-hidden className="text-amber-200 drop-shadow-sm">✦</span>
+          <Sparkles size={16} strokeWidth={1.75} className="text-amber-200" aria-hidden />
         )}
         <span>{generating ? '生成中…' : label}</span>
       </button>
@@ -46,12 +47,13 @@ export function GenerateButton({
         title="編輯 prompt"
         aria-label="編輯 prompt"
         className={cn(
+          'shrink-0',
           size === 'sm' && 'h-9 w-9',
           size === 'lg' && 'h-12 w-12',
           size === 'default' && 'h-10 w-10',
         )}
       >
-        ⚙
+        <Settings size={size === 'lg' ? 18 : 16} strokeWidth={1.75} />
       </Button>
     </div>
   )

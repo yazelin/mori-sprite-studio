@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Image as ImageIcon, Grid3x3, Square } from 'lucide-react'
 import { useAppStore } from '@/store'
 import type { StateName, SheetStatus } from '@/types/project'
 import type { TemplateKey } from '@/types/prompts'
@@ -14,6 +15,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+
+const ICON_PROPS = { size: 18, strokeWidth: 1.75 } as const
 
 const STATUS_PILL: Record<SheetStatus, { label: string; cls: string }> = {
   pending:     { label: '尚未生成', cls: 'bg-stone-100 text-stone-600 border-stone-200' },
@@ -112,7 +115,7 @@ export function StateView({ name }: { name: StateName }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 items-start">
         {/* Left column: static + config */}
-        <Section title="Static Base" subtitle="256×256 · AI 生成的代表姿勢" icon="⊙" className="lg:sticky lg:top-6">
+        <Section title="Static Base" subtitle="256×256 · AI 生成的代表姿勢" icon={<ImageIcon {...ICON_PROPS} />} className="lg:sticky lg:top-6">
           <div className="space-y-4">
             <div className="rounded-xl border border-border bg-[conic-gradient(at_top_left,_#f5f5f4_0%,_#fafaf9_50%,_#f5f5f4_100%)] overflow-hidden" style={{ width: 232, height: 232 }}>
               {staticUrl
@@ -163,7 +166,7 @@ export function StateView({ name }: { name: StateName }) {
         </Section>
 
         {/* Right column: sheet + animation */}
-        <Section title="Sprite Sheet" subtitle="點任一格選取,可寫 frame note 或重生" icon="▦">
+        <Section title="Sprite Sheet" subtitle="點任一格選取,可寫 frame note 或重生" icon={<Grid3x3 {...ICON_PROPS} />}>
           <div className="flex flex-col xl:flex-row gap-6 items-start">
             <SpriteSheetPreview
               sheet={state.sheet}
@@ -195,7 +198,7 @@ export function StateView({ name }: { name: StateName }) {
         <Section
           title={`Frame ${selectedCell + 1}`}
           subtitle="這格的 note 會餵進動畫化 prompt;也可單獨重生這格"
-          icon="◈"
+          icon={<Square {...ICON_PROPS} />}
           action={
             <Button variant="ghost" size="sm" onClick={() => selectCell(null)} className="text-muted-foreground">
               取消選取

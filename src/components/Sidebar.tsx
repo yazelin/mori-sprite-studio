@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Home, Download, Leaf } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { STATE_NAMES, type StateName, type SheetStatus } from '@/types/project'
 import { cn } from '@/lib/utils'
@@ -44,8 +45,8 @@ export function Sidebar() {
               className="w-10 h-10 rounded-xl object-cover border border-border shadow-sm bg-stone-100"
             />
           ) : (
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-base">
-              🌿
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
+              <Leaf size={18} strokeWidth={1.75} />
             </div>
           )}
           <div className="flex flex-col leading-tight">
@@ -59,7 +60,7 @@ export function Sidebar() {
         <Item
           active={view.kind === 'project'}
           onClick={() => setView({ kind: 'project' })}
-          icon={<span className="text-base">⌂</span>}
+          icon={<Home size={16} strokeWidth={1.75} />}
           label="專案設定"
         />
 
@@ -84,7 +85,7 @@ export function Sidebar() {
         <Item
           active={view.kind === 'export'}
           onClick={() => setView({ kind: 'export' })}
-          icon={<span className="text-base">⤓</span>}
+          icon={<Download size={16} strokeWidth={1.75} />}
           label="匯出 .moripack"
         />
       </div>

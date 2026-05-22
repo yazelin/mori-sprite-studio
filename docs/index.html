@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mori Sprite Studio — character pack maker</title>
+  <meta name="description" content="Web tool to build 1024×1024 4×4 sprite animation packs from a single character reference image. AI-powered, transparent backgrounds, multiple export formats.">
+  <meta property="og:title" content="Mori Sprite Studio">
+  <meta property="og:description" content="Web tool to build 1024×1024 4×4 sprite animation packs from a single character reference. AI-powered.">
+  <meta property="og:image" content="assets/screen-01-project.png">
+  <link rel="icon" href="assets/mori-idle.png">
+  <style>
+    :root {
+      --fg: #1c1917;
+      --fg-muted: #78716c;
+      --bg: #fbfaf7;
+      --bg-card: #ffffff;
+      --border: #e7e5e4;
+      --accent: #047857;
+      --accent-bg: #ecfdf5;
+      --bmc: #ffdd00;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; font-feature-settings: 'cv11', 'ss01'; -webkit-font-smoothing: antialiased; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: radial-gradient(circle at 1px 1px, rgba(120,113,108,.05) 1px, transparent 0); background-size: 24px 24px; pointer-events: none; z-index: 0; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    main { position: relative; max-width: 960px; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+    section { margin-block: 3.5rem; }
+    h1 { font-size: 2.75rem; line-height: 1.15; margin: 0 0 .5rem; letter-spacing: -.02em; }
+    h2 { font-size: 1.65rem; margin: 0 0 1rem; letter-spacing: -.01em; padding-bottom: .5rem; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 1.1rem; margin: 1.5rem 0 .5rem; }
+    p, li { color: #44403c; }
+    .tagline { font-size: 1.15rem; color: var(--fg-muted); margin-block: 0 1.5rem; max-width: 640px; }
+    .hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: 1rem; }
+    .hero-anim { display: flex; gap: 1rem; margin-block: 1rem 2rem; flex-wrap: wrap; justify-content: center; }
+    .hero-anim img { width: 180px; height: 180px; border-radius: 24px; background: repeating-conic-gradient(#f5f5f4 0 25%, #fafaf9 0 50%) 0 0 / 16px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 8px 24px rgba(120,113,108,.08); }
+    .cta { display: inline-flex; gap: .75rem; flex-wrap: wrap; justify-content: center; align-items: center; }
+    .btn { display: inline-flex; align-items: center; gap: .5rem; padding: .7rem 1.25rem; border-radius: 10px; font-weight: 500; transition: all .15s; }
+    .btn-primary { background: var(--accent); color: #fff !important; }
+    .btn-primary:hover { background: #065f46; text-decoration: none; transform: translateY(-1px); }
+    .btn-outline { background: var(--bg-card); color: var(--fg) !important; border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--accent); text-decoration: none; }
+    .btn-bmc { background: var(--bmc); color: #1c1917 !important; }
+    .btn-bmc:hover { background: #ffd000; text-decoration: none; transform: translateY(-1px); }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    .feature-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem 1.5rem; }
+    .feature-card h3 { margin: 0 0 .5rem; color: var(--accent); font-size: 1rem; }
+    .feature-card p { margin: 0; font-size: .9rem; color: var(--fg-muted); }
+    img.screen { width: 100%; max-width: 100%; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 16px rgba(120,113,108,.06); margin-block: 1rem; }
+    pre { background: #1c1917; color: #f5f5f4; padding: 1rem 1.25rem; border-radius: 10px; overflow-x: auto; font-size: .85rem; line-height: 1.5; }
+    code { background: #f5f5f4; padding: .15rem .4rem; border-radius: 4px; font-size: .9em; font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; }
+    pre code { background: transparent; padding: 0; }
+    .flow { background: #1c1917; color: #d6d3d1; padding: 1.5rem; border-radius: 12px; font-family: 'JetBrains Mono', Consolas, monospace; font-size: .85rem; line-height: 1.6; white-space: pre; overflow-x: auto; }
+    .flow .accent { color: #6ee7b7; }
+    table { width: 100%; border-collapse: collapse; margin-block: 1rem; background: var(--bg-card); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+    th, td { padding: .75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); font-size: .9rem; }
+    th { background: #f5f5f4; font-weight: 600; }
+    tr:last-child td { border-bottom: none; }
+    .support-box { background: linear-gradient(135deg, #fefce8, #fef3c7); border: 1px solid #fcd34d; border-radius: 14px; padding: 1.5rem 2rem; text-align: center; margin-block: 2rem; }
+    .support-box h2 { border: none; margin: 0 0 .5rem; }
+    footer { text-align: center; color: var(--fg-muted); font-size: .85rem; padding: 2rem 0; border-top: 1px solid var(--border); margin-top: 4rem; }
+  </style>
+</head>
+<body>
+<main>
+
+<header class="hero">
+  <h1>Mori Sprite Studio</h1>
+  <p class="tagline">
+    Web tool to build 1024×1024 4×4 sprite animation packs from a single character reference image.
+    AI-powered. Browser-only. Transparent backgrounds. Multiple export formats.
+  </p>
+  <div class="hero-anim">
+    <img src="assets/mori-idle.png" alt="Mori idle animation">
+    <img src="assets/mori-sleeping.png" alt="Mori sleeping animation">
+  </div>
+  <div class="cta">
+    <a class="btn btn-primary" href="https://mori-sprite-studio.vercel.app" target="_blank">▶ Try the live app</a>
+    <a class="btn btn-outline" href="https://github.com/yazelin/mori-sprite-studio" target="_blank">⭐ GitHub repo</a>
+    <a class="btn btn-bmc" href="https://buymeacoffee.com/yazelin" target="_blank">☕ Buy me a coffee</a>
+  </div>
+</header>
+
+<section>
+  <h2>What it does</h2>
+  <p>You give it <strong>one reference image</strong> of your character. It produces a complete sprite animation pack for <a href="https://github.com/yazelin/mori-desktop">mori-desktop</a> — 6 animated states (idle / sleeping / recording / thinking / done / error), each a 1024×1024 4×4 sprite sheet that the floating widget plays back.</p>
+  <p>You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG — useful for LINE animated stickers, Discord, OBS overlays, video editing, etc.</p>
+  <img class="screen" src="assets/screen-01-project.png" alt="Project setup screen with demo loader banner">
+</section>
+
+<section>
+  <h2>Workflow</h2>
+  <div class="flow"><span class="accent">[character ref image]</span>
+       │
+       │ (AI · 1 call)
+       ▼
+<span class="accent">[6 static base poses]</span>    ← editable / re-rollable per state
+       │
+       │ (AI · 6 calls, one per state)
+       ▼
+<span class="accent">[6 sprite sheets, 4×4 each]</span>    ← editable per cell, normalize across states
+       │
+       │ (bake transforms + zip)
+       ▼
+<span class="accent">[mori.moripack.zip]</span>    →    mori-desktop
+       │
+       │ (per state, optional)
+       ▼
+<span class="accent">[mori-{state}.png / .gif / .webm]</span>    →    LINE / Discord / OBS</div>
+  <ol>
+    <li><strong>Upload character ref</strong> — any PNG/JPG of your character (cropped, any background).</li>
+    <li><strong>Generate 6 statics</strong> — one AI call produces a 3×2 grid the tool splits into 6 state poses.</li>
+    <li><strong>Per-state animation</strong> — pre-tiled placeholder + multi-anchor identity reference keeps the character locked in position with only subtle motion (blink, breath, gesture).</li>
+    <li><strong>Fine-tune</strong> — per-cell regen, loop config, cross-state normalize, scale/offset sliders with reference guides, manual upload/download round-trip.</li>
+    <li><strong>Backdrop</strong> (optional) — Light + Dark backdrop PNGs ship inside the pack.</li>
+    <li><strong>Export</strong> <code>.moripack.zip</code> for mori-desktop, or individual APNG / GIF / WebM for other platforms.</li>
+  </ol>
+  <img class="screen" src="assets/screen-02-state.png" alt="State editor with sprite sheet, loop preview, and transform sliders">
+</section>
+
+<section>
+  <h2>Features</h2>
+  <div class="feature-grid">
+    <div class="feature-card"><h3>4 AI providers</h3><p>Author Fallback (free, no setup), Codex-Image (ChatGPT Plus quota), Vertex Gemini, Google Gemini Direct.</p></div>
+    <div class="feature-card"><h3>Anti-jitter</h3><p>Pre-tiled placeholder sheet as AI reference locks character position across all 16 frames.</p></div>
+    <div class="feature-card"><h3>Anti-character-drift</h3><p>Multi-anchor identity reference sends every other state's static so outfit/hair stays consistent.</p></div>
+    <div class="feature-card"><h3>Anatomy-agnostic</h3><p>Works for humanoid / plant / robot / blob / gem. Semantics describe motion abstractly.</p></div>
+    <div class="feature-card"><h3>One-shot patterns</h3><p>BURST-AND-SETTLE for celebrations vs SUSTAINED-ENERGY for distress.</p></div>
+    <div class="feature-card"><h3>Per-cell regen</h3><p>Click any frame to regen just that cell with prev+next frames as context.</p></div>
+    <div class="feature-card"><h3>Chroma key + edge erosion</h3><p>Green or magenta, 3 tolerance levels, 0-10 px erosion. Re-chroma replays from raw output (non-destructive).</p></div>
+    <div class="feature-card"><h3>Cross-state normalize</h3><p>One-click scans bboxes + computes per-state transform so all 6 states match in size + center.</p></div>
+    <div class="feature-card"><h3>Multiple export formats</h3><p>.moripack.zip / APNG / GIF / WebM with VP9 alpha / raw sheet / .moriproject.zip save-load.</p></div>
+    <div class="feature-card"><h3>Per-character backdrop</h3><p>Light + Dark backdrop PNGs ship per mori-desktop PR #107 backplate chain.</p></div>
+    <div class="feature-card"><h3>BYOG path</h3><p>Bring Your Own Generation — copy prompt + reference, run AI yourself, upload result.</p></div>
+    <div class="feature-card"><h3>Demo loader</h3><p>One-click loads a fully-configured 22 MB Mori demo so new visitors see everything immediately.</p></div>
+  </div>
+  <img class="screen" src="assets/screen-03-backdrop.png" alt="Backdrop uploader with Light + Dark slots">
+</section>
+
+<section>
+  <h2>File formats</h2>
+  <table>
+    <thead><tr><th>Format</th><th>Use case</th><th>Plays in</th></tr></thead>
+    <tbody>
+      <tr><td><code>.moripack.zip</code></td><td>Consumer format for mori-desktop</td><td>mori-desktop floating widget</td></tr>
+      <tr><td><code>.moriproject.zip</code></td><td>Author format — resume editing later</td><td>This studio (load button)</td></tr>
+      <tr><td><strong>APNG</strong> (.png)</td><td>Transparent + looping. LINE animated stickers / Discord / Slack / Twitter inline</td><td>Browsers + LINE + Discord</td></tr>
+      <tr><td><strong>GIF</strong> (.gif)</td><td>Universal compatibility, 1-bit alpha (edges slightly crusty)</td><td>Mac Preview, Windows Photos, anywhere</td></tr>
+      <tr><td><strong>WebM</strong> (.webm)</td><td>VP9 + alpha. OBS streaming overlays, QuickTime</td><td>Browsers, OBS, video editors</td></tr>
+      <tr><td>Raw sheet (.png)</td><td>The 1024×1024 4×4 sheet itself</td><td>Photoshop / external edit</td></tr>
+    </tbody>
+  </table>
+  <img class="screen" src="assets/screen-04-export.png" alt="Export view showing completeness check and .moripack download">
+</section>
+
+<section>
+  <h2>Quick start</h2>
+  <h3>Use the live app</h3>
+  <ol>
+    <li>Open <a href="https://mori-sprite-studio.vercel.app">mori-sprite-studio.vercel.app</a></li>
+    <li>Click <code>✦ 載入 Mori Demo</code> on the project page (one-click loads a fully-configured Mori character pack — 22 MB)</li>
+    <li>Browse around, see how it works</li>
+    <li>To make your own: clear data (or use incognito), upload your character ref, click <code>生 6 狀態靜態</code> → per-state <code>生動畫</code></li>
+  </ol>
+  <p>Author Fallback is on by default — no API key needed. ⚠ MVP no rate limit; <a href="https://buymeacoffee.com/yazelin">☕ chip in</a> so it stays free for everyone.</p>
+
+  <h3>Self-host</h3>
+<pre><code>git clone https://github.com/yazelin/mori-sprite-studio
+cd mori-sprite-studio
+npm install
+npm run dev              # Vite dev server
+# OR
+npm run dev:vercel       # vercel dev — for testing /api/generate Author Fallback proxy
+</code></pre>
+  <p>Set env vars in <code>.env.local</code> if using Author Fallback locally:</p>
+<pre><code>AUTHOR_FALLBACK_PROVIDER=vertex-gemini
+AUTHOR_API_KEY=AIza...
+AUTHOR_MODEL=gemini-3-pro-image-preview
+AUTHOR_IMAGE_SIZE=1K</code></pre>
+</section>
+
+<section>
+  <h2>Architecture</h2>
+  <table>
+    <thead><tr><th>Layer</th><th>Tech</th></tr></thead>
+    <tbody>
+      <tr><td>UI</td><td>Vite + React 19 + TypeScript + Tailwind CSS + shadcn/ui</td></tr>
+      <tr><td>State</td><td>Zustand + IndexedDB (idb-keyval) for Blob-native persistence</td></tr>
+      <tr><td>AI providers</td><td>Abstract <code>ImageProvider</code> interface, 4 impls</td></tr>
+      <tr><td>Chroma key</td><td>2-pass per-channel dominance + despill + edge erosion</td></tr>
+      <tr><td>Animation preview</td><td>Canvas + requestAnimationFrame (16-frame row-major)</td></tr>
+      <tr><td>Export encoders</td><td>upng-js (APNG), gifenc (GIF), MediaRecorder + VP9 (WebM), JSZip</td></tr>
+      <tr><td>Server-side</td><td>Vercel Function <code>/api/generate</code> — Author Fallback proxy</td></tr>
+    </tbody>
+  </table>
+  <p>Output spec: 1024×1024 PNG-32, 4×4 grid, 256×256 per cell, row-major frame order, transparent background. Conforms to mori-desktop's <code>character-pack.md</code> v1.0.</p>
+</section>
+
+<div class="support-box">
+  <h2>Running on love + caffeine ☕</h2>
+  <p>This is a personal passion project. If you find it useful, please consider:</p>
+  <div class="cta">
+    <a class="btn btn-bmc" href="https://buymeacoffee.com/yazelin" target="_blank">☕ Buy me a coffee</a>
+    <a class="btn btn-outline" href="https://github.com/yazelin/mori-sprite-studio" target="_blank">⭐ Star on GitHub</a>
+  </div>
+  <p style="font-size: .85rem; color: var(--fg-muted); margin: 1rem 0 0;">
+    Money goes toward API quota for the free Author Fallback path, server / domain costs, and caffeine for me to keep adding features.
+  </p>
+</div>
+
+<section>
+  <h2>Related projects</h2>
+  <ul>
+    <li><a href="https://github.com/yazelin/mori-desktop">mori-desktop</a> — the desktop pet this is built for</li>
+    <li><a href="https://github.com/yazelin/codex-image-service">codex-image-service</a> — self-host ChatGPT Plus/Pro quota as image-gen API (one of the providers)</li>
+    <li><a href="https://github.com/yazelin/line-sticker-studio">line-sticker-studio</a> — sister tool, LINE sticker authoring</li>
+  </ul>
+</section>
+
+<footer>
+  Made with 🌿 by <a href="https://github.com/yazelin">yazelin</a> · MIT License
+</footer>
+
+</main>
+</body>
+</html>

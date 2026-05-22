@@ -11,7 +11,7 @@
   text-rendering: optimizeLegibility;
 }
 
-html, body, #root { height: 100%; }
+html, body, #root { height: 100%; overflow: hidden; }
 body {
   margin: 0;
   /* Mori forest base — cream with a hint of warmth */

@@ -58,7 +58,21 @@ DO change (subtle, idle animation only):
 State pose hint: {{pose_note}}
 Loop mode: {{loop_mode}} (for "loop": frame 16 → frame 1 must be seamless)
 
-Frame-by-frame hints (empty = hold steady from previous frame):
+DEFAULT 16-FRAME IDLE PATTERN (apply unless overridden by per-cell hints below):
+  • Frames 1-3:   character at neutral pose, eyes open, chest at rest position
+  • Frame 4:      chest very slightly raised (breath in starts), eyes still open
+  • Frame 5:      chest slightly raised more (breath in peak), eyes start closing
+  • Frame 6:      chest at peak inhale, eyes fully closed (mid-blink)
+  • Frame 7:      chest still raised, eyes still closed (blink hold)
+  • Frame 8:      chest starts lowering (breath out starts), eyes opening
+  • Frames 9-10:  chest returning toward rest, eyes fully open
+  • Frames 11-13: neutral pose, eyes open, hair tips drift slightly
+  • Frame 14:     subtle accent for "{{state_name}}" (small gesture / aura pulse)
+  • Frame 15:     accent continues
+  • Frame 16:     back to neutral, hair / accent settle so frame 16 → frame 1 loops seamlessly
+
+This is a default — use per-cell hints below if any are filled in:
+
 {{cell_notes_block}}
 
 Output rules:

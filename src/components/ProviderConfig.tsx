@@ -35,16 +35,43 @@ export function ProviderConfig() {
             {provider.active === name && (
               <div className="ml-6 space-y-2 p-3 bg-slate-50 rounded-md">
                 {name === 'author-fallback' && (
-                  <p className="text-xs text-slate-600">
-                    使用作者的 API key(server-side env var)。免設定。MVP 無 rate limit。
-                  </p>
+                  <div className="text-xs text-slate-600 space-y-1">
+                    <p>使用作者的 API key(server-side env var,你不用設定)。免費直接用。</p>
+                    <p className="text-amber-700">
+                      ⚠ 目前為 MVP,**沒有 rate limit**。 多人用 + 大量呼叫會把作者的 quota 燒光。
+                      未來會加 per-IP rate limit + daily cap 保護額度。如果你會大量用,建議切其他 provider 自帶 key。
+                    </p>
+                    <p>
+                      喜歡這個工具? 請我喝杯咖啡{' '}
+                      <a
+                        href="https://buymeacoffee.com/yazelin"
+                        target="_blank" rel="noreferrer"
+                        className="underline text-emerald-700 hover:text-emerald-800"
+                      >
+                        ☕ buymeacoffee.com/yazelin
+                      </a>{' '}
+                      讓我可以買更多 API quota 給大家用 ♥
+                    </p>
+                  </div>
                 )}
                 {name === 'codex-image' && (
                   <>
+                    <p className="text-xs text-slate-600">
+                      呼叫{' '}
+                      <a
+                        href="https://github.com/yazelin/codex-image-service"
+                        target="_blank" rel="noreferrer"
+                        className="underline text-emerald-700 hover:text-emerald-800"
+                      >
+                        yazelin/codex-image-service
+                      </a>
+                      {' '}建立的 endpoint。這個 service 是把你的 ChatGPT Plus / Pro 訂閱包成 image generation API,讓你**用 ChatGPT 訂閱 quota 跑 gpt-image-2**,不必另外買 OpenAI API credit。需 self-host 該 service,Base URL 填你部署的地址(例:Vercel / Render / 自家伺服器)。
+                    </p>
                     <Field label="Base URL">
                       <Input
                         value={provider.codexImage.baseUrl}
                         onChange={(e) => update('codexImage', { baseUrl: e.target.value })}
+                        placeholder="https://your-codex-image-service.vercel.app"
                       />
                     </Field>
                     <Field label="API Key">

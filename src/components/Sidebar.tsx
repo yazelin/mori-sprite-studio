@@ -89,6 +89,26 @@ export function Sidebar() {
           label="匯出 .moripack"
         />
       </div>
+
+      {/* Footer — Buy Me a Coffee + GitHub */}
+      <div className="mt-auto px-3 py-3 border-t border-border space-y-2 text-xs">
+        <a
+          href="https://buymeacoffee.com/yazelin"
+          target="_blank" rel="noreferrer"
+          className="flex items-center gap-2 px-2 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 transition-colors"
+          title="支持作者繼續開發 + 維持 Author Fallback API quota"
+        >
+          <span className="text-base leading-none">☕</span>
+          <span className="font-medium">Buy me a coffee</span>
+        </a>
+        <a
+          href="https://github.com/yazelin/mori-sprite-studio"
+          target="_blank" rel="noreferrer"
+          className="block px-2 py-1 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          ⭐ GitHub repo
+        </a>
+      </div>
     </nav>
   )
 }

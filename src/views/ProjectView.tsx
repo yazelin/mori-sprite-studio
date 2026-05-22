@@ -57,6 +57,8 @@ export function ProjectView() {
         subtitle="一張角色 ref 圖 → 一次 AI 生成 6 個 state 靜態 → 各自動畫化 → 匯出 .moripack.zip。"
       />
 
+      <DemoLoaderBanner />
+
       <Section
         title="Character Reference"
         subtitle="上傳一張你的角色圖。後續所有 state 都會以這張為基底生成。"
@@ -136,12 +138,126 @@ export function ProjectView() {
         <NormalizeConfig />
       </Section>
 
+      <Section
+        title="專案存檔"
+        subtitle="把當前完整 IDB 狀態(6 sheet + raw + 設定 + character ref + backdrops)包成 .moriproject.zip;之後可載回繼續編輯,或分享給人當基底。"
+        icon={<FileText {...ICON_PROPS} />}
+      >
+        <ProjectFileButtons />
+      </Section>
+
       <PromptEditorModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         context={modalContext}
         onGenerate={runB1WithCustomPrompt}
       />
+    </div>
+  )
+}
+
+function DemoLoaderBanner() {
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const characterRef = useAppStore((s) => s.project.characterRef)
+
+  // Only show banner if user is on a blank-ish project (no character ref uploaded)
+  if (characterRef) return null
+
+  async function loadDemo() {
+    setLoading(true); setErr(null)
+    try {
+      const { loadDemoProject } = await import('@/lib/projectFile')
+      await loadDemoProject('/demo/mori.moriproject.zip')
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50/40 p-5">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="space-y-1 flex-1 min-w-[280px]">
+          <h2 className="text-base font-semibold text-emerald-900">第一次用?載 Mori 預設 Demo</h2>
+          <p className="text-sm text-emerald-800/80 max-w-prose">
+            完整 Mori 角色 pack(6 個 state 動畫 + character ref + 2 個背板),
+            一鍵載入立刻看到所有功能。也可當作改造起點 → 改 metadata / pose
+            note 重生成你自己的角色。
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={loadDemo}
+          disabled={loading}
+          className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 shrink-0 transition-colors"
+        >
+          {loading ? '載入中…' : '✦ 載入 Mori Demo'}
+        </button>
+      </div>
+      {err && <p className="text-xs text-red-700 mt-2">⚠ 載入失敗: {err}</p>}
+    </div>
+  )
+}
+
+function ProjectFileButtons() {
+  const project = useAppStore((s) => s.project)
+  const [busy, setBusy] = useState(false)
+  const [report, setReport] = useState<string | null>(null)
+  const inputId = 'project-file-load'
+
+  async function save() {
+    setBusy(true); setReport(null)
+    try {
+      const { downloadProjectFile } = await import('@/lib/projectFile')
+      await downloadProjectFile(project)
+      setReport('已下載 .moriproject.zip')
+    } catch (e) {
+      setReport(`錯誤: ${e instanceof Error ? e.message : String(e)}`)
+    } finally { setBusy(false) }
+  }
+
+  async function load(file: File) {
+    setBusy(true); setReport(null)
+    try {
+      const { loadProjectFile } = await import('@/lib/projectFile')
+      await loadProjectFile(file)
+      setReport(`已載入 ${file.name}`)
+    } catch (e) {
+      setReport(`錯誤: ${e instanceof Error ? e.message : String(e)}`)
+    } finally { setBusy(false) }
+  }
+
+  return (
+    <div className="space-y-3 max-w-xl">
+      <div className="flex gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={save}
+          disabled={busy}
+          className="h-9 px-4 border border-border bg-card hover:bg-stone-50 text-sm rounded-md disabled:opacity-50"
+        >
+          ⇩ 下載 .moriproject.zip
+        </button>
+        <input
+          id={inputId}
+          type="file"
+          accept=".zip,application/zip"
+          className="sr-only"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) void load(f); e.target.value = '' }}
+        />
+        <label
+          htmlFor={inputId}
+          className={`h-9 px-4 inline-flex items-center border border-border bg-card hover:bg-stone-50 text-sm rounded-md cursor-pointer ${busy ? 'opacity-50' : ''}`}
+        >
+          ⇧ 載入 .moriproject.zip
+        </label>
+      </div>
+      {report && <p className="text-xs text-muted-foreground">{report}</p>}
+      <p className="text-xs text-muted-foreground">
+        提醒:**載入會完全取代當前所有資料**,先備份你目前的狀態再載新檔。
+      </p>
     </div>
   )
 }

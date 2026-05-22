@@ -161,83 +161,21 @@ export function StateView({ name }: { name: StateName }) {
 
   return (
     <div className="space-y-8">
-      {/* Page header — only identity + export. Generation buttons live in the
-          action ribbon below so the workflow reads top-down. */}
-      <header className="flex items-start justify-between gap-6 flex-wrap">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight capitalize text-stone-900">{name}</h1>
-            <span className={cn('text-xs font-medium px-2.5 py-0.5 rounded-full border', pill.cls)}>
-              {pill.label}
-            </span>
-          </div>
-          <p className="text-sm text-muted-foreground max-w-prose">
-            這個 state 的 256×256 static base + 1024×1024 4×4 sprite sheet。
-          </p>
+      {/* Page header — identity only. Actions live INSIDE the section they
+          operate on, so spatial association matches: 重生 base in Static
+          Base column (left), 生動畫 / 重新去背 / 下載 in Sprite Sheet
+          column (right). */}
+      <header className="space-y-1.5">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight capitalize text-stone-900">{name}</h1>
+          <span className={cn('text-xs font-medium px-2.5 py-0.5 rounded-full border', pill.cls)}>
+            {pill.label}
+          </span>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!state.sheet || encodingApng}
-              className="h-10 gap-2"
-              title={state.status !== 'animated' ? '生動畫後才能下載真實 loop' : '下載動畫(多種格式)'}
-            >
-              <Download size={16} strokeWidth={1.75} />
-              {encodingApng ? '打包中…' : '下載動畫'}
-              <ChevronDown size={14} strokeWidth={1.75} className="opacity-60" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-72">
-            <DropdownMenuItem onClick={downloadApng} className="flex-col items-start gap-0.5 py-2.5">
-              <div className="font-medium text-sm">APNG（.png）</div>
-              <div className="text-[11px] text-muted-foreground">透明 + 循環。瀏覽器 / LINE / Discord 會動;本機 viewer 多半只第 1 格</div>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={downloadGif} className="flex-col items-start gap-0.5 py-2.5">
-              <div className="font-medium text-sm">GIF（.gif）</div>
-              <div className="text-[11px] text-muted-foreground">1-bit 透明(邊緣稍粗)+ 循環。Mac Preview / Windows Photos 都會動,最廣相容</div>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={downloadWebm} className="flex-col items-start gap-0.5 py-2.5">
-              <div className="font-medium text-sm">WebM 影片（.webm）</div>
-              <div className="text-[11px] text-muted-foreground">VP9 + alpha。錄製 3 個 loop。QuickTime / 瀏覽器會動,OBS 直接拿來用</div>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <p className="text-sm text-muted-foreground max-w-prose">
+          這個 state 的 256×256 static base + 1024×1024 4×4 sprite sheet。
+        </p>
       </header>
-
-      {/* Action ribbon — primary action front + center, secondary / utility to the side.
-          Reads as: "the thing you usually want to do" + "occasional touch-ups". */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <GenerateButton
-          label={`生 ${name} 動畫`}
-          onGenerate={() => runOp('C')}
-          onEditPrompt={() => openModal('C')}
-          disabled={!state.staticBase}
-          generating={generating}
-        />
-        <span className="text-xs text-muted-foreground select-none px-1">主要動作</span>
-        <div className="ml-auto flex items-center gap-1">
-          <GenerateButton
-            label="重生 base"
-            onGenerate={() => runOp('B2')}
-            onEditPrompt={() => openModal('B2')}
-            generating={generating}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={rechroma}
-            disabled={!state.sheet || generating}
-            className="h-9 gap-1.5 text-muted-foreground hover:text-foreground"
-            title="用當前 Chroma 設定(顏色 + tolerance + edge erosion)從原始 AI 輸出重跑去背"
-          >
-            <Eraser size={14} strokeWidth={1.75} />
-            重新去背
-          </Button>
-        </div>
-      </div>
 
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -307,32 +245,13 @@ export function StateView({ name }: { name: StateName }) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-stone-700">Loop mode</Label>
-                <Select
-                  value={state.loopMode}
-                  onValueChange={(v) => updateState(name, { loopMode: v as 'loop' | 'one-shot' })}
-                >
-                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="loop">loop</SelectItem>
-                    <SelectItem value="one-shot">one-shot</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-stone-700">Duration</Label>
-                <div className="text-sm text-stone-900 font-mono tabular-nums h-9 flex items-center px-1">
-                  {state.loopDurationMs} <span className="text-muted-foreground ml-1">ms</span>
-                </div>
-              </div>
-            </div>
-            <Input
-              type="range" min={100} max={10000} step={100}
-              value={state.loopDurationMs}
-              onChange={(e) => updateState(name, { loopDurationMs: parseInt(e.target.value, 10) })}
-              className="accent-emerald-600"
+            {/* Primary action for this column — re-roll the static base.
+                Sits directly under the thing it modifies. */}
+            <GenerateButton
+              label="重生 base"
+              onGenerate={() => runOp('B2')}
+              onEditPrompt={() => openModal('B2')}
+              generating={generating}
             />
           </div>
         </Section>
@@ -343,7 +262,7 @@ export function StateView({ name }: { name: StateName }) {
           subtitle="點任一格選取,可寫 frame note 或重生"
           icon={<Grid3x3 {...ICON_PROPS} />}
           action={(
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1">
               <input
                 ref={sheetUploadRef}
                 type="file"
@@ -360,48 +279,138 @@ export function StateView({ name }: { name: StateName }) {
                 size="sm"
                 onClick={() => sheetUploadRef.current?.click()}
                 disabled={generating}
-                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                className="h-7 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground"
                 title="上傳一張 1024×1024 4×4 sheet 來覆蓋當前 sheet(會跑 chroma key + edge erosion)"
               >
-                <Upload size={14} strokeWidth={1.75} />
-                上傳 sheet
+                <Upload size={12} strokeWidth={1.75} />
+                上傳
               </Button>
               {state.sheet && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={downloadRawSheet}
-                  className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-                  title="下載當前 1024×1024 4×4 sheet"
+                  className="h-7 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground"
+                  title="下載當前 1024×1024 4×4 sheet 來檢查 AI 真實輸出"
                 >
-                  <Download size={14} strokeWidth={1.75} />
-                  raw sheet
+                  <Download size={12} strokeWidth={1.75} />
+                  raw
                 </Button>
               )}
             </div>
           )}
         >
-          <div className="flex flex-col xl:flex-row gap-6 items-start">
-            <SpriteSheetPreview
-              sheet={state.sheet}
-              selectedCell={selectedCell}
-              onCellClick={selectCell}
-              size={384}
-            />
-            <div className="space-y-3">
-              <div>
-                <Label className="text-xs font-medium text-stone-700 block mb-1.5">Loop preview</Label>
-                <div className="rounded-xl border border-border tx-checker p-2">
-                  <AnimationPreview sheet={state.sheet} durationMs={state.loopDurationMs} size={224} />
+          <div className="space-y-5">
+            {/* Primary actions for this column — generate animation + cleanup + download.
+                Sits directly under the thing it produces. */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <GenerateButton
+                label={`生 ${name} 動畫`}
+                onGenerate={() => runOp('C')}
+                onEditPrompt={() => openModal('C')}
+                disabled={!state.staticBase}
+                generating={generating}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={rechroma}
+                disabled={!state.sheet || generating}
+                className="h-9 gap-1.5 text-muted-foreground hover:text-foreground"
+                title="用當前 Chroma 設定(顏色 + tolerance + edge erosion)從原始 AI 輸出重跑去背"
+              >
+                <Eraser size={14} strokeWidth={1.75} />
+                重新去背
+              </Button>
+              <div className="ml-auto">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!state.sheet || encodingApng}
+                      className="h-9 gap-2"
+                      title={state.status !== 'animated' ? '生動畫後才能下載真實 loop' : '下載動畫(多種格式)'}
+                    >
+                      <Download size={14} strokeWidth={1.75} />
+                      {encodingApng ? '打包中…' : '下載動畫'}
+                      <ChevronDown size={12} strokeWidth={1.75} className="opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-72">
+                    <DropdownMenuItem onClick={downloadApng} className="flex-col items-start gap-0.5 py-2.5">
+                      <div className="font-medium text-sm">APNG（.png）</div>
+                      <div className="text-[11px] text-muted-foreground">透明 + 循環。瀏覽器 / LINE / Discord 會動;本機 viewer 多半只第 1 格</div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={downloadGif} className="flex-col items-start gap-0.5 py-2.5">
+                      <div className="font-medium text-sm">GIF（.gif）</div>
+                      <div className="text-[11px] text-muted-foreground">1-bit 透明(邊緣稍粗)+ 循環。Mac Preview / Windows Photos 都會動,最廣相容</div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={downloadWebm} className="flex-col items-start gap-0.5 py-2.5">
+                      <div className="font-medium text-sm">WebM 影片（.webm）</div>
+                      <div className="text-[11px] text-muted-foreground">VP9 + alpha。錄製 3 個 loop。QuickTime / 瀏覽器會動,OBS 直接拿來用</div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+
+            <div className="flex flex-col xl:flex-row gap-6 items-start">
+              <SpriteSheetPreview
+                sheet={state.sheet}
+                selectedCell={selectedCell}
+                onCellClick={selectCell}
+                size={384}
+              />
+              <div className="space-y-4 min-w-[224px]">
+                <div>
+                  <Label className="text-xs font-medium text-stone-700 block mb-1.5">Loop preview</Label>
+                  <div className="rounded-xl border border-border tx-checker p-2">
+                    <AnimationPreview sheet={state.sheet} durationMs={state.loopDurationMs} size={224} />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5 max-w-[224px]">
+                    {state.status === 'animated'
+                      ? '播放真實 4×4 動畫'
+                      : state.status === 'placeholder'
+                        ? '16 格 = 同張靜態,看不出動'
+                        : '尚未生成'}
+                  </p>
+                </div>
+
+                {/* Loop config — animation-only properties, so they live next to the
+                    animation preview (not in Static Base column). */}
+                <div className="space-y-2 pt-2 border-t border-border/60">
+                  <Label className="text-xs font-medium text-stone-700">動畫參數</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-normal text-muted-foreground">Loop mode</Label>
+                      <Select
+                        value={state.loopMode}
+                        onValueChange={(v) => updateState(name, { loopMode: v as 'loop' | 'one-shot' })}
+                      >
+                        <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="loop">loop</SelectItem>
+                          <SelectItem value="one-shot">one-shot</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-normal text-muted-foreground">Duration</Label>
+                      <div className="text-sm text-stone-900 font-mono tabular-nums h-9 flex items-center px-1">
+                        {state.loopDurationMs} <span className="text-muted-foreground ml-1">ms</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Input
+                    type="range" min={100} max={10000} step={100}
+                    value={state.loopDurationMs}
+                    onChange={(e) => updateState(name, { loopDurationMs: parseInt(e.target.value, 10) })}
+                    className="accent-emerald-600"
+                  />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground max-w-[224px]">
-                {state.status === 'animated'
-                  ? '播放真實 4×4 動畫'
-                  : state.status === 'placeholder'
-                    ? '16 格 = 同張靜態,看不出動。按上方「生動畫」轉成真動畫。'
-                    : '尚未生成,先回專案頁按「生 6 狀態靜態」。'}
-              </p>
             </div>
           </div>
         </Section>

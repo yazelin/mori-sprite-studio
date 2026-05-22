@@ -43,17 +43,23 @@ OUTPUT RULES:
 
 Your task: take this pre-built grid and ADD tiny per-cell animation variations so it becomes a working sprite animation sheet for state "{{state_name}}". Output is the SAME 4×4 grid layout, character at the SAME position and size in every cell — only small per-cell details differ.
 
+STATE CONTEXT — what state "{{state_name}}" means for this character:
+{{state_semantics}}
+
+Use this context to understand the INTENT of the animation, but do NOT add new props, accessories, or anatomy that aren't already in the reference grid you received. The reference IS the truth — only animate what's already there.
+
 DO NOT change:
 - Character position, size, scale, or framing in any cell
 - The overall 4×4 grid layout
 - Character design (hair, clothes, palette, facing)
 - The size of any cell or the grid's dimensions
+- Props or items the character is holding (do NOT add or remove items)
 
 DO change (subtle, idle animation only):
 - Eyelid open vs closed (1-2 cells closed = blink) if the character has eyes
 - Tiny chest / silhouette wobble of 1-3 px (breath, pulse, gentle sway)
 - Hair / leaves / antenna / tail / aura drift by 1-3 px
-- One small gesture appropriate to state "{{state_name}}"
+- One small gesture appropriate to state "{{state_name}}" — within the existing character design, not new props
 
 State pose hint: {{pose_note}}
 Loop mode: {{loop_mode}} (for "loop": frame 16 → frame 1 must be seamless)

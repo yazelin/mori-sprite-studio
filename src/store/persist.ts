@@ -1,6 +1,7 @@
 import { get, set, del } from 'idb-keyval'
 import type { AppStore } from './index'
-import { STATE_NAMES } from '@/types/project'
+import { STATE_NAMES, type SpriteState, type StateName } from '@/types/project'
+import { DEFAULT_LOOP_MODES, DEFAULT_LOOP_DURATIONS_MS } from '@/defaults'
 
 // v2: switched from localStorage (data-URL Blob, ~5MB quota) to IndexedDB
 // via idb-keyval. IndexedDB stores Blobs natively via structured clone
@@ -40,21 +41,46 @@ export async function loadStore(): Promise<Partial<PersistedShape> | null> {
  * Fills missing fields with defaults so React doesn't crash on undefined
  * access when reading e.g. state.transform.scale.
  */
+function defaultSpriteState(name: StateName): SpriteState {
+  return {
+    staticBase: null,
+    sheet: null,
+    rawSheet: null,
+    rawStaticBase: null,
+    transform: { scale: 1, offsetX: 0, offsetY: 0 },
+    poseNote: '',
+    notes: Array(16).fill(''),
+    loopMode: DEFAULT_LOOP_MODES[name],
+    loopDurationMs: DEFAULT_LOOP_DURATIONS_MS[name],
+    status: 'pending',
+  }
+}
+
 function migrate(data: Partial<PersistedShape>): Partial<PersistedShape> {
   if (!data.project) return data
   const project = data.project as any
   // Project-level fields
   if (project.backdropDark === undefined) project.backdropDark = null
   if (project.backdropLight === undefined) project.backdropLight = null
+  if (!project.states) project.states = {}
   // SpriteState fields
-  if (project.states) {
-    for (const name of STATE_NAMES) {
-      const s = project.states[name] as any
-      if (!s) continue
-      if (s.transform === undefined) s.transform = { scale: 1, offsetX: 0, offsetY: 0 }
-      if (s.rawSheet === undefined) s.rawSheet = null
-      if (s.rawStaticBase === undefined) s.rawStaticBase = null
+  for (const name of STATE_NAMES) {
+    let s = project.states[name] as any
+    if (!s) {
+      // Missing entire state entry (e.g. walking/dragging added after this
+      // project was saved). Inject default so components don't crash when
+      // they iterate STATE_NAMES + read .sheet / .status / .transform.
+      project.states[name] = defaultSpriteState(name)
+      continue
     }
+    if (s.transform === undefined) s.transform = { scale: 1, offsetX: 0, offsetY: 0 }
+    if (s.rawSheet === undefined) s.rawSheet = null
+    if (s.rawStaticBase === undefined) s.rawStaticBase = null
+    if (s.loopMode === undefined) s.loopMode = DEFAULT_LOOP_MODES[name]
+    if (s.loopDurationMs === undefined) s.loopDurationMs = DEFAULT_LOOP_DURATIONS_MS[name]
+    if (s.poseNote === undefined) s.poseNote = ''
+    if (s.notes === undefined) s.notes = Array(16).fill('')
+    if (s.status === undefined) s.status = s.sheet ? 'animated' : 'pending'
   }
   return data
 }

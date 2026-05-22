@@ -58,18 +58,20 @@ DO change (subtle, idle animation only):
 State pose hint: {{pose_note}}
 Loop mode: {{loop_mode}} (for "loop": frame 16 → frame 1 must be seamless)
 
-DEFAULT 16-FRAME IDLE PATTERN (apply unless overridden by per-cell hints below):
-  • Frames 1-3:   character at neutral pose, eyes open, chest at rest position
-  • Frame 4:      chest very slightly raised (breath in starts), eyes still open
-  • Frame 5:      chest slightly raised more (breath in peak), eyes start closing
-  • Frame 6:      chest at peak inhale, eyes fully closed (mid-blink)
-  • Frame 7:      chest still raised, eyes still closed (blink hold)
-  • Frame 8:      chest starts lowering (breath out starts), eyes opening
-  • Frames 9-10:  chest returning toward rest, eyes fully open
-  • Frames 11-13: neutral pose, eyes open, hair tips drift slightly
-  • Frame 14:     subtle accent for "{{state_name}}" (small gesture / aura pulse)
-  • Frame 15:     accent continues
-  • Frame 16:     back to neutral, hair / accent settle so frame 16 → frame 1 loops seamlessly
+DEFAULT 16-FRAME IDLE PATTERN (anatomy-agnostic — interpret each beat appropriately for the character's actual form, whether humanoid, plant, slime, gem, robot, etc.):
+  • Frames 1-3:   character at resting baseline (all secondary features at rest)
+  • Frame 4:      primary silhouette begins a subtle 1-2 px expansion (the character's equivalent of "breath in" — for humanoid this is chest rise; for a plant it's leaves lifting; for a gem it's a faint glow; for a slime it's the body stretching upward)
+  • Frame 5:      expansion approaches peak; one prominent feature begins its closing/dimming moment if applicable (for a character with eyes this is the lid starting to drop; for a glowing character this is brightness peaking before fading; for a character with no closable feature, simply continue the silhouette expansion)
+  • Frame 6:      peak expansion + peak closure/dim moment (mid-"blink" equivalent — eyes fully closed if eyes exist, otherwise hold the peak silhouette + add any state-specific accent)
+  • Frame 7:      hold peak briefly
+  • Frame 8:      reverse begins (silhouette starts shrinking back; closure starts opening / dim returns to bright)
+  • Frames 9-10:  silhouette returns to baseline; closure fully reopens if applicable
+  • Frames 11-13: resting baseline; subtle drift of any free-flowing features (hair, leaves, tail, aura wisps, antenna, cape — whatever the character has) by 1-3 px
+  • Frame 14:     subtle accent moment appropriate to state "{{state_name}}" (a gesture / pulse / wave / glance — whatever fits the character's form and the state)
+  • Frame 15:     accent settling
+  • Frame 16:     back to baseline so frame 16 → frame 1 loops seamlessly
+
+This pattern uses ABSTRACT motion descriptors. If the character has no eyes, skip the closure/blink beats — just continue the silhouette expansion. If the character has no flowing features, skip the drift. Adapt every beat to the character's actual design (the pre-tiled grid you received shows you exactly what the character is — work within that).
 
 This is a default — use per-cell hints below if any are filled in:
 

@@ -105,26 +105,24 @@ export async function buildReferences(
   if (templateKey === 'W' || templateKey === 'Dr') {
     // Walking / Dragging:  STANDALONE pipeline (no pre-tiling).
     //
-    // References (in priority order):
+    // References:
     //   1. character ref (canonical identity portrait)
-    //   2. idle static base (FULL-BODY NEUTRAL POSE — gives AI the right
-    //      body proportions, leg length, full outfit, with NO specific
-    //      gait pose anchoring it). Idle semantic default is "standing
-    //      front-facing, arms relaxed at sides" — exactly the neutral
-    //      reference walking/dragging need.
+    //   2. walking/dragging OWN static base (which per the updated
+    //      semantics is now a NEUTRAL FULL-BODY STANDING POSE — both
+    //      feet planted, hands at sides, full body head-to-toe visible.
+    //      NOT a walking pose, so it doesn't anchor AI to a specific
+    //      gait. It provides identity + body proportions + the fact
+    //      that feet exist and are visible).
     //
-    // CRITICAL — do NOT pass the W/Dr's OWN static base. That static
-    // shows ONE specific pose (e.g. right foot forward); including it
-    // as a reference anchors AI to that single pose, producing 16 cells
-    // all with right-foot-forward + jitter instead of the proper
-    // alternating gait cycle.
+    // Using the own static (now neutral) means walking gets a static
+    // designed for IT (with feet shown) rather than borrowing idle's
+    // static which may not show feet at all.
     if (!project.characterRef) throw new Error('character ref required')
     if (!stateName) throw new Error('stateName required')
     const chromaHex = CHROMA_COLORS[store.chroma.key].hex
     const refs: Blob[] = [project.characterRef]
-    // Use idle's static as the full-body neutral identity anchor
-    const idleSb = project.states.idle?.staticBase
-    if (idleSb) refs.push(await fillBgWithChroma(idleSb, chromaHex))
+    const ownSb = project.states[stateName].staticBase
+    if (ownSb) refs.push(await fillBgWithChroma(ownSb, chromaHex))
     return refs
   }
   if (templateKey === 'C') {

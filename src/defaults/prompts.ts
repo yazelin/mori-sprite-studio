@@ -214,17 +214,21 @@ DO NOT:
 - Change clothes (if reference has long dress, output stays long dress)
 - Change to pixel-art style if reference is anime/illustration
 
-If reference #2 also provided, it is the character's IDLE STATIC —
-a NEUTRAL FULL-BODY STANDING POSE (front-facing, arms at sides, both
-feet planted). Use ref #2 ONLY for:
-  - body proportions (leg length, torso length, head size)
+If reference #2 also provided, it is THIS state's neutral static base —
+a FULL-BODY STANDING reference where BOTH feet are planted, hands at
+sides, full body visible from hair-top to shoe-bottom. Use ref #2 for:
+  - confirming body proportions (leg length, torso length, head size)
   - confirming clothing details (full dress / pant length / shoe shape)
-  - confirming the FULL outfit (some details may not be in the portrait)
+  - confirming where the FEET are and what they look like (shoe color,
+    shoe shape) — important because the portrait ref #1 may not show
+    feet at all
+  - confirming the FULL outfit head-to-toe
 
-DO NOT copy ref #2's standing pose into the walking cells — ref #2 is
-the "neutral baseline" not the pose for this animation. Walking cells
-must show MOVING legs (alternating per the cell-by-cell instructions
-below), not standing-still legs like ref #2.
+DO NOT copy ref #2's standing-still pose into the walking cells — ref
+#2 is the "neutral baseline showing what the character looks like with
+both feet planted." Walking cells MUST show LEGS IN MOTION (alternating
+per the cell-by-cell instructions below), not standing-still legs like
+ref #2.
 
 ═══════════════════════════════════════════════════════════════════
 NO EMPTY CELLS — STRICTLY ENFORCED

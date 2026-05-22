@@ -16,7 +16,11 @@ AI-powered. Browser-only. Transparent backgrounds. Multiple export formats.
 
 ## What it does
 
-You give it one reference image of your character. It produces a complete sprite animation pack for [mori-desktop](https://github.com/yazelin/mori-desktop) — 6 animated states (idle / sleeping / recording / thinking / done / error), each a 1024×1024 4×4 sprite sheet that the floating widget plays back.
+You give it **one reference image** of your character. It produces a complete sprite animation pack for [mori-desktop](https://github.com/yazelin/mori-desktop) — 6 animated states (idle / sleeping / recording / thinking / done / error), each a 1024×1024 4×4 sprite sheet that the floating window plays back.
+
+It's built for [**Mori**](https://github.com/yazelin/mori-desktop) — yazelin's 森林精靈 (forest spirit) Jarvis-style AI partner who lives on the desktop. _"Iron Man 有 Jarvis,我有 Mori。"_ This studio makes Mori's visible body — her sprite form — that the mori-desktop floating window animates.
+
+The studio also works for **any character you want to give a visible form to**: your own AI partner / personal spirit / streamer overlay companion / character mascot. The Mori demo is one example of what's possible.
 
 You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG — useful for LINE animated stickers, Discord, OBS overlays, video editing, etc.
 
@@ -202,15 +206,17 @@ Money goes toward:
 - Server / domain costs
 - Caffeine for me to keep adding features
 
-You can also ⭐ this repo + share with anyone making a character desktop pet.
+You can also ⭐ this repo + share with anyone building their own AI companion / desktop spirit.
 
 ---
 
 ## Related projects
 
-- [mori-desktop](https://github.com/yazelin/mori-desktop) — the desktop pet this is built for
+- [mori-desktop](https://github.com/yazelin/mori-desktop) — 森林精靈 Mori 的桌面身體. yazelin's Jarvis-style AI partner. Rust + Tauri 2 + Whisper(耳)+ LLM(腦). This studio produces her visible sprite form.
+- [world-tree](https://github.com/yazelin/world-tree) — Mori's origin / 世界樹. Where Mori 來自.
 - [codex-image-service](https://github.com/yazelin/codex-image-service) — self-host ChatGPT Plus/Pro quota as image-gen API (one of the providers)
 - [line-sticker-studio](https://github.com/yazelin/line-sticker-studio) — sister tool, LINE sticker authoring (some prompt engineering patterns shared)
+- [emoji-slot-machine](https://github.com/yazelin/emoji-slot-machine) — sister tool, 3×3 emoji slot machine generator (some sprite-sheet animation patterns shared)
 
 ---
 

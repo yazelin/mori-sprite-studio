@@ -1,65 +1,174 @@
+import { useEffect, useState } from 'react'
 import { useAppStore } from '@/store'
-import { STATE_NAMES } from '@/types/project'
-import { StatusBadge } from './StatusBadge'
+import { STATE_NAMES, type StateName, type SheetStatus } from '@/types/project'
 import { cn } from '@/lib/utils'
+
+const STATE_LABEL: Record<StateName, string> = {
+  idle:      'Idle',
+  sleeping:  'Sleeping',
+  recording: 'Recording',
+  thinking:  'Thinking',
+  done:      'Done',
+  error:     'Error',
+}
+
+const STATUS_DOT_COLOR: Record<SheetStatus, string> = {
+  pending:     'bg-stone-300',
+  placeholder: 'bg-amber-400',
+  animated:    'bg-emerald-500',
+}
 
 export function Sidebar() {
   const view = useAppStore((s) => s.ui.view)
   const setView = useAppStore((s) => s.setView)
   const states = useAppStore((s) => s.project.states)
+  const characterRef = useAppStore((s) => s.project.characterRef)
+  const [refUrl, setRefUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!characterRef) { setRefUrl(null); return }
+    const u = URL.createObjectURL(characterRef)
+    setRefUrl(u)
+    return () => URL.revokeObjectURL(u)
+  }, [characterRef])
 
   return (
-    <nav className="w-60 shrink-0 border-r border-border bg-slate-50 p-3 flex flex-col gap-1">
-      <Item
-        active={view.kind === 'project'}
-        onClick={() => setView({ kind: 'project' })}
-      >
-        <span className="text-base">⌂</span>
-        <span>專案</span>
-      </Item>
+    <nav className="w-72 shrink-0 border-r border-border bg-card/60 backdrop-blur-sm flex flex-col">
+      {/* Brand */}
+      <div className="px-5 pt-6 pb-4 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          {refUrl ? (
+            <img
+              src={refUrl}
+              alt="character"
+              className="w-10 h-10 rounded-xl object-cover border border-border shadow-sm bg-stone-100"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-base">
+              🌿
+            </div>
+          )}
+          <div className="flex flex-col leading-tight">
+            <span className="font-semibold text-stone-900">Mori Sprite Studio</span>
+            <span className="text-[11px] text-muted-foreground">character pack maker</span>
+          </div>
+        </div>
+      </div>
 
-      <div className="border-t border-border my-2" />
-
-      {STATE_NAMES.map((name) => (
+      <div className="flex-1 overflow-auto px-3 py-4 space-y-1">
         <Item
-          key={name}
-          active={view.kind === 'state' && view.name === name}
-          onClick={() => setView({ kind: 'state', name })}
-        >
-          <StatusBadge status={states[name].status} />
-          <span className="capitalize">{name}</span>
-        </Item>
-      ))}
+          active={view.kind === 'project'}
+          onClick={() => setView({ kind: 'project' })}
+          icon={<span className="text-base">⌂</span>}
+          label="專案設定"
+        />
 
-      <div className="border-t border-border my-2" />
+        <SectionLabel>States</SectionLabel>
 
-      <Item
-        active={view.kind === 'export'}
-        onClick={() => setView({ kind: 'export' })}
-      >
-        <span className="text-base">⤓</span>
-        <span>匯出</span>
-      </Item>
+        {STATE_NAMES.map((name) => {
+          const state = states[name]
+          return (
+            <StateItem
+              key={name}
+              active={view.kind === 'state' && view.name === name}
+              onClick={() => setView({ kind: 'state', name })}
+              label={STATE_LABEL[name]}
+              status={state.status}
+              thumbBlob={state.staticBase ?? state.sheet}
+            />
+          )
+        })}
+
+        <SectionLabel>Output</SectionLabel>
+
+        <Item
+          active={view.kind === 'export'}
+          onClick={() => setView({ kind: 'export' })}
+          icon={<span className="text-base">⤓</span>}
+          label="匯出 .moripack"
+        />
+      </div>
     </nav>
   )
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="pt-4 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+      {children}
+    </div>
+  )
+}
+
 function Item({
-  active, onClick, children,
+  active, onClick, icon, label,
 }: {
   active: boolean
   onClick: () => void
-  children: React.ReactNode
+  icon: React.ReactNode
+  label: string
 }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center gap-2 px-3 py-2 rounded-md text-sm text-left transition-colors',
-        active ? 'bg-slate-900 text-white' : 'hover:bg-slate-200 text-slate-700',
+        'w-full group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left transition-all',
+        active
+          ? 'bg-primary text-primary-foreground shadow-sm'
+          : 'text-stone-700 hover:bg-accent/60 hover:text-accent-foreground',
       )}
     >
-      {children}
+      <span className={cn('shrink-0 w-5 flex items-center justify-center', active ? 'opacity-100' : 'opacity-70')}>
+        {icon}
+      </span>
+      <span className="flex-1 truncate">{label}</span>
+    </button>
+  )
+}
+
+function StateItem({
+  active, onClick, label, status, thumbBlob,
+}: {
+  active: boolean
+  onClick: () => void
+  label: string
+  status: SheetStatus
+  thumbBlob: Blob | null
+}) {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    if (!thumbBlob) { setUrl(null); return }
+    const u = URL.createObjectURL(thumbBlob)
+    setUrl(u)
+    return () => URL.revokeObjectURL(u)
+  }, [thumbBlob])
+
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'w-full group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-left transition-all',
+        active
+          ? 'bg-primary text-primary-foreground shadow-sm'
+          : 'text-stone-700 hover:bg-accent/60 hover:text-accent-foreground',
+      )}
+    >
+      <div className={cn(
+        'shrink-0 w-9 h-9 rounded-md border overflow-hidden flex items-center justify-center',
+        active ? 'border-primary-foreground/30 bg-primary-foreground/10' : 'border-border bg-stone-100',
+      )}>
+        {url ? (
+          <img src={url} alt={label} className="w-full h-full object-cover" />
+        ) : (
+          <span className="text-base opacity-50">·</span>
+        )}
+      </div>
+      <span className="flex-1 truncate font-medium">{label}</span>
+      <span
+        className={cn('w-2 h-2 rounded-full shrink-0', STATUS_DOT_COLOR[status])}
+        aria-label={status}
+        title={status}
+      />
     </button>
   )
 }

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 interface Props {
   sheet: Blob | null
   durationMs: number
-  size?: number    // display size in px (square)
+  size?: number
   paused?: boolean
 }
 
@@ -20,10 +20,10 @@ export function AnimationPreview({ sheet, durationMs, size = 256, paused = false
   if (!url) {
     return (
       <div
-        className="border border-dashed border-border bg-slate-50 flex items-center justify-center text-xs text-slate-400"
+        className="rounded-lg border border-dashed border-stone-300 bg-stone-50/60 flex items-center justify-center text-xs text-muted-foreground"
         style={{ width: size, height: size }}
       >
-        (no sheet)
+        no sheet
       </div>
     )
   }
@@ -32,10 +32,12 @@ export function AnimationPreview({ sheet, durationMs, size = 256, paused = false
     width: size,
     height: size,
     backgroundImage: `url(${url})`,
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: '400% 400%',
     animation: paused
       ? undefined
       : `mori-sprite-x ${durationMs / 4}ms steps(4) infinite, mori-sprite-y ${durationMs}ms steps(4) infinite`,
   }
 
-  return <div className="mori-sprite-frame border border-border" style={style} />
+  return <div className="rounded-lg overflow-hidden" style={style} />
 }

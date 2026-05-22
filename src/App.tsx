@@ -10,10 +10,12 @@ export default function App() {
   return (
     <div className="h-full flex">
       <Sidebar />
-      <main className="flex-1 overflow-auto bg-white">
-        {view.kind === 'project' && <ProjectView />}
-        {view.kind === 'state' && <StateView name={view.name} />}
-        {view.kind === 'export' && <ExportView />}
+      <main className="flex-1 overflow-auto">
+        <div className="mx-auto max-w-5xl px-8 py-10">
+          {view.kind === 'project' && <ProjectView />}
+          {view.kind === 'state' && <StateView name={view.name} />}
+          {view.kind === 'export' && <ExportView />}
+        </div>
       </main>
     </div>
   )

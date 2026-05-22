@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/store'
-import type { StateName } from '@/types/project'
+import type { StateName, SheetStatus } from '@/types/project'
 import type { TemplateKey } from '@/types/prompts'
-import { StatusBadge } from '@/components/StatusBadge'
 import { GenerateButton } from '@/components/GenerateButton'
+import { Section } from '@/components/Section'
 import { SpriteSheetPreview } from '@/components/SpriteSheetPreview'
 import { AnimationPreview } from '@/components/AnimationPreview'
 import { PromptEditorModal, type PromptEditorContext } from '@/components/PromptEditorModal'
@@ -13,6 +13,13 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+
+const STATUS_PILL: Record<SheetStatus, { label: string; cls: string }> = {
+  pending:     { label: '尚未生成', cls: 'bg-stone-100 text-stone-600 border-stone-200' },
+  placeholder: { label: 'Placeholder',   cls: 'bg-amber-50 text-amber-800 border-amber-200' },
+  animated:    { label: '已動畫化',    cls: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+}
 
 export function StateView({ name }: { name: StateName }) {
   const state = useAppStore((s) => s.project.states[name])
@@ -63,102 +70,146 @@ export function StateView({ name }: { name: StateName }) {
     finally { setGenerating(false) }
   }
 
+  const pill = STATUS_PILL[state.status]
+
   return (
-    <div className="p-6 space-y-6 max-w-5xl">
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-semibold capitalize">◆ {name}</h1>
-        <StatusBadge status={state.status} className="text-2xl" />
-        <span className="text-sm text-slate-500">{state.status}</span>
-      </div>
+    <div className="space-y-8">
+      {/* Page header */}
+      <header className="flex items-start justify-between gap-6 flex-wrap">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight capitalize text-stone-900">{name}</h1>
+            <span className={cn('text-xs font-medium px-2.5 py-0.5 rounded-full border', pill.cls)}>
+              {pill.label}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground max-w-prose">
+            這個 state 的 256×256 static base + 1024×1024 4×4 sprite sheet。先 [生靜態],再 [生動畫]。
+          </p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <GenerateButton
+            label="重生此 state 靜態"
+            onGenerate={() => runOp('B2')}
+            onEditPrompt={() => openModal('B2')}
+            generating={generating}
+          />
+          <GenerateButton
+            label={`生 ${name} 動畫`}
+            onGenerate={() => runOp('C')}
+            onEditPrompt={() => openModal('C')}
+            disabled={!state.staticBase}
+            generating={generating}
+          />
+        </div>
+      </header>
 
-      <div className="flex gap-2 flex-wrap">
-        <GenerateButton
-          label="重生此 state 靜態"
-          onGenerate={() => runOp('B2')}
-          onEditPrompt={() => openModal('B2')}
-          generating={generating}
-        />
-        <GenerateButton
-          label={`生 ${name} 動畫`}
-          onGenerate={() => runOp('C')}
-          onEditPrompt={() => openModal('C')}
-          disabled={!state.staticBase}
-          generating={generating}
-        />
-      </div>
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <span className="font-medium">⚠ 生成失敗:</span> {error}
+        </div>
+      )}
 
-      {error && <p className="text-sm text-red-600 max-w-prose">⚠ {error}</p>}
-
-      <div className="grid grid-cols-[auto_1fr] gap-6">
-        <div className="space-y-4">
-          <div>
-            <Label className="text-xs text-slate-600 block mb-1">靜態 base (256×256)</Label>
-            <div className="border border-border" style={{ width: 256, height: 256 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 items-start">
+        {/* Left column: static + config */}
+        <Section title="Static Base" subtitle="256×256 · AI 生成的代表姿勢" icon="⊙" className="lg:sticky lg:top-6">
+          <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-[conic-gradient(at_top_left,_#f5f5f4_0%,_#fafaf9_50%,_#f5f5f4_100%)] overflow-hidden" style={{ width: 232, height: 232 }}>
               {staticUrl
-                ? <img src={staticUrl} alt="static" className="w-full h-full object-contain" />
-                : <div className="w-full h-full bg-slate-50 flex items-center justify-center text-xs text-slate-400">(no static)</div>
+                ? <img src={staticUrl} alt="static" className="w-full h-full object-contain p-2" />
+                : <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">(no static)</div>
               }
             </div>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-sm">Pose Note</Label>
-            <Textarea
-              value={state.poseNote}
-              onChange={(e) => updateState(name, { poseNote: e.target.value })}
-              rows={2}
-              placeholder="e.g. 站姿、頭微抬"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-sm">Loop mode</Label>
-            <Select
-              value={state.loopMode}
-              onValueChange={(v) => updateState(name, { loopMode: v as 'loop' | 'one-shot' })}
-            >
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="loop">loop</SelectItem>
-                <SelectItem value="one-shot">one-shot</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-sm">Duration: {state.loopDurationMs} ms</Label>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-stone-700">Pose Note</Label>
+              <Textarea
+                value={state.poseNote}
+                onChange={(e) => updateState(name, { poseNote: e.target.value })}
+                rows={2}
+                placeholder="e.g. 站姿、頭微抬"
+                className="resize-none text-sm"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-stone-700">Loop mode</Label>
+                <Select
+                  value={state.loopMode}
+                  onValueChange={(v) => updateState(name, { loopMode: v as 'loop' | 'one-shot' })}
+                >
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="loop">loop</SelectItem>
+                    <SelectItem value="one-shot">one-shot</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-stone-700">Duration</Label>
+                <div className="text-sm text-stone-900 font-mono tabular-nums h-9 flex items-center px-1">
+                  {state.loopDurationMs} <span className="text-muted-foreground ml-1">ms</span>
+                </div>
+              </div>
+            </div>
             <Input
               type="range" min={100} max={10000} step={100}
               value={state.loopDurationMs}
               onChange={(e) => updateState(name, { loopDurationMs: parseInt(e.target.value, 10) })}
+              className="accent-emerald-600"
             />
           </div>
-        </div>
+        </Section>
 
-        <div className="space-y-4">
-          <div>
-            <Label className="text-xs text-slate-600 block mb-1">4×4 Sheet (1024×1024)</Label>
+        {/* Right column: sheet + animation */}
+        <Section title="Sprite Sheet" subtitle="點任一格選取,可寫 frame note 或重生" icon="▦">
+          <div className="flex flex-col xl:flex-row gap-6 items-start">
             <SpriteSheetPreview
               sheet={state.sheet}
               selectedCell={selectedCell}
               onCellClick={selectCell}
               size={384}
             />
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs font-medium text-stone-700 block mb-1.5">Loop preview</Label>
+                <div className="rounded-xl border border-border bg-[conic-gradient(at_top_left,_#f5f5f4_0%,_#fafaf9_50%,_#f5f5f4_100%)] p-2">
+                  <AnimationPreview sheet={state.sheet} durationMs={state.loopDurationMs} size={224} />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground max-w-[224px]">
+                {state.status === 'animated'
+                  ? '播放真實 4×4 動畫'
+                  : state.status === 'placeholder'
+                    ? '16 格 = 同張靜態,看不出動。按上方「生動畫」轉成真動畫。'
+                    : '尚未生成,先回專案頁按「生 6 狀態靜態」。'}
+              </p>
+            </div>
           </div>
-          <div>
-            <Label className="text-xs text-slate-600 block mb-1">Loop preview (256×256)</Label>
-            <AnimationPreview sheet={state.sheet} durationMs={state.loopDurationMs} />
-          </div>
-        </div>
+        </Section>
       </div>
 
+      {/* Cell editor */}
       {selectedCell !== null && (
-        <div className="border-t border-border pt-4 space-y-2">
-          <Label className="text-sm font-semibold">Frame {selectedCell + 1}</Label>
-          <Textarea
-            value={state.notes[selectedCell]}
-            onChange={(e) => setStateNote(name, selectedCell, e.target.value)}
-            rows={2}
-            placeholder="e.g. 吸氣頂點"
-          />
-          <div className="flex gap-2">
+        <Section
+          title={`Frame ${selectedCell + 1}`}
+          subtitle="這格的 note 會餵進動畫化 prompt;也可單獨重生這格"
+          icon="◈"
+          action={
+            <Button variant="ghost" size="sm" onClick={() => selectCell(null)} className="text-muted-foreground">
+              取消選取
+            </Button>
+          }
+        >
+          <div className="space-y-3 max-w-2xl">
+            <Textarea
+              value={state.notes[selectedCell]}
+              onChange={(e) => setStateNote(name, selectedCell, e.target.value)}
+              rows={3}
+              placeholder="e.g. 吸氣頂點、胸口最高"
+              className="resize-none text-sm"
+            />
             <GenerateButton
               label="重生此 frame"
               onGenerate={() => runOp('D', selectedCell)}
@@ -166,9 +217,8 @@ export function StateView({ name }: { name: StateName }) {
               disabled={!state.staticBase || !state.sheet}
               generating={generating}
             />
-            <Button variant="ghost" size="sm" onClick={() => selectCell(null)}>取消選取</Button>
           </div>
-        </div>
+        </Section>
       )}
 
       <PromptEditorModal

@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
-import { STATE_NAMES } from '@/types/project'
-import { StatusBadge } from '@/components/StatusBadge'
+import { STATE_NAMES, type SheetStatus } from '@/types/project'
+import { Section } from '@/components/Section'
 import { validateProject } from '@/lib/validation'
 import { buildManifest } from '@/lib/manifest'
 import { downloadPack } from '@/lib/exportPack'
+import { cn } from '@/lib/utils'
+
+const STATUS_ROW: Record<SheetStatus, { icon: string; tone: string; label: string }> = {
+  pending:     { icon: '○', tone: 'text-stone-400',    label: '尚未生靜態' },
+  placeholder: { icon: '◐', tone: 'text-amber-600',    label: '靜態 OK,未動畫化' },
+  animated:    { icon: '◉', tone: 'text-emerald-600',  label: '已動畫化' },
+}
 
 export function ExportView() {
   const project = useAppStore((s) => s.project)
@@ -14,6 +21,8 @@ export function ExportView() {
 
   const validation = validateProject(project)
   const manifest = buildManifest(project)
+  const animatedCount = STATE_NAMES.filter((n) => project.states[n].status === 'animated').length
+  const placeholderCount = STATE_NAMES.filter((n) => project.states[n].status === 'placeholder').length
 
   async function handleExport() {
     setError(null); setDownloading(true)
@@ -23,68 +32,86 @@ export function ExportView() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl">
-      <h1 className="text-2xl font-semibold">⤓ 匯出</h1>
+    <div className="space-y-8">
+      <header className="space-y-1.5">
+        <h1 className="text-2xl font-semibold text-stone-900 tracking-tight">匯出</h1>
+        <p className="text-sm text-muted-foreground">
+          匯出符合 <code className="font-mono text-xs text-stone-700">character-pack.md v1.0</code> 的 .moripack.zip,可直接被 mori-desktop import。
+        </p>
+      </header>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-medium border-b border-border pb-1">完成度檢查</h2>
-        <div className="space-y-1 font-mono text-sm">
+      <Section
+        title="完成度"
+        subtitle={`${animatedCount}/6 已動畫化,${placeholderCount}/6 還只是 placeholder`}
+        icon="✓"
+      >
+        <div className="space-y-1">
           {STATE_NAMES.map((n) => {
             const s = project.states[n]
-            const symbol = s.status === 'animated' ? '✓' : s.status === 'placeholder' ? '⚠' : '✗'
+            const row = STATUS_ROW[s.status]
             return (
-              <div key={n} className="grid grid-cols-[100px_120px_30px_1fr] gap-2 items-center">
-                <span className="capitalize">{n}</span>
-                <span className="flex items-center gap-2">
-                  <StatusBadge status={s.status} />
+              <div
+                key={n}
+                className="grid grid-cols-[28px_120px_140px_1fr] gap-3 items-center py-2 px-2 rounded-md hover:bg-stone-50/80"
+              >
+                <span className={cn('text-xl font-mono leading-none', row.tone)}>{row.icon}</span>
+                <span className="capitalize font-medium text-stone-800">{n}</span>
+                <span className={cn('text-xs px-2 py-0.5 rounded-full border w-fit',
+                  s.status === 'animated' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' :
+                  s.status === 'placeholder' ? 'border-amber-200 bg-amber-50 text-amber-800' :
+                  'border-stone-200 bg-stone-50 text-stone-600',
+                )}>
                   {s.status}
                 </span>
-                <span>{symbol}</span>
-                <span className="text-xs text-slate-500">
-                  {s.status === 'pending' && '尚未生靜態'}
-                  {s.status === 'placeholder' && '靜態 OK,未動畫化'}
-                  {s.status === 'animated' && 'OK'}
-                </span>
+                <span className="text-sm text-muted-foreground">{row.label}</span>
               </div>
             )
           })}
         </div>
-      </section>
+      </Section>
 
       {validation.blocking.length > 0 && (
-        <section className="space-y-1 bg-red-50 border border-red-200 p-3 rounded-md">
-          <h3 className="text-sm font-semibold text-red-900">阻擋匯出:</h3>
-          <ul className="list-disc list-inside text-sm text-red-900">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 space-y-2">
+          <h3 className="text-sm font-semibold text-red-900 flex items-center gap-2">
+            <span>⚠</span> 阻擋匯出
+          </h3>
+          <ul className="list-disc list-inside text-sm text-red-800 space-y-0.5 pl-1">
             {validation.blocking.map((b, i) => <li key={i}>{b}</li>)}
           </ul>
-        </section>
+        </div>
       )}
 
       {validation.warnings.length > 0 && (
-        <section className="space-y-1 bg-amber-50 border border-amber-200 p-3 rounded-md">
-          <h3 className="text-sm font-semibold text-amber-900">警告:</h3>
-          <ul className="list-disc list-inside text-sm text-amber-900">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-2">
+          <h3 className="text-sm font-semibold text-amber-900 flex items-center gap-2">
+            <span>!</span> 警告(仍可匯出)
+          </h3>
+          <ul className="list-disc list-inside text-sm text-amber-800 space-y-0.5 pl-1">
             {validation.warnings.map((w, i) => <li key={i}>{w}</li>)}
           </ul>
-        </section>
+        </div>
       )}
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-medium border-b border-border pb-1">manifest.json 預覽</h2>
-        <pre className="text-xs font-mono bg-slate-50 p-3 rounded-md overflow-auto max-h-96">
+      <Section title="manifest.json 預覽" subtitle="這個內容會放進 zip 的 root" icon="{}">
+        <pre className="text-xs font-mono bg-stone-50 border border-border rounded-lg p-4 overflow-auto max-h-[28rem] text-stone-800 leading-relaxed">
           {JSON.stringify(manifest, null, 2)}
         </pre>
-      </section>
+      </Section>
 
-      <div>
+      <div className="flex items-center gap-4 pt-2">
         <Button
           size="lg"
           disabled={!validation.canExport || downloading}
           onClick={handleExport}
+          className={cn(
+            'h-12 px-6 gap-2 text-base font-medium rounded-lg shadow-sm',
+            'bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-700 hover:shadow-md hover:-translate-y-px transition-all',
+            'disabled:from-stone-300 disabled:to-stone-400 disabled:translate-y-0 disabled:shadow-none',
+          )}
         >
-          ⤓ 匯出 {project.metadata.packageName}.moripack.zip
+          {downloading ? '打包中…' : `⤓ 匯出 ${project.metadata.packageName}.moripack.zip`}
         </Button>
-        {error && <p className="text-sm text-red-600 mt-2">⚠ {error}</p>}
+        {error && <p className="text-sm text-red-600">⚠ {error}</p>}
       </div>
     </div>
   )

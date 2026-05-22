@@ -1,0 +1,21 @@
+/* Sprite sheet animation: 4×4 grid, row-major, two-axis independent steps.
+   Matches mori-desktop floating.css. Apply with inline style:
+     background-image: url(<sheet>)
+     animation: mori-sprite-x <duration/4>ms steps(4) infinite,
+                mori-sprite-y <duration>ms   steps(4) infinite
+*/
+.mori-sprite-frame {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-size: 400% 400%;
+}
+
+@keyframes mori-sprite-x { to { background-position-x: -400%; } }
+@keyframes mori-sprite-y { to { background-position-y: -400%; } }
+
+/* Static (animation OFF) — show only frame 1 */
+.mori-sprite-static {
+  background-position: 0 0;
+  background-size: 400% 400%;
+}

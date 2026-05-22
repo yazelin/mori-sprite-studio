@@ -1,3 +1,5 @@
+@import './styles/sprite-anim.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

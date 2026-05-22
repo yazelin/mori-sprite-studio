@@ -61,6 +61,27 @@ DO change (subtle, idle animation only):
 - Hair / leaves / antenna / tail / aura drift by 1-3 px
 - One small gesture appropriate to state "{{state_name}}" — within the existing character design, not new props
 
+⚠ EXCEPTION — cyclic locomotion states (walking, dragging):
+The "DO NOT change body pose" rule above is RELAXED for these states.
+For walking specifically:
+- You MUST redraw LEG positions across cells — that is the entire point
+  of a gait cycle. If you keep legs identical in all 16 cells, you have
+  FAILED the task.
+- Cells 1-8 show one full step (e.g. left leg forward → middle → right
+  leg forward), cells 9-16 mirror that as the second step.
+- Arms swing in counter-phase (when left leg is forward, right arm is
+  forward, and vice versa).
+- Body bobs UP 2-4 px during leg swing-through (between steps), DOWN at
+  the step plant.
+- Head + torso CENTER stays at roughly the same canvas position in each
+  cell (don't translate the whole character) — only the legs, arms, and
+  body tilt change.
+
+For dragging: you MAY swing the body left/right 5-8 px across cells
+(suspended swing), and the limbs MAY hang/swing freely — only the
+"feet on ground" constraint is broken (feet should be visibly off any
+surface in every cell).
+
 State pose hint: {{pose_note}}
 Loop mode: {{loop_mode}}
   - "loop" mode: frame 16 must connect seamlessly back to frame 1

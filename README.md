@@ -1,73 +1,37 @@
-# React + TypeScript + Vite
+# Mori Sprite Studio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Web tool to produce `.moripack.zip` character packs for [mori-desktop](https://github.com/yazelin/mori-desktop) — compliant with `character-pack.md` v1.0.
 
-Currently, two official plugins are available:
+## Workflow
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Upload 1 character reference image
+2. Click "生 6 狀態靜態" — AI generates a 3×2 grid of 6 state poses; tool splits into 6 individual statics
+3. Per state: click "生 <state> 動畫" — AI animates the static into a 4×4 sprite sheet
+4. Optionally fine-tune individual frames
+5. Export `.moripack.zip`
 
-## React Compiler
+## Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm install -g vercel
+cp .env.example .env.local  # optional: only if you want the author-fallback path locally
+npm run dev                  # uses `vercel dev` so /api/* works
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open http://localhost:3000
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## AI Providers
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+| Provider | Where to get key |
+|---|---|
+| Codex-Image (self-hosted) | yazelin's service |
+| Vertex Gemini | console.cloud.google.com/vertex-ai/express |
+| Google Gemini Direct | aistudio.google.com |
+| Author Fallback | (no user key — uses `AUTHOR_API_KEY` env var server-side) |
+
+A 5th path — **BYOG** (Bring Your Own Generation) — lets you copy the prompt, run any AI tool yourself, and upload the result.
+
+## Spec / Design
+
+See [`docs/superpowers/specs/2026-05-22-mori-sprite-studio-design.md`](docs/superpowers/specs/2026-05-22-mori-sprite-studio-design.md).

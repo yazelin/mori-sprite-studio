@@ -80,7 +80,6 @@ export function ProjectView() {
         onClose={() => setModalOpen(false)}
         context={modalContext}
         onGenerate={runB1WithCustomPrompt}
-        onByogStart={() => alert('TODO M12: BYOG path')}
       />
     </div>
   )

@@ -46,7 +46,11 @@ export function StateView({ name }: { name: StateName }) {
 
   function openModal(key: TemplateKey, cellIdx?: number) {
     const { vars, opLabel } = buildPromptContext(key, name, cellIdx)
-    setModalContext({ templateKey: key, vars, opLabel })
+    setModalContext({
+      templateKey: key, vars, opLabel,
+      stateName: name,
+      cellIndex: cellIdx,
+    })
     setPendingKey(key)
     setModalOpen(true)
   }
@@ -172,7 +176,6 @@ export function StateView({ name }: { name: StateName }) {
         onClose={() => setModalOpen(false)}
         context={modalContext}
         onGenerate={runWithCustomPrompt}
-        onByogStart={() => alert('TODO M12: BYOG path')}
       />
     </div>
   )

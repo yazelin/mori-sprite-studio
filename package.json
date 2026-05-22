@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:vercel": "vercel dev --listen 3000",
+    "dev:vercel": "bash scripts/dev-vercel.sh",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",

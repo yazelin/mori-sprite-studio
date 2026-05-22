@@ -104,21 +104,14 @@ export async function buildReferences(
   }
   if (templateKey === 'W' || templateKey === 'Dr') {
     // Walking / Dragging:  STANDALONE pipeline (no pre-tiling).
-    // Pass character ref + all available static bases of OTHER states as
-    // identity anchors. AI gets full freedom to design 16 frames from
-    // scratch — no 'paint variations on top of identical grid' constraint.
+    // Keep references MINIMAL — too many refs (we tried 8) makes AI
+    // synthesize a 'compromise' character that drifts identity. Just two:
+    //   1. character ref (canonical identity source-of-truth)
+    //   2. own state static base if it exists (pose anchor for this state)
     if (!project.characterRef) throw new Error('character ref required')
     if (!stateName) throw new Error('stateName required')
     const chromaHex = CHROMA_COLORS[store.chroma.key].hex
     const refs: Blob[] = [project.characterRef]
-    // Include other states' static bases (chroma-filled) as identity anchors
-    for (const name of STATE_NAMES) {
-      if (name === stateName) continue
-      const sb = project.states[name]?.staticBase
-      if (sb) refs.push(await fillBgWithChroma(sb, chromaHex))
-    }
-    // Include THIS state's static base too if it exists (gives AI a baseline
-    // single-frame pose, but no pre-tiled grid forcing identical 16 cells).
     const ownSb = project.states[stateName].staticBase
     if (ownSb) refs.push(await fillBgWithChroma(ownSb, chromaHex))
     return refs

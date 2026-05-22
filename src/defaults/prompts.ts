@@ -194,7 +194,40 @@ Output rules:
 
   W: `Create a 1024×1024 PNG that is a 4×4 grid (16 cells of 256×256 each) showing the reference character WALKING. This is a fully designed walking animation cycle — you design ALL 16 frames freely from scratch (NOT animate-on-top of an existing tile).
 
-CHARACTER IDENTITY (from reference image you received):
+═══════════════════════════════════════════════════════════════════
+🔒 IDENTITY SOURCE-OF-TRUTH: REFERENCE IMAGE #1
+═══════════════════════════════════════════════════════════════════
+
+The FIRST reference image you received IS the character. You MUST match
+its identity EXACTLY in every one of the 16 cells:
+- Hair COLOR + length + style (every detail)
+- Face features (eyes, nose, mouth shape, eye color)
+- Skin tone, ear shape (pointed elf ears stay pointed!)
+- Every piece of clothing — count the garments, match each one
+- Every accessory — flowers, jewelry, belts, etc.
+- Art style — anime / chibi / illustration style of reference STAYS
+
+DO NOT:
+- Add accessories not in the reference (no red flowers if no red flowers
+  in ref, no brown belt if no brown belt in ref, no red shoes if no red
+  shoes in ref)
+- Change clothes (if reference has long dress, output stays long dress)
+- Change to pixel-art style if reference is anime/illustration
+
+If reference #2 also provided (your own state's static base), that's a
+POSE example — match its identity too (it should already match ref #1).
+Use ref #2 as inspiration for what walking pose looks like for this
+character, then design 16 cells around it.
+
+═══════════════════════════════════════════════════════════════════
+NO EMPTY CELLS — STRICTLY ENFORCED
+═══════════════════════════════════════════════════════════════════
+
+ALL 16 cells of the 4×4 grid MUST contain a full character. NO cell may be
+empty, transparent (chroma-only), partially-drawn, or cropped. Every cell
+has: full head, full body, full limbs visible, character centered.
+
+CHARACTER CONTEXT (what walking means for this character):
 {{state_semantics}}
 
 ═══════════════════════════════════════════════════════════════════
@@ -263,7 +296,23 @@ OUTPUT RULES:
 
   Dr: `Create a 1024×1024 PNG that is a 4×4 grid (16 cells of 256×256 each) showing the reference character BEING LIFTED OFF THE GROUND AND SWINGING. The character is held by an invisible force (mouse cursor) from above, dangling in mid-air, with a slight sway across the 16 frames. You design ALL 16 frames freely from scratch.
 
-CHARACTER IDENTITY (from reference image you received):
+═══════════════════════════════════════════════════════════════════
+🔒 IDENTITY SOURCE-OF-TRUTH: REFERENCE IMAGE #1
+═══════════════════════════════════════════════════════════════════
+
+The FIRST reference image you received IS the character. You MUST match
+its identity EXACTLY in every one of the 16 cells: same hair, face,
+clothes, accessories, art style. DO NOT add elements not in the ref.
+DO NOT change to pixel-art if ref is anime/illustration.
+
+═══════════════════════════════════════════════════════════════════
+NO EMPTY CELLS — STRICTLY ENFORCED
+═══════════════════════════════════════════════════════════════════
+
+ALL 16 cells must contain a full character. No empty / transparent /
+partial / cropped cells.
+
+CHARACTER CONTEXT (what dragging means for this character):
 {{state_semantics}}
 
 ═══════════════════════════════════════════════════════════════════

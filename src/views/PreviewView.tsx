@@ -14,6 +14,8 @@ const STATE_LABEL: Record<StateName, string> = {
   thinking:  'Thinking',
   done:      'Done',
   error:     'Error',
+  walking:   'Walking',
+  dragging:  'Dragging',
 }
 
 type Theme = 'light' | 'dark'

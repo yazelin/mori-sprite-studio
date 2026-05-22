@@ -1,9 +1,38 @@
 export type StateName =
   | 'idle' | 'sleeping' | 'recording' | 'thinking' | 'done' | 'error'
+  | 'walking' | 'dragging'
 
-export const STATE_NAMES: readonly StateName[] = [
+/**
+ * Required 6 states — mori-desktop expects a pack to ship all of these
+ * (else the manifest is rejected). Authors must produce sheets for all 6.
+ */
+export const REQUIRED_STATE_NAMES: readonly StateName[] = [
   'idle', 'sleeping', 'recording', 'thinking', 'done', 'error',
 ] as const
+
+/**
+ * Optional 2 states — mori-desktop has them in `optional_states` array.
+ * If a pack doesn't ship walking/dragging sheets, the engine falls back
+ * to idle.png + CSS scale (per character-pack.md):
+ *
+ *   walking  — sprite when the floating widget wanders / walks across
+ *              the screen. Engine mirrors with scaleX(-1) for left
+ *              direction, so design facing right.
+ *   dragging — sprite shown when user holds + drags >4 px. Suggested
+ *              pose: feet off ground, slight wobble, surprised / happy.
+ */
+export const OPTIONAL_STATE_NAMES: readonly StateName[] = [
+  'walking', 'dragging',
+] as const
+
+export const STATE_NAMES: readonly StateName[] = [
+  ...REQUIRED_STATE_NAMES,
+  ...OPTIONAL_STATE_NAMES,
+] as const
+
+export function isOptionalState(name: StateName): boolean {
+  return (OPTIONAL_STATE_NAMES as readonly StateName[]).includes(name)
+}
 
 export type SheetStatus = 'pending' | 'placeholder' | 'animated'
 

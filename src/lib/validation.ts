@@ -1,5 +1,5 @@
 import type { Project } from '@/types/project'
-import { STATE_NAMES } from '@/types/project'
+import { STATE_NAMES, REQUIRED_STATE_NAMES, isOptionalState } from '@/types/project'
 
 export interface ValidationResult {
   canExport: boolean
@@ -24,9 +24,9 @@ export function validateProject(p: Project): ValidationResult {
     blocking.push('display_name 不能為空')
   }
 
-  const sheetCount = STATE_NAMES.filter((n) => p.states[n].sheet !== null).length
-  if (sheetCount === 0) {
-    blocking.push('至少要有 1 個 state 有 sheet')
+  const requiredSheetCount = REQUIRED_STATE_NAMES.filter((n) => p.states[n].sheet !== null).length
+  if (requiredSheetCount === 0) {
+    blocking.push('至少要有 1 個必要 state 有 sheet')
   }
 
   if (!SEMVER_RE.test(p.metadata.version)) {
@@ -34,8 +34,13 @@ export function validateProject(p: Project): ValidationResult {
   }
 
   for (const n of STATE_NAMES) {
+    const isOpt = isOptionalState(n)
     if (!p.states[n].sheet) {
-      warnings.push(`${n} 沒有 sheet,匯出時會缺檔(mori-desktop 會 fallback default)`)
+      // Missing optional state is INFORMATIONAL — pack still ships fine without it,
+      // mori-desktop falls back to idle.png + CSS scale. Only warn for required.
+      if (!isOpt) {
+        warnings.push(`${n} 沒有 sheet,匯出時會缺檔(mori-desktop 會 fallback default)`)
+      }
     } else if (p.states[n].status === 'placeholder') {
       warnings.push(`${n} 仍為 placeholder,未動畫化`)
     }

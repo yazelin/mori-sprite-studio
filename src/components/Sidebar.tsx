@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Home, Download, Leaf, ImagePlus, Eye } from 'lucide-react'
 import { useAppStore } from '@/store'
-import { STATE_NAMES, type StateName, type SheetStatus } from '@/types/project'
+import {
+  REQUIRED_STATE_NAMES, OPTIONAL_STATE_NAMES,
+  type StateName, type SheetStatus,
+} from '@/types/project'
 import { cn } from '@/lib/utils'
 import { QuotaIndicator } from '@/components/QuotaIndicator'
 
@@ -12,6 +15,8 @@ const STATE_LABEL: Record<StateName, string> = {
   thinking:  'Thinking',
   done:      'Done',
   error:     'Error',
+  walking:   'Walking',
+  dragging:  'Dragging',
 }
 
 const STATUS_DOT_COLOR: Record<SheetStatus, string> = {
@@ -65,9 +70,25 @@ export function Sidebar() {
           label="專案設定"
         />
 
-        <SectionLabel>States</SectionLabel>
+        <SectionLabel>States(必要 6 個)</SectionLabel>
 
-        {STATE_NAMES.map((name) => {
+        {REQUIRED_STATE_NAMES.map((name) => {
+          const state = states[name]
+          return (
+            <StateItem
+              key={name}
+              active={view.kind === 'state' && view.name === name}
+              onClick={() => setView({ kind: 'state', name })}
+              label={STATE_LABEL[name]}
+              status={state.status}
+              thumbBlob={state.staticBase ?? state.sheet}
+            />
+          )
+        })}
+
+        <SectionLabel>Optional states(可選 2 個)</SectionLabel>
+
+        {OPTIONAL_STATE_NAMES.map((name) => {
           const state = states[name]
           return (
             <StateItem

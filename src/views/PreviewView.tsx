@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Eye, Sun, Moon } from 'lucide-react'
+import { Eye, Sun, Moon, Circle, Square, Squircle } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { STATE_NAMES, type StateName } from '@/types/project'
 import { Section } from '@/components/Section'
@@ -17,6 +17,14 @@ const STATE_LABEL: Record<StateName, string> = {
 }
 
 type Theme = 'light' | 'dark'
+type Shape = 'circle' | 'rounded' | 'square'
+type Backplate = 'logo' | 'plain'    // logo=show backdrop, plain=hide backdrop
+
+const SHAPE_RADIUS: Record<Shape, string> = {
+  circle:  '50%',
+  rounded: '16px',  // default x11_shape_radius
+  square:  '0',
+}
 
 /**
  * 桌面預覽 — what mori-desktop floating widget actually shows.
@@ -37,28 +45,50 @@ type Theme = 'light' | 'dark'
  */
 export function PreviewView() {
   const [theme, setTheme] = useState<Theme>('light')
+  const [shape, setShape] = useState<Shape>('circle')
+  const [backplate, setBackplate] = useState<Backplate>('logo')
 
   return (
     <div className="space-y-8">
       <header className="space-y-1.5">
         <h1 className="text-2xl font-semibold text-stone-900 tracking-tight">桌面預覽</h1>
         <p className="text-sm text-muted-foreground max-w-prose">
-          模擬 mori-desktop 的 160×160 floating window:角色背板墊在底層,
-          sprite sheet 動畫疊上去。6 個 state 並排,可切換 light / dark theme
-          看背板自動換的樣子。
+          模擬 mori-desktop 的 160×160 floating window:角色背板墊在底層(可關),
+          124×124 sprite 動畫置中疊上去(有 drop-shadow)。可切 light/dark theme、
+          window shape(圓 / 圓角 / 方)+ backplate 模式,跟 mori-desktop 的 Config
+          → Floating 三個設定 1:1 對應。
         </p>
       </header>
 
       <Section
-        title="6 個 state × theme 切換"
-        subtitle="跟 mori-desktop 跑起來時看到的一樣 — backdrop + sprite 兩層疊。"
+        title="6 個 state × shape × theme"
+        subtitle="跟 mori-desktop 跑起來時看到的一樣。"
         icon={<Eye {...ICON_PROPS} />}
-        action={<ThemeToggle theme={theme} setTheme={setTheme} />}
       >
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
-          {STATE_NAMES.map((name) => (
-            <FloatingWidgetMockup key={name} state={name} theme={theme} />
-          ))}
+        <div className="space-y-4">
+          <div className="flex gap-4 flex-wrap items-end">
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Theme</div>
+              <ThemeToggle theme={theme} setTheme={setTheme} />
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Window shape</div>
+              <ShapeToggle shape={shape} setShape={setShape} />
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Backplate mode</div>
+              <BackplateToggle backplate={backplate} setBackplate={setBackplate} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+            {STATE_NAMES.map((name) => (
+              <FloatingWidgetMockup
+                key={name} state={name}
+                theme={theme} shape={shape} backplate={backplate}
+              />
+            ))}
+          </div>
         </div>
       </Section>
 
@@ -126,7 +156,52 @@ function ThemeToggle({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) =
   )
 }
 
-function FloatingWidgetMockup({ state, theme }: { state: StateName; theme: Theme }) {
+function ShapeToggle({ shape, setShape }: { shape: Shape; setShape: (s: Shape) => void }) {
+  return (
+    <div className="inline-flex rounded-md border border-border bg-card overflow-hidden">
+      {(['circle', 'rounded', 'square'] as const).map((s, i) => {
+        const Icon = s === 'circle' ? Circle : s === 'rounded' ? Squircle : Square
+        const label = s === 'circle' ? '圓' : s === 'rounded' ? '圓角' : '方'
+        return (
+          <button
+            key={s}
+            type="button"
+            onClick={() => setShape(s)}
+            className={`h-8 px-3 text-xs flex items-center gap-1.5 transition-colors ${i > 0 ? 'border-l border-border' : ''} ${shape === s ? 'bg-emerald-100 text-emerald-900' : 'text-muted-foreground hover:bg-stone-50'}`}
+          >
+            <Icon size={13} strokeWidth={1.75} />
+            {label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function BackplateToggle({ backplate, setBackplate }: { backplate: Backplate; setBackplate: (b: Backplate) => void }) {
+  return (
+    <div className="inline-flex rounded-md border border-border bg-card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setBackplate('logo')}
+        className={`h-8 px-3 text-xs transition-colors ${backplate === 'logo' ? 'bg-emerald-100 text-emerald-900' : 'text-muted-foreground hover:bg-stone-50'}`}
+      >
+        顯示
+      </button>
+      <button
+        type="button"
+        onClick={() => setBackplate('plain')}
+        className={`h-8 px-3 text-xs border-l border-border transition-colors ${backplate === 'plain' ? 'bg-emerald-100 text-emerald-900' : 'text-muted-foreground hover:bg-stone-50'}`}
+      >
+        關閉
+      </button>
+    </div>
+  )
+}
+
+function FloatingWidgetMockup({
+  state, theme, shape, backplate,
+}: { state: StateName; theme: Theme; shape: Shape; backplate: Backplate }) {
   const spriteState = useAppStore((s) => s.project.states[state])
   const backdropBlob = useAppStore((s) => theme === 'light' ? s.project.backdropLight : s.project.backdropDark)
   const [backdropUrl, setBackdropUrl] = useState<string | null>(null)
@@ -138,42 +213,61 @@ function FloatingWidgetMockup({ state, theme }: { state: StateName; theme: Theme
     return () => URL.revokeObjectURL(u)
   }, [backdropBlob])
 
-  // Simulated floating window environment per theme — mimics what the user's
-  // desktop wallpaper might look like in light vs dark mode.
+  // Simulated desktop wallpaper behind the floating window
   const envClass = theme === 'light'
     ? 'bg-gradient-to-br from-amber-50 via-stone-100 to-amber-100'
     : 'bg-gradient-to-br from-slate-800 via-slate-900 to-stone-900'
   const labelClass = theme === 'light' ? 'text-stone-800' : 'text-stone-200'
   const subClass = theme === 'light' ? 'text-stone-500' : 'text-stone-400'
 
-  const fallbackBackdrop = theme === 'light'
-    // mori-desktop default gradient for light
-    ? 'radial-gradient(circle at center, rgba(255,255,255,0.6), rgba(254,243,199,0.3) 60%, transparent 90%)'
-    // for dark
-    : 'radial-gradient(circle at center, rgba(45,55,72,0.7), rgba(30,41,59,0.4) 60%, transparent 90%)'
+  // Match mori-desktop's exact sizing (floating.css PR #107):
+  //   .mori-sprite-area = 160×160 (window)
+  //   .mori-backdrop    = inset 0 → 160×160 cover (only when backplate=logo)
+  //   .mori-sprite      = 124×124 CENTERED + drop-shadow
+  const STAGE_PX = 160
+  const SPRITE_PX = 124
+  const showBackdrop = backplate === 'logo'
+
+  // Status text
+  const statusText =
+    spriteState.status === 'animated' ? '已動畫化' :
+    spriteState.status === 'placeholder' ? 'placeholder' :
+    '尚未生成'
+  const backdropText = !showBackdrop ? 'backplate 關閉' :
+                       backdropUrl ? `${theme} backdrop` :
+                       '無背板上傳 · fallback'
 
   return (
     <div className={`rounded-2xl p-4 ${envClass} flex flex-col items-center gap-2`}>
       <div
-        className="relative w-40 h-40 rounded-lg overflow-hidden"
+        className="relative overflow-hidden"
         style={{
-          background: backdropUrl ? undefined : fallbackBackdrop,
+          width: STAGE_PX, height: STAGE_PX,
+          borderRadius: SHAPE_RADIUS[shape],
         }}
       >
-        {/* Layer 1: backdrop */}
-        {backdropUrl && (
+        {/* Layer 1: backdrop (only when backplate=logo) */}
+        {showBackdrop && backdropUrl && (
           <img
             src={backdropUrl}
             alt={`${theme} backdrop`}
             className="absolute inset-0 w-full h-full object-cover"
           />
         )}
-        {/* Layer 2: sprite animation (canvas) */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        {/* Layer 2: sprite — 124×124 centered + drop shadow */}
+        <div
+          className="absolute"
+          style={{
+            top: (STAGE_PX - SPRITE_PX) / 2,
+            left: (STAGE_PX - SPRITE_PX) / 2,
+            width: SPRITE_PX, height: SPRITE_PX,
+            filter: 'drop-shadow(0 3px 5px rgba(0, 0, 0, 0.4))',
+          }}
+        >
           <AnimationPreview
             sheet={spriteState.sheet}
             durationMs={spriteState.loopDurationMs}
-            size={160}
+            size={SPRITE_PX}
             transform={spriteState.transform}
           />
         </div>
@@ -181,11 +275,7 @@ function FloatingWidgetMockup({ state, theme }: { state: StateName; theme: Theme
       <div className="text-center">
         <div className={`text-sm font-medium capitalize ${labelClass}`}>{STATE_LABEL[state]}</div>
         <div className={`text-[10px] ${subClass}`}>
-          {spriteState.status === 'animated' ? '已動畫化' :
-           spriteState.status === 'placeholder' ? 'placeholder' :
-           '尚未生成'}
-          {' · '}
-          {backdropUrl ? `${theme} backdrop` : 'fallback gradient'}
+          {statusText} · {backdropText}
         </div>
       </div>
     </div>

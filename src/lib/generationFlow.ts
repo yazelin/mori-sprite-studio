@@ -99,17 +99,24 @@ export async function buildReferences(
     if (!stateName) throw new Error('stateName required for C')
     const sb = project.states[stateName].staticBase
     if (!sb) throw new Error(`${stateName} has no staticBase`)
-    // ANTI-JITTER + ANTI-CHROMA-LEAK: pre-build a 1024×1024 4×4 grid with
-    // 16 identical copies of the staticBase, AND pre-fill the canvas with
-    // the user's chroma color underneath. This gives the AI two anchors:
-    //   1) layout / position lock — character is already positioned, the
-    //      AI only paints micro-variations on top
-    //   2) background lock — AI sees the magenta/green it should preserve,
-    //      no ambiguity between "transparent" and "filled". This kills the
-    //      pink-halo issue we got when feeding a transparent reference.
+    // Three anchors for C:
+    //   1) Pre-tiled 4×4 placeholder sheet (this state's staticBase × 16,
+    //      pre-filled with chroma BG). Locks layout + position + background.
+    //   2) Other states' staticBases (chroma-filled). Identity anchor — AI
+    //      sees the same character rendered in multiple poses so it can't
+    //      drift the outfit / hair / proportions when interpreting dramatic
+    //      state semantics.
+    //   3) Original characterRef. Final identity ground-truth.
     const chromaHex = CHROMA_COLORS[store.chroma.key].hex
     const placeholderSheet = await buildPlaceholderSheetWithChromaBg(sb, chromaHex)
-    return [placeholderSheet]
+    const refs: Blob[] = [placeholderSheet]
+    for (const name of STATE_NAMES) {
+      if (name === stateName) continue
+      const otherSb = project.states[name]?.staticBase
+      if (otherSb) refs.push(await fillBgWithChroma(otherSb, chromaHex))
+    }
+    if (project.characterRef) refs.push(project.characterRef)
+    return refs
   }
   if (templateKey === 'D') {
     if (!stateName || cellIndex === undefined) throw new Error('stateName + cellIndex required for D')

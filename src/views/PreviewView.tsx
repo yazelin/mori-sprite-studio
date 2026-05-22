@@ -93,20 +93,39 @@ export function PreviewView() {
       </Section>
 
       <Section
-        title="背板組合機制(技術說明)"
-        subtitle="mori-desktop PR #107 cross-platform backdrop chain"
+        title="為什麼有「角色背板」這個功能?(技術背景)"
+        subtitle="Linux X11 的半透明渲染問題 + 跨平台 backdrop chain"
         icon={<Eye {...ICON_PROPS} />}
       >
         <div className="text-sm text-muted-foreground space-y-3 max-w-prose">
+          <h3 className="text-stone-900 font-semibold text-base">背板的原因:Linux X11 半透明 bug</h3>
           <p>
-            mori-desktop 用 3 層 fallback 找背板,從具體到 fallback 排序:
+            mori-desktop 是 Tauri 2 + WebKit2GTK。**在 Linux X11 桌面環境下,WebKit2GTK
+            渲染半透明 / 漸層會有 alpha compositing bug** — 桌面看到的不是設計的視覺,
+            而是被 black background bleed 出怪色;對 floating window 這種小視窗,
+            sprite 周圍會出現一圈 50% 黑霧。
           </p>
+          <p>
+            **角色背板就是這個問題的 workaround**:整個 floating window 範圍鋪一張
+            **完全不透明 (opaque)** 的圖,然後**用 XShape extension 做 sharp pixel clip
+            切出想要的形狀(圓 / 圓角 / 方)**。整個 region 都是 opaque pixel,WebKit
+            無從 bleed;同時 X server 的 XShape clip 是 binary mask(0/1),不靠 alpha
+            blending,所以邊緣銳利乾淨。
+          </p>
+          <p>
+            **Wayland 跟 Windows 本身原生支援整視窗 alpha channel**,所以 sprite 不墊
+            背板也能正常顯示透明(只是視覺上少了那圈光暈設計)。Wayland / Windows 上把
+            backplate 設成「關閉」,sprite 就會直接浮在桌面上。
+          </p>
+
+          <h3 className="text-stone-900 font-semibold text-base pt-2">3 層 backdrop fallback chain</h3>
+          <p>mori-desktop 找背板的優先順序(高 → 低):</p>
           <ol className="list-decimal pl-5 space-y-1.5">
             <li>
-              <strong>character pack 自帶</strong> — 這個專案的「角色背板」頁上傳的
+              <strong>character pack 自帶</strong> — 這個 studio 「角色背板」頁上傳的
               <code className="text-xs bg-stone-100 px-1.5 py-0.5 rounded mx-1">backdrop-{'{dark,light}'}.png</code>
-              ,跟 sprite sheet 一起打包進 <code className="text-xs bg-stone-100 px-1.5 py-0.5 rounded">.moripack.zip</code>
-              。優先級最高,代表角色作者特別為這隻角色設計的背景。
+              ,打包進 <code className="text-xs bg-stone-100 px-1.5 py-0.5 rounded">.moripack.zip</code>
+              。每隻角色作者可設計自己的光暈 / 剪影。
             </li>
             <li>
               <strong>user 全域 fallback</strong> —
@@ -114,18 +133,22 @@ export function PreviewView() {
               。使用者個人喜好,任何角色 pack 都會繼承。
             </li>
             <li>
-              <strong>內建 fallback</strong> — mori-desktop binary 內建的純色 gradient,
-              永遠保證有底圖。
+              <strong>內建 fallback</strong> — mori-desktop binary 內建純色 gradient,
+              保證 X11 環境永遠有 opaque pixel 墊著。
             </li>
           </ol>
-          <p>
-            這頁的預覽只算層 1(本 pack 的背板)+ sprite。如果 user 全域有設,
-            mori-desktop 顯示的視覺會用 layer 1(這頁顯示的)。如果沒上傳本 pack
-            背板,user 開 mori-desktop 會看到 layer 2 或 3(這頁顯示透明 fallback)。
-          </p>
-          <p>
-            theme 切換對應 mori-desktop 的 <code className="text-xs bg-stone-100 px-1.5 py-0.5 rounded">prefers-color-scheme</code>
-            CSS media query — 系統暗色模式用 dark,亮色用 light。
+
+          <h3 className="text-stone-900 font-semibold text-base pt-2">三個設定怎麼互動</h3>
+          <ul className="list-disc pl-5 space-y-1.5">
+            <li><strong>Window shape</strong>:控制 floating window 外形(border-radius + XShape clip)。圓 = 半徑 50%、圓角 = 16 px、方 = 0。</li>
+            <li><strong>Backplate mode</strong>:logo = 顯示背板圖(Linux X11 需要、其他平台美觀);plain = 不放圖(Wayland / Windows 可,X11 會 fallback 到內建 gradient 避免渲染 bug)。</li>
+            <li><strong>Theme</strong>:對應系統 <code className="text-xs bg-stone-100 px-1.5 py-0.5 rounded">prefers-color-scheme</code>,自動換 dark / light 背板。</li>
+          </ul>
+
+          <p className="text-xs italic">
+            這頁預覽只展示 layer 1(本 pack 的背板)。若沒上傳本 pack 背板,user 開
+            mori-desktop 會看到 layer 2 或 3 — 視覺會有差;設計時建議至少 light + dark
+            各上傳一張,確保所有 user 看到的是你設計的版本。
           </p>
         </div>
       </Section>

@@ -244,51 +244,48 @@ export function StateView({ name }: { name: StateName }) {
           subtitle="256×256 · AI 生成的代表姿勢"
           icon={<ImageIcon {...ICON_PROPS} />}
           className="lg:sticky lg:top-6"
-          action={(
-            <div className="flex gap-1">
-              <input
-                ref={staticUploadRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0]
-                  if (f) void uploadStaticBaseFile(f)
-                  if (staticUploadRef.current) staticUploadRef.current.value = ''
-                }}
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => staticUploadRef.current?.click()}
-                disabled={generating}
-                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-                title="上傳一張 256×256 圖當這個 state 的 static base"
-              >
-                <Upload size={14} strokeWidth={1.75} />
-                上傳
-              </Button>
-              {state.staticBase && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => state.staticBase && downloadBlob(state.staticBase, `${name}-static-base.png`)}
-                  className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-                  title="下載當前 256×256 static base"
-                >
-                  <Download size={14} strokeWidth={1.75} />
-                  下載
-                </Button>
-              )}
-            </div>
-          )}
         >
           <div className="space-y-4">
-            <div className="rounded-xl border border-border tx-checker overflow-hidden aspect-square w-full max-w-[212px]">
+            <div className="rounded-xl border border-border tx-checker overflow-hidden aspect-square w-full max-w-[212px] relative group">
               {staticUrl
                 ? <img src={staticUrl} alt="static" className="w-full h-full object-contain p-2" />
                 : <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">(no static)</div>
               }
+              {/* Hover-revealed icon-only upload/download in bottom-right corner */}
+              <div className="absolute bottom-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <input
+                  ref={staticUploadRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) void uploadStaticBaseFile(f)
+                    if (staticUploadRef.current) staticUploadRef.current.value = ''
+                  }}
+                />
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  onClick={() => staticUploadRef.current?.click()}
+                  disabled={generating}
+                  className="h-7 w-7 shadow-sm bg-white/95 hover:bg-white border border-border/60"
+                  title="上傳一張 256×256 圖當這個 state 的 static base"
+                >
+                  <Upload size={13} strokeWidth={1.75} />
+                </Button>
+                {state.staticBase && (
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={() => state.staticBase && downloadBlob(state.staticBase, `${name}-static-base.png`)}
+                    className="h-7 w-7 shadow-sm bg-white/95 hover:bg-white border border-border/60"
+                    title="下載當前 256×256 static base"
+                  >
+                    <Download size={13} strokeWidth={1.75} />
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-1.5">

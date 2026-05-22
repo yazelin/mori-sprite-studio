@@ -271,11 +271,16 @@ function FloatingWidgetMockup({
   const labelClass = osTheme === 'light' ? 'text-stone-800' : 'text-stone-200'
   const subClass = osTheme === 'light' ? 'text-stone-500' : 'text-stone-400'
 
-  // Match mori-desktop's exact sizing (floating.css PR #107):
-  //   .mori-sprite-area = 160×160 (window)
-  //   .mori-backdrop    = inset 0 → 160×160 cover (only when backplate=logo)
-  //   .mori-sprite      = 124×124 CENTERED + drop-shadow
-  const STAGE_PX = 160
+  // Match mori-desktop's actual rendered sizing.
+  // tauri.conf.json declares 160×160 but the floating window actually
+  // renders ~200×200 in practice (DPI / scale factor / runtime adjust).
+  // User verified by comparing real mori-desktop screenshot to preview.
+  //   stage           ≈ 200×200 (the floating window)
+  //   .mori-backdrop  = inset 0 → fills full stage with cover
+  //   .mori-sprite    = 124×124 CENTERED → ~38 px backdrop margin shows
+  // Sprite occupies 62% of backdrop (was 77.5% at 160 stage; 62% is what
+  // the real mori-desktop visually shows).
+  const STAGE_PX = 200
   const SPRITE_PX = 124
   const showBackdrop = backplate === 'logo'
 

@@ -88,8 +88,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const data = await upstream.json()
-  const partsResp: unknown[] = data?.candidates?.[0]?.content?.parts ?? []
+  const data = await upstream.json() as Record<string, unknown>
+  const partsResp: unknown[] = (data as { candidates?: { content?: { parts?: unknown[] } }[] })?.candidates?.[0]?.content?.parts ?? []
   const imagePart = partsResp.find(
     (p): p is { inlineData: { mimeType?: string; data: string } } =>
       typeof p === 'object' && p !== null && 'inlineData' in p,

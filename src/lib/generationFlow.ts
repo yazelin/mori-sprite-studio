@@ -10,6 +10,7 @@ import {
   splitGrid,
   cropToSize,
   buildPlaceholderSheet,
+  buildPlaceholderSheetWithChromaBg,
   pasteIntoSheet,
   cropCell,
 } from './imageOps'
@@ -78,14 +79,16 @@ export async function buildReferences(
     if (!stateName) throw new Error('stateName required for C')
     const sb = project.states[stateName].staticBase
     if (!sb) throw new Error(`${stateName} has no staticBase`)
-    // NEW APPROACH (anti-jitter): instead of feeding just the 256×256
-    // static and letting AI build the 4×4 grid layout from scratch
-    // (which lets size/position drift), pre-build the 1024×1024 4×4
-    // placeholder sheet with 16 identical copies of the staticBase
-    // and hand THAT to the AI. Now the AI sees the exact target layout
-    // with character already locked in position — it only needs to
-    // paint micro-variations per cell, not lay out the grid itself.
-    const placeholderSheet = await buildPlaceholderSheet(sb)
+    // ANTI-JITTER + ANTI-CHROMA-LEAK: pre-build a 1024×1024 4×4 grid with
+    // 16 identical copies of the staticBase, AND pre-fill the canvas with
+    // the user's chroma color underneath. This gives the AI two anchors:
+    //   1) layout / position lock — character is already positioned, the
+    //      AI only paints micro-variations on top
+    //   2) background lock — AI sees the magenta/green it should preserve,
+    //      no ambiguity between "transparent" and "filled". This kills the
+    //      pink-halo issue we got when feeding a transparent reference.
+    const chromaHex = CHROMA_COLORS[store.chroma.key].hex
+    const placeholderSheet = await buildPlaceholderSheetWithChromaBg(sb, chromaHex)
     return [placeholderSheet]
   }
   if (templateKey === 'D') {

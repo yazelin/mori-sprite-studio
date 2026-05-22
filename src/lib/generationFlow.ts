@@ -105,24 +105,34 @@ export async function buildReferences(
   if (templateKey === 'W' || templateKey === 'Dr') {
     // Walking / Dragging:  STANDALONE pipeline (no pre-tiling).
     //
-    // References:
+    // References (mirrors how C template anchors identity — that's why
+    // sleeping / done / etc preserve Mori's outfit while W/Dr drift):
     //   1. character ref (canonical identity portrait)
-    //   2. walking/dragging OWN static base (which per the updated
-    //      semantics is now a NEUTRAL FULL-BODY STANDING POSE — both
-    //      feet planted, hands at sides, full body head-to-toe visible.
-    //      NOT a walking pose, so it doesn't anchor AI to a specific
-    //      gait. It provides identity + body proportions + the fact
-    //      that feet exist and are visible).
+    //   2. W/Dr OWN static base (neutral full-body standing per the
+    //      updated walking/dragging semantics — gives feet + proportions
+    //      anchor without locking gait pose)
+    //   3. Other 6 states' static bases (idle/sleeping/recording/etc) —
+    //      strong identity anchors. AI sees "this character in 6 other
+    //      poses, all with same outfit / hair / accessories", making
+    //      identity drift much harder than with just 2 refs.
     //
-    // Using the own static (now neutral) means walking gets a static
-    // designed for IT (with feet shown) rather than borrowing idle's
-    // static which may not show feet at all.
+    // This brings W/Dr ref count up to ~8, matching what C template uses
+    // for the other 6 states. We tried minimal (just character ref) and
+    // identity drifted; adding back the multi-state anchor should match
+    // the identity preservation that other states get from C template.
     if (!project.characterRef) throw new Error('character ref required')
     if (!stateName) throw new Error('stateName required')
     const chromaHex = CHROMA_COLORS[store.chroma.key].hex
     const refs: Blob[] = [project.characterRef]
     const ownSb = project.states[stateName].staticBase
     if (ownSb) refs.push(await fillBgWithChroma(ownSb, chromaHex))
+    // Identity anchors: every OTHER state's static base (chroma-filled),
+    // skipping the W/Dr own (already added above)
+    for (const name of STATE_NAMES) {
+      if (name === stateName) continue
+      const sb = project.states[name]?.staticBase
+      if (sb) refs.push(await fillBgWithChroma(sb, chromaHex))
+    }
     return refs
   }
   if (templateKey === 'C') {

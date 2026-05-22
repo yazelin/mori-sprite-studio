@@ -70,6 +70,36 @@ Loop mode: {{loop_mode}}
 DEFAULT PATTERN — choose based on loop_mode:
 ═══════════════════════════════════════════════════════════════════
 
+▼ OVERRIDE (cyclic locomotion states like "walking", "dragging"):
+  If the State semantics above explicitly describes WALKING / GAIT CYCLE /
+  STEP CADENCE / SWING / WOBBLE / SUSPENDED MOTION across multiple frames,
+  IGNORE the default loop pattern below — that pattern is for "alive but
+  holding still" breathing, which produces 16 nearly-identical frames and
+  is WRONG for locomotion.
+
+  Instead, follow the State semantics' frame-by-frame motion description
+  EXACTLY. For walking, this means:
+    • Frames 1-8:  one complete step (e.g. left leg forward at frame 1,
+                   passing-through middle at frame 4, right leg forward
+                   at frame 8). Arms counter-swing across these frames.
+    • Frames 9-16: a second complete step in mirror (right leg forward
+                   at frame 9, passing-through at frame 12, left leg
+                   forward at frame 16). Frame 16 must connect back to
+                   frame 1 seamlessly (full gait cycle = 2 steps).
+    • Body bobs up/down 2-4 px per step (down at step plant, up at swing).
+    • LEGS MUST visibly move between every pair of adjacent frames. No
+      "16 nearly-identical poses" — adjacent frames differ noticeably.
+
+  For dragging (suspended swing): apply a similar cyclic principle —
+  body oscillates left/right ~5-8 px across the 16 frames (e.g. left at
+  frame 1, center at frame 4, right at frame 8, center at frame 12, left
+  at frame 16 = complete sway cycle). Hair / clothes / accessories trail
+  the motion.
+
+  Adjacent frames in cyclic locomotion MUST differ visibly — not by 1-2 px
+  micro-drift, but by clear pose progression (e.g. limb position, body
+  tilt, hair sweep).
+
 ▼ IF loop_mode == "loop" (anatomy-agnostic idle pattern):
   • Frames 1-3:   character at resting baseline (all secondary features at rest)
   • Frame 4:      primary silhouette begins a subtle 1-2 px expansion (character's equivalent of "breath in" — for humanoid this is chest rise; for a plant it's leaves lifting; for a gem it's a faint glow; for a slime it's the body stretching upward)
@@ -135,4 +165,17 @@ OUTPUT RULES:
 - No drop shadows, no ground plane, no scenery.`,
 }
 
-export const CHROMA_SUFFIX_TEMPLATE = `Background: pure solid {{chroma_color}} (#{{chroma_hex}}) covering 100% of the canvas edge-to-edge. No shadow, no gradient, no noise, no texture, no other colors. The character must NOT contain this exact color anywhere — not on clothes, hair, eyes, accessories, highlights, reflected light, or shadows. If the reference uses any color too close to #{{chroma_hex}}, substitute with a clearly different color. Pixels matching #{{chroma_hex}} will be programmatically removed by chroma-key, so any accidental matches in the character become holes.`
+export const CHROMA_SUFFIX_TEMPLATE = `Background: pure solid {{chroma_color}} (#{{chroma_hex}}) covering 100% of the canvas edge-to-edge.
+
+CRITICAL — EXACT COLOR REQUIREMENT:
+- The background MUST be EXACTLY #{{chroma_hex}} (RGB values exactly as specified).
+- DO NOT use a near-match, pastel variant, lighter shade, or "looks similar" color.
+- For magenta (#FF00FF) this means R=255, G=0, B=255 — NOT pink (#FFC0CB), NOT light pink (#FFB6C1), NOT hot pink (#FF69B4), NOT any pinkish variant. It must be the FULL-SATURATION digital magenta — vivid, electric, almost neon, the kind of color a green-screen studio would use.
+- For green (#00FF00) this means R=0, G=255, B=0 — NOT olive, NOT lime, NOT pastel green. Full-saturation electric green.
+
+WHY THIS MATTERS — pixels matching #{{chroma_hex}} will be programmatically removed by a strict chroma-key filter on the client. If your background is the WRONG shade (pink instead of magenta, lime instead of green), the chroma key will FAIL to remove it and the user will see colored bands around the character.
+
+CONTENT RULES:
+- No shadow, no gradient, no noise, no texture, no other colors in the background.
+- The character must NOT contain this exact color anywhere — not on clothes, hair, eyes, accessories, highlights, reflected light, or shadows. If the reference uses any color too close to #{{chroma_hex}}, substitute with a clearly different color.
+- Pixels matching #{{chroma_hex}} on the character become holes after chroma-key removal.`

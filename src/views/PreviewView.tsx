@@ -44,8 +44,8 @@ const SHAPE_RADIUS: Record<Shape, string> = {
  * how each state actually looks when the user runs mori-desktop.
  */
 export function PreviewView() {
-  const [backdropTheme, setBackdropTheme] = useState<Theme>('light')
-  const [systemTheme, setSystemTheme] = useState<Theme>('light')
+  const [appTheme, setAppTheme] = useState<Theme>('light')
+  const [osTheme, setOsTheme] = useState<Theme>('light')
   const [shape, setShape] = useState<Shape>('circle')
   const [backplate, setBackplate] = useState<Backplate>('logo')
 
@@ -54,12 +54,11 @@ export function PreviewView() {
       <header className="space-y-1.5">
         <h1 className="text-2xl font-semibold text-stone-900 tracking-tight">桌面預覽</h1>
         <p className="text-sm text-muted-foreground max-w-prose">
-          模擬 mori-desktop 的 160×160 floating window:角色背板墊在底層(可關),
-          124×124 sprite 動畫置中疊上去(有 drop-shadow)。可獨立切換
-          **角色背板選哪張**(Light/Dark)跟**模擬的系統桌面亮暗**,
-          幫你檢查 light backdrop 在 dark 桌面下會不會被吞、反之亦然。
-          再加 window shape(圓 / 圓角 / 方)+ backplate 模式,跟 mori-desktop 的
-          Config → Floating 設定 1:1 對應。
+          模擬 mori-desktop 的 160×160 floating window。**有兩個獨立的 theme**:
+          mori-desktop App 的主題(在 mori-desktop Config 設,決定用 light 還是 dark 背板)、
+          作業系統的 theme(決定桌布視覺)。實際 user 可以在 Config 把 App 設成
+          跟系統不同的 theme(例如 dark 系統下用 light App),所以這頁拆開讓你
+          看各種組合下角色會長什麼樣。
         </p>
       </header>
 
@@ -71,12 +70,18 @@ export function PreviewView() {
         <div className="space-y-4">
           <div className="flex gap-4 flex-wrap items-end">
             <div>
-              <div className="text-xs text-muted-foreground mb-1">角色背板</div>
-              <ThemeToggle theme={backdropTheme} setTheme={setBackdropTheme} />
+              <div className="text-xs text-muted-foreground mb-1">
+                mori-desktop App 主題
+                <span className="ml-1 text-stone-400">(決定用哪張背板)</span>
+              </div>
+              <ThemeToggle theme={appTheme} setTheme={setAppTheme} />
             </div>
             <div>
-              <div className="text-xs text-muted-foreground mb-1">模擬系統桌面</div>
-              <ThemeToggle theme={systemTheme} setTheme={setSystemTheme} />
+              <div className="text-xs text-muted-foreground mb-1">
+                作業系統 OS 主題
+                <span className="ml-1 text-stone-400">(模擬桌布)</span>
+              </div>
+              <ThemeToggle theme={osTheme} setTheme={setOsTheme} />
             </div>
             <div>
               <div className="text-xs text-muted-foreground mb-1">Window shape</div>
@@ -89,17 +94,17 @@ export function PreviewView() {
           </div>
 
           <p className="text-[11px] text-muted-foreground italic">
-            提醒:mori-desktop 實際跑時,背板選擇是跟著系統 theme 自動切換的
-            (light 系統 → light 背板,dark 系統 → dark 背板)。這頁刻意拆開,
-            是為了讓你 debug 「萬一 user 把系統設成跟我預期不同的 theme,
-            backdrop 看起來會怎樣?」。
+            在 mori-desktop 裡,App 主題可在 Config tab 手動指定(不會自動跟系統同步),
+            所以 4 種組合都可能在 user 端發生 — Light App / Light OS、
+            Light App / Dark OS、Dark App / Light OS、Dark App / Dark OS。
+            每種組合都要看一下,確認 backdrop 設計在所有場景都不至於消失或太突兀。
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
             {STATE_NAMES.map((name) => (
               <FloatingWidgetMockup
                 key={name} state={name}
-                backdropTheme={backdropTheme} systemTheme={systemTheme}
+                appTheme={appTheme} osTheme={osTheme}
                 shape={shape} backplate={backplate}
               />
             ))}
@@ -238,16 +243,18 @@ function BackplateToggle({ backplate, setBackplate }: { backplate: Backplate; se
 }
 
 function FloatingWidgetMockup({
-  state, backdropTheme, systemTheme, shape, backplate,
+  state, appTheme, osTheme, shape, backplate,
 }: {
   state: StateName;
-  backdropTheme: Theme;       // which backdrop image (light or dark)
-  systemTheme: Theme;         // simulated desktop background (light or dark)
+  appTheme: Theme;       // mori-desktop's own theme (set in its Config tab) — picks backdrop
+  osTheme: Theme;        // user's operating system theme — picks wallpaper bg
   shape: Shape;
   backplate: Backplate;
 }) {
   const spriteState = useAppStore((s) => s.project.states[state])
-  const backdropBlob = useAppStore((s) => backdropTheme === 'light' ? s.project.backdropLight : s.project.backdropDark)
+  // App theme decides which backdrop image (matches mori-desktop's
+  // html[data-theme-base="light"] .mori-backdrop CSS binding)
+  const backdropBlob = useAppStore((s) => appTheme === 'light' ? s.project.backdropLight : s.project.backdropDark)
   const [backdropUrl, setBackdropUrl] = useState<string | null>(null)
 
   useEffect(() => {
@@ -257,12 +264,12 @@ function FloatingWidgetMockup({
     return () => URL.revokeObjectURL(u)
   }, [backdropBlob])
 
-  // Simulated DESKTOP wallpaper (controlled by systemTheme, independent of backdrop choice)
-  const envClass = systemTheme === 'light'
+  // OS theme decides the simulated desktop wallpaper behind the floating window
+  const envClass = osTheme === 'light'
     ? 'bg-gradient-to-br from-amber-50 via-stone-100 to-amber-100'
     : 'bg-gradient-to-br from-slate-800 via-slate-900 to-stone-900'
-  const labelClass = systemTheme === 'light' ? 'text-stone-800' : 'text-stone-200'
-  const subClass = systemTheme === 'light' ? 'text-stone-500' : 'text-stone-400'
+  const labelClass = osTheme === 'light' ? 'text-stone-800' : 'text-stone-200'
+  const subClass = osTheme === 'light' ? 'text-stone-500' : 'text-stone-400'
 
   // Match mori-desktop's exact sizing (floating.css PR #107):
   //   .mori-sprite-area = 160×160 (window)
@@ -278,7 +285,7 @@ function FloatingWidgetMockup({
     spriteState.status === 'placeholder' ? 'placeholder' :
     '尚未生成'
   const backdropText = !showBackdrop ? 'backplate 關閉' :
-                       backdropUrl ? `${backdropTheme} backdrop` :
+                       backdropUrl ? `${appTheme} backdrop` :
                        '無背板上傳 · fallback'
 
   return (
@@ -294,7 +301,7 @@ function FloatingWidgetMockup({
         {showBackdrop && backdropUrl && (
           <img
             src={backdropUrl}
-            alt={`${backdropTheme} backdrop`}
+            alt={`${appTheme} backdrop`}
             className="absolute inset-0 w-full h-full object-cover"
           />
         )}

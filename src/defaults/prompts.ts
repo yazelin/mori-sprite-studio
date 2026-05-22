@@ -62,16 +62,22 @@ DEFAULT 16-FRAME IDLE PATTERN (anatomy-agnostic — interpret each beat appropri
   • Frames 1-3:   character at resting baseline (all secondary features at rest)
   • Frame 4:      primary silhouette begins a subtle 1-2 px expansion (the character's equivalent of "breath in" — for humanoid this is chest rise; for a plant it's leaves lifting; for a gem it's a faint glow; for a slime it's the body stretching upward)
   • Frame 5:      expansion approaches peak; one prominent feature begins its closing/dimming moment if applicable (for a character with eyes this is the lid starting to drop; for a glowing character this is brightness peaking before fading; for a character with no closable feature, simply continue the silhouette expansion)
-  • Frame 6:      peak expansion + peak closure/dim moment (mid-"blink" equivalent — eyes fully closed if eyes exist, otherwise hold the peak silhouette + add any state-specific accent)
-  • Frame 7:      hold peak briefly
+  • Frame 6:      peak expansion + peak closure/dim moment (mid-"blink" equivalent — eyes fully closed if eyes exist, otherwise hold the peak silhouette)
+  • Frame 7:      hold peak briefly (no new motion introduced)
   • Frame 8:      reverse begins (silhouette starts shrinking back; closure starts opening / dim returns to bright)
   • Frames 9-10:  silhouette returns to baseline; closure fully reopens if applicable
-  • Frames 11-13: resting baseline; subtle drift of any free-flowing features (hair, leaves, tail, aura wisps, antenna, cape — whatever the character has) by 1-3 px
-  • Frame 14:     subtle accent moment appropriate to state "{{state_name}}" (a gesture / pulse / wave / glance — whatever fits the character's form and the state)
-  • Frame 15:     accent settling
-  • Frame 16:     back to baseline so frame 16 → frame 1 loops seamlessly
+  • Frames 11-16: resting baseline; only allow 1-2 px drift of free-flowing features (hair tips, leaves, tail end, aura wisps — whatever the character has). NO head turning, NO gestures, NO accent moments, NO new motions introduced. These frames bridge the loop back to frame 1 with the smallest possible change.
 
-This pattern uses ABSTRACT motion descriptors. If the character has no eyes, skip the closure/blink beats — just continue the silhouette expansion. If the character has no flowing features, skip the drift. Adapt every beat to the character's actual design (the pre-tiled grid you received shows you exactly what the character is — work within that).
+CRITICAL — frames 11-16 are PURE HOLD with only ambient drift on already-flowing features. Do NOT introduce:
+- Head turns, head tilts, head movements of any kind
+- New gestures, hand movements, finger waves
+- New facial expressions
+- Body shifts or postural changes
+- Anything that looks like a "second beat" in the animation
+
+The idle loop has exactly ONE active beat (the breath/blink in frames 4-8). The rest of the loop is "alive but holding still".
+
+This pattern uses ABSTRACT motion descriptors. If the character has no eyes, skip the closure/blink beats — just continue the silhouette expansion. If the character has no flowing features, skip the drift entirely. Adapt every beat to the character's actual design (the pre-tiled grid you received shows you exactly what the character is — work within that).
 
 This is a default — use per-cell hints below if any are filled in:
 

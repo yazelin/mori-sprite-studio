@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ImagePlus, Sun, Moon, X } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Section } from '@/components/Section'
-import { Button } from '@/components/ui/button'
 
 const ICON_PROPS = { size: 18, strokeWidth: 1.75 } as const
 
@@ -58,6 +57,7 @@ function BackdropSlot({ which }: { which: 'light' | 'dark' }) {
   const blob = useAppStore((s) => which === 'light' ? s.project.backdropLight : s.project.backdropDark)
   const setBackdrop = useAppStore((s) => s.setBackdrop)
   const [url, setUrl] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     if (!blob) { setUrl(null); return }
@@ -73,6 +73,12 @@ function BackdropSlot({ which }: { which: 'light' | 'dark' }) {
     ? 'bg-gradient-to-br from-stone-50 to-stone-100'
     : 'bg-gradient-to-br from-stone-700 to-stone-900'
 
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault()
+    const f = e.dataTransfer.files?.[0]
+    if (f) setBackdrop(which, f)
+  }
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm font-medium text-stone-800">
@@ -81,41 +87,48 @@ function BackdropSlot({ which }: { which: 'light' | 'dark' }) {
         <span className="ml-auto text-xs font-mono text-muted-foreground">{filename}</span>
       </div>
 
-      <label
-        className={`block aspect-square rounded-xl border-2 border-dashed cursor-pointer overflow-hidden relative
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="sr-only"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) setBackdrop(which, f)
+          if (inputRef.current) inputRef.current.value = ''
+        }}
+      />
+
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={onDrop}
+        className={`block w-full aspect-square rounded-xl border-2 border-dashed cursor-pointer overflow-hidden relative
           ${url ? 'border-border' : 'border-stone-300 hover:border-emerald-400'} ${bgClass}`}
       >
-        <input
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            if (f) setBackdrop(which, f)
-            e.target.value = ''
-          }}
-        />
         {url ? (
           <>
-            <img src={url} alt={label} className="w-full h-full object-contain" />
-            <Button
-              type="button"
-              size="icon"
-              variant="secondary"
-              onClick={(e) => { e.preventDefault(); setBackdrop(which, null) }}
-              className="absolute top-2 right-2 h-7 w-7 shadow-sm bg-white/95 hover:bg-white border border-border/60"
+            <img src={url} alt={label} className="w-full h-full object-contain pointer-events-none" />
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => { e.stopPropagation(); setBackdrop(which, null) }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setBackdrop(which, null) } }}
+              className="absolute top-2 right-2 h-7 w-7 rounded-md shadow-sm bg-white/95 hover:bg-white border border-border/60 flex items-center justify-center cursor-pointer"
               title="移除"
             >
               <X size={13} strokeWidth={1.75} />
-            </Button>
+            </span>
           </>
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground pointer-events-none">
             <ImagePlus size={28} strokeWidth={1.5} />
             <span>點此上傳 {which === 'light' ? '淺色' : '深色'} 背板</span>
+            <span className="text-[10px]">(也可拖檔進來)</span>
           </div>
         )}
-      </label>
+      </button>
     </div>
   )
 }

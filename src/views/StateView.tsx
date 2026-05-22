@@ -8,8 +8,9 @@ import { Section } from '@/components/Section'
 import { SpriteSheetPreview } from '@/components/SpriteSheetPreview'
 import { AnimationPreview } from '@/components/AnimationPreview'
 import { PromptEditorModal, type PromptEditorContext } from '@/components/PromptEditorModal'
-import { runGeneration, runGenerationWithPrompt, buildPromptContext } from '@/lib/generationFlow'
+import { runGeneration, runGenerationWithPrompt, buildPromptContext, reapplyChromaToState } from '@/lib/generationFlow'
 import { buildAPNG, downloadBlob } from '@/lib/apngExport'
+import { Eraser } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -93,6 +94,13 @@ export function StateView({ name }: { name: StateName }) {
     downloadBlob(state.sheet, `${name}-raw-4x4-sheet.png`)
   }
 
+  async function rechroma() {
+    setError(null); setGenerating(true)
+    try { await reapplyChromaToState(name) }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)) }
+    finally { setGenerating(false) }
+  }
+
   const pill = STATUS_PILL[state.status]
 
   return (
@@ -124,6 +132,17 @@ export function StateView({ name }: { name: StateName }) {
             disabled={!state.staticBase}
             generating={generating}
           />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={rechroma}
+            disabled={!state.sheet || generating}
+            className="h-10 gap-2"
+            title="用當前 Chroma 設定(顏色 + tolerance)重新對 sheet / static base 去背"
+          >
+            <Eraser size={16} strokeWidth={1.75} />
+            重新去背
+          </Button>
           <Button
             type="button"
             variant="outline"

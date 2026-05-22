@@ -39,29 +39,33 @@ OUTPUT RULES:
 - Character must be recognizably the same as the reference (same hair, clothes, face features, proportions).
 - No drop shadows, no ground plane, no scenery.`,
 
-  C: `A 4×4 sprite animation sheet (1024×1024 PNG, 16 frames in a 4-column × 4-row grid, each cell 256×256, played row-major) for state "{{state_name}}" of the reference character.
+  C: `You are given a 1024×1024 PNG that is ALREADY a 4×4 grid of 16 identical 256×256 cells. All 16 cells contain the EXACT same character at the EXACT same position, size, and pose.
 
-Classic 2D sprite animation — every cell shows the same character in the same pose, framing, scale, and position as the reference image. Frames only differ by tiny idle motion (e.g. breath, blink, hair / leaves / aura drift, gentle gesture appropriate to the character's form). The 4×4 grid is just storage layout for 16 sequential frames — not 16 different scenes.
+Your task: take this pre-built grid and ADD tiny per-cell animation variations so it becomes a working sprite animation sheet for state "{{state_name}}". Output is the SAME 4×4 grid layout, character at the SAME position and size in every cell — only small per-cell details differ.
 
-State pose: {{pose_note}}
-Loop mode: {{loop_mode}} (for "loop": frame 16 → frame 1 must be seamless; for "one-shot": frame 16 is the final pose)
+DO NOT change:
+- Character position, size, scale, or framing in any cell
+- The overall 4×4 grid layout
+- Character design (hair, clothes, palette, facing)
+- The size of any cell or the grid's dimensions
+
+DO change (subtle, idle animation only):
+- Eyelid open vs closed (1-2 cells closed = blink) if the character has eyes
+- Tiny chest / silhouette wobble of 1-3 px (breath, pulse, gentle sway)
+- Hair / leaves / antenna / tail / aura drift by 1-3 px
+- One small gesture appropriate to state "{{state_name}}"
+
+State pose hint: {{pose_note}}
+Loop mode: {{loop_mode}} (for "loop": frame 16 → frame 1 must be seamless)
 
 Frame-by-frame hints (empty = hold steady from previous frame):
 {{cell_notes_block}}
 
-CRITICAL — DO NOT apply any camera motion across the 16 frames:
-- NO camera zoom-in.
-- NO camera zoom-out.
-- NO camera dolly / pull-back / push-in.
-- NO change in focal length, perspective, or distance to subject.
-- NO making the character look bigger in some cells and smaller in others.
-- NO showing more of the body in some cells than others.
-The 16 frames are taken with a single locked-off shot at IDENTICAL distance and IDENTICAL crop. The ONLY thing the camera does is "stay still"; the only thing the character does is breathe / blink / drift slightly.
-
 Output rules:
-- Match the reference exactly in design / framing / scale / facing.
+- Output the SAME 1024×1024 4×4 grid with the same cell positions — just paint the per-cell variations on top.
 - No visible borders or grid lines between cells. No frame numbers painted on the output.
-- No shadows, no scenery, no extra props.`,
+- No shadows, no scenery, no extra props.
+- Solid magenta or green chroma background (per the auto-appended directive below) — clean fill, no patterns.`,
 
   D: `A single 256×256 frame showing the reference character in state "{{state_name}}", positioned as an intermediate pose between the previous and next frames provided.
 

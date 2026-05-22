@@ -78,7 +78,15 @@ export async function buildReferences(
     if (!stateName) throw new Error('stateName required for C')
     const sb = project.states[stateName].staticBase
     if (!sb) throw new Error(`${stateName} has no staticBase`)
-    return [sb]
+    // NEW APPROACH (anti-jitter): instead of feeding just the 256×256
+    // static and letting AI build the 4×4 grid layout from scratch
+    // (which lets size/position drift), pre-build the 1024×1024 4×4
+    // placeholder sheet with 16 identical copies of the staticBase
+    // and hand THAT to the AI. Now the AI sees the exact target layout
+    // with character already locked in position — it only needs to
+    // paint micro-variations per cell, not lay out the grid itself.
+    const placeholderSheet = await buildPlaceholderSheet(sb)
+    return [placeholderSheet]
   }
   if (templateKey === 'D') {
     if (!stateName || cellIndex === undefined) throw new Error('stateName + cellIndex required for D')
@@ -154,6 +162,25 @@ export async function applyResult(
   }
 
   throw new Error(`unknown templateKey: ${templateKey}`)
+}
+
+/**
+ * Re-apply chroma key to an existing state's sheet and static base
+ * (no AI involved). Lets the user clean lingering chroma spill (pink
+ * halos around character) by switching tolerance and re-processing.
+ */
+export async function reapplyChromaToState(stateName: StateName): Promise<void> {
+  const store = useAppStore.getState()
+  const state = store.project.states[stateName]
+  if (!state.sheet && !state.staticBase) {
+    throw new Error(`${stateName} has no sheet or static base`)
+  }
+  const cleanedSheet = state.sheet ? await applyChroma(state.sheet) : null
+  const cleanedStatic = state.staticBase ? await applyChroma(state.staticBase) : null
+  store.updateState(stateName, {
+    ...(cleanedSheet ? { sheet: cleanedSheet } : {}),
+    ...(cleanedStatic ? { staticBase: cleanedStatic } : {}),
+  })
 }
 
 /** Full end-to-end: render → provider → chroma → post-process → store. */

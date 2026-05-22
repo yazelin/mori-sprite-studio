@@ -18,6 +18,8 @@ function emptyState(name: StateName): SpriteState {
   return {
     staticBase: null,
     sheet: null,
+    rawSheet: null,
+    rawStaticBase: null,
     poseNote: '',
     notes: Array(16).fill(''),
     loopMode: DEFAULT_LOOP_MODES[name],

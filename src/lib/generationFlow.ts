@@ -130,18 +130,27 @@ export async function applyResult(
   cleanedBlob: Blob,
   stateName?: StateName,
   cellIndex?: number,
+  rawBlob?: Blob,  // optional: AI output BEFORE chroma+erode, stored for re-process
 ): Promise<void> {
   const store = useAppStore.getState()
+  const erodePx = store.chroma.edgeErosionPx
 
   if (templateKey === 'B1') {
-    const cells = await splitGrid(cleanedBlob, 3, 2)   // 6 cells, 512×512 each
+    // Split BOTH the cleaned 1536×1024 (for current static) AND the raw
+    // 1536×1024 (for storage so re-chroma can re-process). 6 cells each.
+    const cleanedCells = await splitGrid(cleanedBlob, 3, 2)
+    const rawCells = rawBlob ? await splitGrid(rawBlob, 3, 2) : null
     for (let i = 0; i < STATE_NAMES.length; i++) {
       const name = STATE_NAMES[i]
-      const staticBase = await cropToSize(cells[i], 256, 256)
+      const rawStaticBase = rawCells ? await cropToSize(rawCells[i], 256, 256) : null
+      const staticBaseNoErode = await cropToSize(cleanedCells[i], 256, 256)
+      const staticBase = erodePx > 0 ? await erodeSingleCellEdges(staticBaseNoErode, erodePx) : staticBaseNoErode
       const placeholderSheet = await buildPlaceholderSheet(staticBase)
       store.updateState(name, {
         staticBase,
+        rawStaticBase,
         sheet: placeholderSheet,
+        rawSheet: null,  // B1 only made statics; sheets here are placeholder copies, not real animation rawSheet
         status: 'placeholder',
       })
     }
@@ -151,33 +160,49 @@ export async function applyResult(
   if (!stateName) throw new Error(`stateName required for ${templateKey}`)
 
   if (templateKey === 'B2') {
-    const staticBase = await cropToSize(cleanedBlob, 256, 256)
+    const rawStaticBase = rawBlob ? await cropToSize(rawBlob, 256, 256) : null
+    const staticBaseNoErode = await cropToSize(cleanedBlob, 256, 256)
+    const staticBase = erodePx > 0 ? await erodeSingleCellEdges(staticBaseNoErode, erodePx) : staticBaseNoErode
     const placeholderSheet = await buildPlaceholderSheet(staticBase)
     store.updateState(stateName, {
       staticBase,
+      rawStaticBase,
       sheet: placeholderSheet,
+      rawSheet: null,
       status: 'placeholder',
     })
     return
   }
 
   if (templateKey === 'C') {
-    // 1024×1024 sheet, erode each cell's outer border to kill chroma spill
-    const erodePx = store.chroma.edgeErosionPx
+    // Store raw 1024×1024 + processed 1024×1024 separately
     const eroded = erodePx > 0 ? await erodeCellEdges(cleanedBlob, erodePx) : cleanedBlob
-    store.updateState(stateName, { sheet: eroded, status: 'animated' })
+    store.updateState(stateName, {
+      sheet: eroded,
+      ...(rawBlob ? { rawSheet: rawBlob } : {}),
+      status: 'animated',
+    })
     return
   }
 
   if (templateKey === 'D') {
     if (cellIndex === undefined) throw new Error('cellIndex required')
     const currentSheet = store.project.states[stateName].sheet
+    const currentRawSheet = store.project.states[stateName].rawSheet
     if (!currentSheet) throw new Error(`${stateName} has no sheet`)
-    const erodePx = store.chroma.edgeErosionPx
-    const rawCell = await cropToSize(cleanedBlob, 256, 256)
-    const newCell = erodePx > 0 ? await erodeSingleCellEdges(rawCell, erodePx) : rawCell
+    const rawCellNoErode = await cropToSize(cleanedBlob, 256, 256)
+    const newCell = erodePx > 0 ? await erodeSingleCellEdges(rawCellNoErode, erodePx) : rawCellNoErode
     const newSheet = await pasteIntoSheet(currentSheet, newCell, cellIndex)
-    store.updateState(stateName, { sheet: newSheet })
+    // Also paste the RAW cell into rawSheet so re-chroma can replay
+    let newRawSheet = currentRawSheet
+    if (currentRawSheet && rawBlob) {
+      const rawNewCell = await cropToSize(rawBlob, 256, 256)
+      newRawSheet = await pasteIntoSheet(currentRawSheet, rawNewCell, cellIndex)
+    }
+    store.updateState(stateName, {
+      sheet: newSheet,
+      ...(newRawSheet !== currentRawSheet ? { rawSheet: newRawSheet } : {}),
+    })
     return
   }
 
@@ -185,19 +210,31 @@ export async function applyResult(
 }
 
 /**
- * Re-apply chroma key to an existing state's sheet and static base
- * (no AI involved). Lets the user clean lingering chroma spill (pink
- * halos around character) by switching tolerance and re-processing.
+ * Re-apply chroma key + edge erosion to an existing state (no AI involved).
+ *
+ * Prefers the RAW AI output (state.rawSheet / state.rawStaticBase) as
+ * source so the result is fully reversible — user can switch tolerance
+ * or erosion px back and forth without losing data. Erosion is destructive
+ * (eaten pixels are gone), so working from raw is the only way to bump
+ * erosion DOWN after going UP.
+ *
+ * Falls back to current sheet/static (legacy / pre-raw-storage data) if
+ * raw isn't available — in that case the operation IS destructive.
  */
 export async function reapplyChromaToState(stateName: StateName): Promise<void> {
   const store = useAppStore.getState()
   const state = store.project.states[stateName]
-  if (!state.sheet && !state.staticBase) {
+  if (!state.sheet && !state.staticBase && !state.rawSheet && !state.rawStaticBase) {
     throw new Error(`${stateName} has no sheet or static base`)
   }
   const erodePx = store.chroma.edgeErosionPx
-  let cleanedSheet = state.sheet ? await applyChroma(state.sheet) : null
-  let cleanedStatic = state.staticBase ? await applyChroma(state.staticBase) : null
+
+  // Source = raw (preferred) or current (legacy fallback)
+  const sheetSource = state.rawSheet ?? state.sheet
+  const staticSource = state.rawStaticBase ?? state.staticBase
+
+  let cleanedSheet = sheetSource ? await applyChroma(sheetSource) : null
+  let cleanedStatic = staticSource ? await applyChroma(staticSource) : null
   if (erodePx > 0) {
     if (cleanedSheet) cleanedSheet = await erodeCellEdges(cleanedSheet, erodePx)
     if (cleanedStatic) cleanedStatic = await erodeSingleCellEdges(cleanedStatic, erodePx)
@@ -238,7 +275,7 @@ export async function runGenerationWithPrompt(
     outputSize: OUTPUT_SIZE[templateKey],
   })
   const cleaned = await applyChroma(raw)
-  await applyResult(templateKey, cleaned, stateName, cellIndex)
+  await applyResult(templateKey, cleaned, stateName, cellIndex, raw)
 }
 
 export { OUTPUT_SIZE }

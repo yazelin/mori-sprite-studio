@@ -10,6 +10,15 @@ export type SheetStatus = 'pending' | 'placeholder' | 'animated'
 export interface SpriteState {
   staticBase: Blob | null
   sheet: Blob | null
+  /**
+   * Raw AI-returned sheet BEFORE chroma key + edge erosion. Stored so
+   * "重新去背" can re-process from the original output when the user
+   * changes chroma tolerance or edge erosion — erosion is destructive
+   * (eaten pixels are gone), so we can't go back without the raw.
+   */
+  rawSheet: Blob | null
+  /** Raw AI-returned static base BEFORE chroma + erosion (same reason). */
+  rawStaticBase: Blob | null
   poseNote: string
   notes: string[]
   loopMode: 'loop' | 'one-shot'

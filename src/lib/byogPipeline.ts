@@ -14,5 +14,8 @@ export async function processByogUpload(
   cellIndex?: number,
 ): Promise<void> {
   const cleaned = await applyChroma(uploaded, skipChromaKey)
-  await applyResult(templateKey, cleaned, stateName, cellIndex)
+  // Treat the uploaded blob as the "raw" so re-chroma can replay from it.
+  // If user opted to skip chroma, the upload is already transparent —
+  // store as raw too; re-chroma will be a no-op on transparent pixels.
+  await applyResult(templateKey, cleaned, stateName, cellIndex, uploaded)
 }

@@ -83,17 +83,31 @@ DEFAULT PATTERN — choose based on loop_mode:
   CRITICAL — loop mode has exactly ONE active beat (frames 4-8). The rest is "alive but holding still". No head turns, no new expressions, no body shifts after frame 10.
 
 ▼ IF loop_mode == "one-shot" (motion arc, not a hold):
-  The character PROGRESSES through a brief motion. Frames are NOT mostly identical — they tell a short visual story from rest → peak → settle. Adjacent frames should differ by clear small amounts (not by tiny invisible amounts like loop mode), so that at the chosen playback speed (typically 1.5-2.5 seconds for 16 frames = ~100-150 ms per frame), each frame is visible and the motion reads smoothly without flicker.
+  The character PROGRESSES through a brief motion. Frames are NOT mostly identical — they tell a short visual story. Adjacent frames should differ by clear small amounts (not by tiny invisible amounts like loop mode), so that at typical playback speed (1.5-2.5 seconds for 16 frames = ~100-150 ms per frame), each frame is visible and motion reads smoothly without flicker.
 
+  TWO sub-patterns — pick based on the state's energy semantic:
+
+  ─── Sub-pattern A: BURST-AND-SETTLE (use when state energy releases, e.g. done celebration, "yay!" → calm pride) ───
   • Frame 1:     starting pose (lower energy version of the {{state_name}} pose)
-  • Frames 2-4:  energy builds — character begins the gesture (arms rising, body leaning in, expression intensifying)
+  • Frames 2-4:  energy builds — character begins the gesture
   • Frames 5-7:  approach peak (gesture nearly complete, energy at max)
-  • Frame 8:     PEAK MOMENT (the most expressive instant of the {{state_name}} gesture — biggest smile, highest arms, brightest sparkles, etc.)
-  • Frames 9-11: peak held + small accent variation (slight bounce, sparkle pulse, gentle rocking)
+  • Frame 8:     PEAK MOMENT (most expressive instant — biggest smile, highest arms, brightest sparkles)
+  • Frames 9-11: peak held + small accent variation (bounce, sparkle pulse)
   • Frames 12-14:settle begins — energy easing down
-  • Frames 15-16:final resting pose (the character relaxes into a calmer version of the gesture; this is what's visible after the animation completes)
+  • Frames 15-16:final resting pose (calmer version of the gesture, what's visible after animation completes)
 
-  CRITICAL for one-shot: do NOT change FACIAL EXPRESSION dramatically between adjacent frames. Eyes stay open OR closed for runs of 3-4 frames, then transition smoothly. Same with mouth open/closed. Rapid expression flicker (eyes open / closed / open / closed across consecutive frames) looks like jitter, not animation. Choose ONE expression for frames 1-7, ONE for frames 8-11 (the peak), ONE for frames 12-16 (the settle) — within each group keep facial features identical.
+  ─── Sub-pattern B: SUSTAINED-ENERGY (use when state energy should HOLD throughout, e.g. error distress, panic, ongoing worry — settling would break the dramatic intent) ───
+  • Frame 1:     full intensity of the {{state_name}} pose (no "starting low" — drop in already at full energy)
+  • Frames 2-4:  small accent variations (slight head shake / tilt / sweat-drop appearing / sparkle pulse)
+  • Frames 5-7:  continue at full intensity — small wobble or shake variation
+  • Frame 8:     PEAK MOMENT — slight intensification of the same gesture (e.g. mouth slightly wider, sweat-drop drips one notch)
+  • Frames 9-11: peak held with small accent variation continuing
+  • Frames 12-14:STILL at full intensity — do NOT settle / sigh / release tension. Small wobble or accent only.
+  • Frames 15-16:still at full intensity (this is what's visible after animation completes — character is held in the dramatic pose, not relaxed out of it)
+
+  Choose Sub-pattern A or B based on the state's emotional intent. As a rule: if the state's purpose is "release something" (done, yay, hooray) → Sub-pattern A. If the state's purpose is "express sustained concern / worry / panic / surprise" (error, alarmed) → Sub-pattern B.
+
+  CRITICAL for one-shot: do NOT change FACIAL EXPRESSION dramatically between adjacent frames. Eyes stay open OR closed for runs of 3-4 frames, then transition smoothly. Same with mouth open/closed. Rapid expression flicker looks like jitter, not animation. Within each frame group (1-7, 8-11, 12-16), keep facial features identical.
 
 This pattern uses ABSTRACT motion descriptors. If the character has no eyes, skip the closure/blink beats — just continue the silhouette expansion. If the character has no flowing features, skip the drift entirely. Adapt every beat to the character's actual design (the pre-tiled grid you received shows you exactly what the character is — work within that).
 

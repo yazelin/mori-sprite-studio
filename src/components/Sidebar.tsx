@@ -40,7 +40,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   }, [characterRef])
 
   return (
-    <nav className="w-full md:w-72 shrink-0 border-r border-border bg-card/60 backdrop-blur-sm flex flex-col h-full">
+    <nav className="w-full md:w-72 shrink-0 border-r border-border bg-card/60 backdrop-blur-sm flex flex-col h-full min-h-0 overflow-hidden">
       <div className="px-5 pt-6 pb-4 border-b border-border/60">
         <div className="flex items-center gap-3">
           {refUrl ? (
@@ -57,7 +57,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto px-3 py-4 space-y-1">
+      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-1">
         <Item active={view.kind === 'project'} onClick={() => { setView({ kind: 'project' }); onNavigate?.() }} icon={<Home size={16} strokeWidth={1.75} />} label="專案設定" />
         <SectionLabel>States(必要 6 個)</SectionLabel>
         {REQUIRED_STATE_NAMES.map((name) => {

@@ -35,8 +35,8 @@
     a:hover { text-decoration: underline; }
     main { position: relative; max-width: 960px; margin: 0 auto; padding: 4rem 1.5rem 8rem; }
     section { margin-block: 3.5rem; }
-    h1 { font-size: 2.75rem; line-height: 1.15; margin: 0 0 .5rem; letter-spacing: -.02em; }
-    h2 { font-size: 1.65rem; margin: 0 0 1rem; letter-spacing: -.01em; padding-bottom: .5rem; border-bottom: 1px solid var(--border); }
+    h1 { font-size: 2.75rem; line-height: 1.15; margin: 0 0 .5rem; letter-spacing: 0; }
+    h2 { font-size: 1.65rem; margin: 0 0 1rem; letter-spacing: 0; padding-bottom: .5rem; border-bottom: 1px solid var(--border); }
     h3 { font-size: 1.1rem; margin: 1.5rem 0 .5rem; }
     p, li { color: #44403c; }
     .tagline { font-size: 1.15rem; color: var(--fg-muted); margin-block: 0 1.5rem; max-width: 640px; }
@@ -56,18 +56,31 @@
     /* Sprite animation engine — explicit per-step keyframes for cross-browser
        pixel-precise alignment. Container 120×120, sheet 1024×1024 scaled to
        480×480 (4× container), each cell = 120 px = step amount. */
-    .mori-sprite { width: 120px; height: 120px; background-size: 480px 480px; background-repeat: no-repeat; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.2)); }
+    .mori-sprite {
+      --sprite-size: 120px;
+      --sprite-sheet-size: 480px;
+      --sprite-step-1: -120px;
+      --sprite-step-2: -240px;
+      --sprite-step-3: -360px;
+      width: var(--sprite-size);
+      height: var(--sprite-size);
+      background-size: var(--sprite-sheet-size) var(--sprite-sheet-size);
+      background-repeat: no-repeat;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.2));
+    }
     @keyframes sprite-x {
       0%,   24.99% { background-position-x:    0px; }
-      25%,  49.99% { background-position-x: -120px; }
-      50%,  74.99% { background-position-x: -240px; }
-      75%,  100%   { background-position-x: -360px; }
+      25%,  49.99% { background-position-x: var(--sprite-step-1); }
+      50%,  74.99% { background-position-x: var(--sprite-step-2); }
+      75%,  100%   { background-position-x: var(--sprite-step-3); }
     }
     @keyframes sprite-y {
       0%,   24.99% { background-position-y:    0px; }
-      25%,  49.99% { background-position-y: -120px; }
-      50%,  74.99% { background-position-y: -240px; }
-      75%,  100%   { background-position-y: -360px; }
+      25%,  49.99% { background-position-y: var(--sprite-step-1); }
+      50%,  74.99% { background-position-y: var(--sprite-step-2); }
+      75%,  100%   { background-position-y: var(--sprite-step-3); }
     }
 
     /* Per-state durations match DEFAULT_LOOP_DURATIONS_MS — sprite-x is duration/4 */
@@ -154,6 +167,59 @@
     .support-box { background: linear-gradient(135deg, #fefce8, #fef3c7); border: 1px solid #fcd34d; border-radius: 14px; padding: 1.5rem 2rem; text-align: center; margin-block: 2rem; }
     .support-box h2 { border: none; margin: 0 0 .5rem; }
     footer { text-align: center; color: var(--fg-muted); font-size: .85rem; padding: 2rem 0; border-top: 1px solid var(--border); margin-top: 4rem; }
+
+    @media (max-width: 640px) {
+      body { overflow-wrap: break-word; }
+      main { padding: 1.75rem 1rem 4rem; }
+      section { margin-block: 2.25rem; }
+      h1 { font-size: 2.05rem; line-height: 1.12; }
+      h2 { font-size: 1.35rem; margin-bottom: .85rem; }
+      h3 { font-size: 1rem; }
+      p, li { font-size: .98rem; }
+      .hero h1,
+      .tagline { width: 100%; }
+      .hero h1 { overflow-wrap: anywhere; }
+      .tagline { font-size: 1rem; margin-bottom: 1.25rem; }
+      .lang-switch { position: relative; top: auto; right: auto; justify-content: center; width: 100%; padding: .85rem 1rem 0; }
+      .lang-switch a { display: inline-flex; align-items: center; min-height: 38px; }
+      .hero { padding-top: .75rem; }
+      .hero-anim { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .625rem; margin-block: .85rem 1rem; max-width: 360px; }
+      .hero-anim .sprite-tile { min-width: 0; padding: .45rem; border-radius: 10px; }
+      .hero-anim .sprite-label { line-height: 1.25; min-height: 1.4em; overflow-wrap: anywhere; }
+      .mori-sprite {
+        --sprite-size: 84px;
+        --sprite-sheet-size: 336px;
+        --sprite-step-1: -84px;
+        --sprite-step-2: -168px;
+        --sprite-step-3: -252px;
+      }
+      .cta { display: grid; grid-template-columns: 1fr; width: 100%; gap: .6rem; }
+      .btn { justify-content: center; width: 100%; min-height: 44px; padding: .72rem 1rem; text-align: center; }
+      .feature-grid { grid-template-columns: 1fr; gap: .75rem; }
+      .feature-card { padding: 1rem; border-radius: 10px; }
+      img.screen { border-radius: 10px; margin-block: .75rem; }
+      pre,
+      .flow { max-width: 100%; padding: .85rem; font-size: .78rem; border-radius: 10px; -webkit-overflow-scrolling: touch; }
+      code { overflow-wrap: anywhere; }
+      pre code { overflow-wrap: normal; }
+      table { display: block; width: 100%; overflow-x: auto; border-radius: 10px; -webkit-overflow-scrolling: touch; }
+      th, td { padding: .65rem .8rem; font-size: .82rem; white-space: nowrap; vertical-align: top; }
+      .support-box { padding: 1.25rem 1rem; margin-block: 1.5rem; border-radius: 10px; }
+      footer { margin-top: 2.5rem; padding: 1.5rem 0; }
+    }
+
+    @media (max-width: 360px) {
+      main { padding-inline: .75rem; }
+      .hero-anim { gap: .5rem; }
+      .hero-anim .sprite-tile { padding: .45rem; }
+      .mori-sprite {
+        --sprite-size: 76px;
+        --sprite-sheet-size: 304px;
+        --sprite-step-1: -76px;
+        --sprite-step-2: -152px;
+        --sprite-step-3: -228px;
+      }
+    }
   </style>
 </head>
 <body>

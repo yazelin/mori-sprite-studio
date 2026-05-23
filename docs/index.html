@@ -83,12 +83,23 @@
       background-image: url('assets/walking-sheet.png');
       background-size: 520px 520px; background-repeat: no-repeat;
       filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
-      pointer-events: none; z-index: 50;
+      cursor: grab;
+      pointer-events: auto;
+      user-select: none; -webkit-user-select: none;
+      touch-action: none;
+      z-index: 50;
       will-change: transform;
-      transform: translate(-200px, 80vh);   /* initial: hidden left, near bottom */
+      transform: translate(-200px, 80vh);
       animation:
         walker-sprite-x 625ms infinite linear,
         walker-sprite-y 2500ms infinite linear;
+    }
+    .mori-walker.is-dragging {
+      cursor: grabbing;
+      background-image: url('assets/dragging-sheet.png');
+      animation:
+        walker-sprite-x 400ms infinite linear,
+        walker-sprite-y 1600ms infinite linear;
     }
     @keyframes walker-sprite-x {
       0%,   24.99% { background-position-x:    0px; }
@@ -344,7 +355,6 @@ KV_REST_API_TOKEN=...</code></pre>
 
 <script>
 (function () {
-  // Skip animation if user prefers reduced motion OR screen is too narrow.
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (window.innerWidth <= 480) return;
 
@@ -352,55 +362,102 @@ KV_REST_API_TOKEN=...</code></pre>
   if (!walker) return;
 
   const WIDTH = 130;
-  const SPEED = 90;            // px / second
-  const Y_MARGIN_TOP = 80;     // keep clear of top edge
-  const Y_MARGIN_BOTTOM = 30;  // keep clear of bottom edge
+  const SPEED = 90;
+  const Y_MARGIN_TOP = 80;
+  const Y_MARGIN_BOTTOM = 30;
 
-  let x = -WIDTH - 20;          // start fully off-screen left
-  let y = window.innerHeight - WIDTH - Y_MARGIN_BOTTOM;  // start near bottom
-  let direction = 1;            // 1 = right, -1 = left
+  let x = -WIDTH - 20;
+  let y = window.innerHeight - WIDTH - Y_MARGIN_BOTTOM;
+  let direction = 1;
   let lastFrame = performance.now();
 
+  // Drag state
+  let dragging = false;
+  let pointerOffsetX = 0;
+  let pointerOffsetY = 0;
+
   function pickNewLane() {
-    // Random Y position anywhere in the visible area (above the top margin,
-    // below the bottom margin). Each off-screen flip picks a new lane.
     const minY = Y_MARGIN_TOP;
     const maxY = window.innerHeight - WIDTH - Y_MARGIN_BOTTOM;
     y = minY + Math.random() * Math.max(0, maxY - minY);
   }
 
   function render() {
-    // Use a single composite transform — no left/top changes (purely
-    // transform-based for GPU-accelerated movement).
-    walker.style.transform = `translate(${x}px, ${y}px) scaleX(${direction})`;
+    // While dragging, character has no horizontal flip (use scaleX 1 so
+    // dragging.png stays front-facing). When walking, scaleX matches
+    // direction so character faces travel direction.
+    const sx = dragging ? 1 : direction;
+    walker.style.transform = `translate(${x}px, ${y}px) scaleX(${sx})`;
   }
 
   function tick(now) {
-    const dt = Math.min(0.1, (now - lastFrame) / 1000);  // clamp to avoid huge jumps after tab inactive
+    const dt = Math.min(0.1, (now - lastFrame) / 1000);
     lastFrame = now;
 
-    x += direction * SPEED * dt;
-
-    const vw = window.innerWidth;
-
-    // Fully off-screen on the right → flip + new lane + restart from right edge
-    if (direction === 1 && x > vw + 10) {
-      direction = -1;
-      x = vw + WIDTH;
-      pickNewLane();
-    }
-    // Fully off-screen on the left → flip + new lane + restart from left edge
-    else if (direction === -1 && x < -WIDTH - 10) {
-      direction = 1;
-      x = -WIDTH - 20;
-      pickNewLane();
+    // Only auto-walk when NOT being dragged.
+    if (!dragging) {
+      x += direction * SPEED * dt;
+      const vw = window.innerWidth;
+      if (direction === 1 && x > vw + 10) {
+        direction = -1;
+        x = vw + WIDTH;
+        pickNewLane();
+      } else if (direction === -1 && x < -WIDTH - 10) {
+        direction = 1;
+        x = -WIDTH - 20;
+        pickNewLane();
+      }
     }
 
     render();
     requestAnimationFrame(tick);
   }
 
-  // Re-evaluate Y when viewport resizes (so Mori doesn't end up outside the new viewport)
+  // ─── Drag-and-drop handling (mouse + touch unified via pointer events) ───
+
+  function onPointerDown(e) {
+    dragging = true;
+    walker.classList.add('is-dragging');
+    // Compute offset from walker's current top-left to pointer
+    // so the character doesn't snap to pointer position.
+    const px = e.clientX, py = e.clientY;
+    pointerOffsetX = px - x;
+    pointerOffsetY = py - y;
+    walker.setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+  }
+
+  function onPointerMove(e) {
+    if (!dragging) return;
+    x = e.clientX - pointerOffsetX;
+    y = e.clientY - pointerOffsetY;
+    e.preventDefault();
+  }
+
+  function onPointerEnd(e) {
+    if (!dragging) return;
+    dragging = false;
+    walker.classList.remove('is-dragging');
+    walker.releasePointerCapture?.(e.pointerId);
+
+    // After release: clamp y back into the walkable strip so she doesn't
+    // float at the very top or get stuck below the fold.
+    const maxY = window.innerHeight - WIDTH - Y_MARGIN_BOTTOM;
+    if (y < Y_MARGIN_TOP) y = Y_MARGIN_TOP;
+    if (y > maxY) y = maxY;
+
+    // Direction picks the closer edge — if she's on the right half of the
+    // screen, walk left; if on the left half, walk right. (More natural
+    // than always restarting in the same direction.)
+    const vw = window.innerWidth;
+    direction = (x + WIDTH / 2) > vw / 2 ? -1 : 1;
+  }
+
+  walker.addEventListener('pointerdown', onPointerDown);
+  walker.addEventListener('pointermove', onPointerMove);
+  walker.addEventListener('pointerup', onPointerEnd);
+  walker.addEventListener('pointercancel', onPointerEnd);
+
   window.addEventListener('resize', () => {
     const maxY = window.innerHeight - WIDTH - Y_MARGIN_BOTTOM;
     if (y > maxY) y = Math.max(Y_MARGIN_TOP, maxY);

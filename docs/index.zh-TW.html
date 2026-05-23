@@ -72,12 +72,23 @@
       background-image: url('assets/walking-sheet.png');
       background-size: 520px 520px; background-repeat: no-repeat;
       filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
-      pointer-events: none; z-index: 50;
+      cursor: grab;
+      pointer-events: auto;
+      user-select: none; -webkit-user-select: none;
+      touch-action: none;
+      z-index: 50;
       will-change: transform;
       transform: translate(-200px, 80vh);
       animation:
         walker-sprite-x 625ms infinite linear,
         walker-sprite-y 2500ms infinite linear;
+    }
+    .mori-walker.is-dragging {
+      cursor: grabbing;
+      background-image: url('assets/dragging-sheet.png');
+      animation:
+        walker-sprite-x 400ms infinite linear,
+        walker-sprite-y 1600ms infinite linear;
     }
     @keyframes walker-sprite-x {
       0%,   24.99% { background-position-x:    0px; }
@@ -335,7 +346,7 @@ KV_REST_API_TOKEN=...</code></pre>
   if (!walker) return;
 
   const WIDTH = 130;
-  const SPEED = 90;            // px / 秒
+  const SPEED = 90;
   const Y_MARGIN_TOP = 80;
   const Y_MARGIN_BOTTOM = 30;
 
@@ -344,6 +355,11 @@ KV_REST_API_TOKEN=...</code></pre>
   let direction = 1;
   let lastFrame = performance.now();
 
+  // 拖曳狀態
+  let dragging = false;
+  let pointerOffsetX = 0;
+  let pointerOffsetY = 0;
+
   function pickNewLane() {
     const minY = Y_MARGIN_TOP;
     const maxY = window.innerHeight - WIDTH - Y_MARGIN_BOTTOM;
@@ -351,22 +367,61 @@ KV_REST_API_TOKEN=...</code></pre>
   }
 
   function render() {
-    walker.style.transform = `translate(${x}px, ${y}px) scaleX(${direction})`;
+    const sx = dragging ? 1 : direction;
+    walker.style.transform = `translate(${x}px, ${y}px) scaleX(${sx})`;
   }
 
   function tick(now) {
     const dt = Math.min(0.1, (now - lastFrame) / 1000);
     lastFrame = now;
-    x += direction * SPEED * dt;
-    const vw = window.innerWidth;
-    if (direction === 1 && x > vw + 10) {
-      direction = -1; x = vw + WIDTH; pickNewLane();
-    } else if (direction === -1 && x < -WIDTH - 10) {
-      direction = 1; x = -WIDTH - 20; pickNewLane();
+    if (!dragging) {
+      x += direction * SPEED * dt;
+      const vw = window.innerWidth;
+      if (direction === 1 && x > vw + 10) {
+        direction = -1; x = vw + WIDTH; pickNewLane();
+      } else if (direction === -1 && x < -WIDTH - 10) {
+        direction = 1; x = -WIDTH - 20; pickNewLane();
+      }
     }
     render();
     requestAnimationFrame(tick);
   }
+
+  // ─── Drag handlers ───
+  function onPointerDown(e) {
+    dragging = true;
+    walker.classList.add('is-dragging');
+    pointerOffsetX = e.clientX - x;
+    pointerOffsetY = e.clientY - y;
+    walker.setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+  }
+  function onPointerMove(e) {
+    if (!dragging) return;
+    x = e.clientX - pointerOffsetX;
+    y = e.clientY - pointerOffsetY;
+    e.preventDefault();
+  }
+  function onPointerEnd(e) {
+    if (!dragging) return;
+    dragging = false;
+    walker.classList.remove('is-dragging');
+    walker.releasePointerCapture?.(e.pointerId);
+
+    // 放開後 clamp y 到可走範圍
+    const maxY = window.innerHeight - WIDTH - Y_MARGIN_BOTTOM;
+    if (y < Y_MARGIN_TOP) y = Y_MARGIN_TOP;
+    if (y > maxY) y = maxY;
+
+    // 方向選比較近的邊(右半邊往左走、左半邊往右走)
+    const vw = window.innerWidth;
+    direction = (x + WIDTH / 2) > vw / 2 ? -1 : 1;
+  }
+
+  walker.addEventListener('pointerdown', onPointerDown);
+  walker.addEventListener('pointermove', onPointerMove);
+  walker.addEventListener('pointerup', onPointerEnd);
+  walker.addEventListener('pointercancel', onPointerEnd);
 
   window.addEventListener('resize', () => {
     const maxY = window.innerHeight - WIDTH - Y_MARGIN_BOTTOM;

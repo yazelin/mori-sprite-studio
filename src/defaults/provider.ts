@@ -5,7 +5,7 @@ export const DEFAULT_PROVIDER_STATE: ProviderState = {
   codexImage: {
     baseUrl: 'https://ching-tech.ddns.net/codex-image',
     apiKey: '',
-    quality: 'standard',
+    quality: 'auto',
   },
   vertexGemini: {
     apiKey: '',

@@ -86,12 +86,14 @@ export function ProviderConfig() {
                     <Field label="Quality">
                       <Select
                         value={provider.codexImage.quality}
-                        onValueChange={(v) => update('codexImage', { quality: v as 'standard' | 'high' })}
+                        onValueChange={(v) => update('codexImage', { quality: v as 'low' | 'medium' | 'high' | 'auto' })}
                       >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="standard">standard</SelectItem>
-                          <SelectItem value="high">high</SelectItem>
+                          <SelectItem value="auto">auto(預設,讓 service 自動選)</SelectItem>
+                          <SelectItem value="low">low(快,省 quota)</SelectItem>
+                          <SelectItem value="medium">medium</SelectItem>
+                          <SelectItem value="high">high(慢,品質最好)</SelectItem>
                         </SelectContent>
                       </Select>
                     </Field>

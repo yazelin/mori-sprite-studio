@@ -63,6 +63,16 @@ function defaultSpriteState(name: StateName): SpriteState {
 }
 
 function migrate(data: Partial<PersistedShape>): Partial<PersistedShape> {
+  // Codex-Image provider: 'standard' quality was a legacy value that 422s
+  // against codex-image-service's current FastAPI schema (which requires
+  // low/medium/high/auto). Migrate to 'auto' on first load.
+  if (data.provider) {
+    const provider = data.provider as any
+    if (provider.codexImage && (provider.codexImage.quality === 'standard' || !provider.codexImage.quality)) {
+      provider.codexImage.quality = 'auto'
+    }
+  }
+
   // Prompts: backfill stateSemantics + templates for keys missing from
   // persisted prompts (e.g. walking/dragging semantics + W/Dr templates
   // added after the user saved).

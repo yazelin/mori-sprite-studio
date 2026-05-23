@@ -451,7 +451,7 @@ export function StateView({ name }: { name: StateName }) {
                 onCellClick={handleCellClick}
                 size={384}
               />
-              <div className="space-y-4 min-w-[224px]">
+              <div className="space-y-4 w-full xl:w-auto xl:min-w-[224px]">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <Label className="text-xs font-medium text-stone-700">Loop preview</Label>
@@ -474,7 +474,7 @@ export function StateView({ name }: { name: StateName }) {
                       showGuides={showGuides}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1.5 max-w-[224px]">
+                  <p className="text-xs text-muted-foreground mt-1.5 max-w-full xl:max-w-[224px]">
                     {state.status === 'animated'
                       ? '播放真實 4×4 動畫'
                       : state.status === 'placeholder'
@@ -535,7 +535,7 @@ export function StateView({ name }: { name: StateName }) {
                     animation preview (not in Static Base column). */}
                 <div className="space-y-2 pt-2 border-t border-border/60">
                   <Label className="text-xs font-medium text-stone-700">動畫參數</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <Label className="text-[11px] font-normal text-muted-foreground">Loop mode</Label>
                       <Select

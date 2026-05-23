@@ -40,16 +40,11 @@ export function Sidebar() {
   }, [characterRef])
 
   return (
-    <nav className="w-72 shrink-0 border-r border-border bg-card/60 backdrop-blur-sm flex flex-col">
-      {/* Brand */}
+    <nav className="w-full md:w-72 shrink-0 border-r border-border bg-card/60 backdrop-blur-sm flex flex-col h-full">
       <div className="px-5 pt-6 pb-4 border-b border-border/60">
         <div className="flex items-center gap-3">
           {refUrl ? (
-            <img
-              src={refUrl}
-              alt="character"
-              className="w-10 h-10 rounded-xl object-cover border border-border shadow-sm bg-stone-100"
-            />
+            <img src={refUrl} alt="character" className="w-10 h-10 rounded-xl object-cover border border-border shadow-sm bg-stone-100" />
           ) : (
             <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
               <Leaf size={18} strokeWidth={1.75} />
@@ -63,15 +58,8 @@ export function Sidebar() {
       </div>
 
       <div className="flex-1 overflow-auto px-3 py-4 space-y-1">
-        <Item
-          active={view.kind === 'project'}
-          onClick={() => setView({ kind: 'project' })}
-          icon={<Home size={16} strokeWidth={1.75} />}
-          label="專案設定"
-        />
-
+        <Item active={view.kind === 'project'} onClick={() => setView({ kind: 'project' })} icon={<Home size={16} strokeWidth={1.75} />} label="專案設定" />
         <SectionLabel>States(必要 6 個)</SectionLabel>
-
         {REQUIRED_STATE_NAMES.map((name) => {
           const state = states[name]
           return (
@@ -85,9 +73,7 @@ export function Sidebar() {
             />
           )
         })}
-
         <SectionLabel>Optional states(可選 2 個)</SectionLabel>
-
         {OPTIONAL_STATE_NAMES.map((name) => {
           const state = states[name]
           return (
@@ -101,100 +87,45 @@ export function Sidebar() {
             />
           )
         })}
-
         <SectionLabel>Extras</SectionLabel>
-
-        <Item
-          active={view.kind === 'backdrop'}
-          onClick={() => setView({ kind: 'backdrop' })}
-          icon={<ImagePlus size={16} strokeWidth={1.75} />}
-          label="角色背板"
-        />
-
-        <Item
-          active={view.kind === 'preview'}
-          onClick={() => setView({ kind: 'preview' })}
-          icon={<Eye size={16} strokeWidth={1.75} />}
-          label="桌面預覽"
-        />
-
+        <Item active={view.kind === 'backdrop'} onClick={() => setView({ kind: 'backdrop' })} icon={<ImagePlus size={16} strokeWidth={1.75} />} label="角色背板" />
+        <Item active={view.kind === 'preview'} onClick={() => setView({ kind: 'preview' })} icon={<Eye size={16} strokeWidth={1.75} />} label="桌面預覽" />
         <SectionLabel>Output</SectionLabel>
-
-        <Item
-          active={view.kind === 'export'}
-          onClick={() => setView({ kind: 'export' })}
-          icon={<Download size={16} strokeWidth={1.75} />}
-          label="匯出 .moripack"
-        />
+        <Item active={view.kind === 'export'} onClick={() => setView({ kind: 'export' })} icon={<Download size={16} strokeWidth={1.75} />} label="匯出 .moripack" />
       </div>
 
-      {/* Footer — quota + Buy Me a Coffee + GitHub */}
       <div className="mt-auto px-3 py-3 border-t border-border space-y-2 text-xs">
         <QuotaIndicator />
-        <a
-          href="https://buymeacoffee.com/yazelin"
-          target="_blank" rel="noreferrer"
-          className="flex items-center gap-2 px-2 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 transition-colors"
-          title="支持作者繼續開發 + 維持 Author Fallback API quota"
-        >
+        <a href="https://buymeacoffee.com/yazelin" target="_blank" rel="noreferrer" className="flex items-center gap-2 px-2 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 transition-colors" title="支持作者繼續開發 + 維持 Author Fallback API quota">
           <span className="text-base leading-none">☕</span>
           <span className="font-medium">Buy me a coffee</span>
         </a>
-        <a
-          href="https://github.com/yazelin/mori-sprite-studio"
-          target="_blank" rel="noreferrer"
-          className="block px-2 py-1 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          ⭐ GitHub repo
-        </a>
+        <a href="https://github.com/yazelin/mori-sprite-studio" target="_blank" rel="noreferrer" className="block px-2 py-1 text-muted-foreground hover:text-foreground transition-colors">⭐ GitHub repo</a>
       </div>
     </nav>
   )
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="pt-4 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-      {children}
-    </div>
-  )
+  return <div className="pt-4 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{children}</div>
 }
 
-function Item({
-  active, onClick, icon, label,
-}: {
-  active: boolean
-  onClick: () => void
-  icon: React.ReactNode
-  label: string
-}) {
+function Item({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
   return (
     <button
       onClick={onClick}
       className={cn(
         'w-full group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left transition-all',
-        active
-          ? 'bg-primary text-primary-foreground shadow-sm'
-          : 'text-stone-700 hover:bg-accent/60 hover:text-accent-foreground',
+        active ? 'bg-primary text-primary-foreground shadow-sm' : 'text-stone-700 hover:bg-accent/60 hover:text-accent-foreground',
       )}
     >
-      <span className={cn('shrink-0 w-5 flex items-center justify-center', active ? 'opacity-100' : 'opacity-70')}>
-        {icon}
-      </span>
+      <span className={cn('shrink-0 w-5 flex items-center justify-center', active ? 'opacity-100' : 'opacity-70')}>{icon}</span>
       <span className="flex-1 truncate">{label}</span>
     </button>
   )
 }
 
-function StateItem({
-  active, onClick, label, status, thumbBlob,
-}: {
-  active: boolean
-  onClick: () => void
-  label: string
-  status: SheetStatus
-  thumbBlob: Blob | null
-}) {
+function StateItem({ active, onClick, label, status, thumbBlob }: { active: boolean; onClick: () => void; label: string; status: SheetStatus; thumbBlob: Blob | null }) {
   const [url, setUrl] = useState<string | null>(null)
   useEffect(() => {
     if (!thumbBlob) { setUrl(null); return }
@@ -208,27 +139,14 @@ function StateItem({
       onClick={onClick}
       className={cn(
         'w-full group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-left transition-all',
-        active
-          ? 'bg-primary text-primary-foreground shadow-sm'
-          : 'text-stone-700 hover:bg-accent/60 hover:text-accent-foreground',
+        active ? 'bg-primary text-primary-foreground shadow-sm' : 'text-stone-700 hover:bg-accent/60 hover:text-accent-foreground',
       )}
     >
-      <div className={cn(
-        'shrink-0 w-9 h-9 rounded-md border overflow-hidden flex items-center justify-center',
-        active ? 'border-primary-foreground/30 bg-primary-foreground/10' : 'border-border bg-stone-100',
-      )}>
-        {url ? (
-          <img src={url} alt={label} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-base opacity-50">·</span>
-        )}
+      <div className={cn('shrink-0 w-9 h-9 rounded-md border overflow-hidden flex items-center justify-center', active ? 'border-primary-foreground/30 bg-primary-foreground/10' : 'border-border bg-stone-100')}>
+        {url ? <img src={url} alt={label} className="w-full h-full object-cover" /> : <span className="text-base opacity-50">·</span>}
       </div>
       <span className="flex-1 truncate font-medium">{label}</span>
-      <span
-        className={cn('w-2 h-2 rounded-full shrink-0', STATUS_DOT_COLOR[status])}
-        aria-label={status}
-        title={status}
-      />
+      <span className={cn('w-2 h-2 rounded-full shrink-0', STATUS_DOT_COLOR[status])} aria-label={status} title={status} />
     </button>
   )
 }

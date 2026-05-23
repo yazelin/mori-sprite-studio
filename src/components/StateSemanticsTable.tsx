@@ -13,9 +13,9 @@ export function StateSemanticsTable() {
   }
 
   return (
-    <div className="space-y-2 max-w-2xl">
+    <div className="space-y-2 w-full max-w-2xl">
       {STATE_NAMES.map((name) => (
-        <div key={name} className="grid grid-cols-[100px_1fr] items-center gap-3">
+        <div key={name} className="grid grid-cols-1 sm:grid-cols-[100px_1fr] items-center gap-2 sm:gap-3">
           <span className="text-sm font-mono capitalize">{name}</span>
           <Input
             value={semantics[name]}

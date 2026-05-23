@@ -44,32 +44,52 @@
     .hero-anim .sprite-label { font-size: .75rem; color: var(--fg-muted); letter-spacing: .02em; }
     .hero-anim .sprite-label .opt-tag { font-size: .55rem; color: var(--accent); background: var(--accent-bg); padding: 1px 5px; border-radius: 4px; margin-left: 3px; vertical-align: 1px; }
 
-    .mori-sprite { width: 120px; height: 120px; background-size: 400% 400%; background-repeat: no-repeat; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.2)); }
-    @keyframes sprite-x { to { background-position-x: -400%; } }
-    @keyframes sprite-y { to { background-position-y: -400%; } }
-    .mori-sprite.idle      { background-image: url('assets/idle-sheet.png');      animation: sprite-x 750ms steps(4) infinite, sprite-y 3000ms steps(4) infinite; }
-    .mori-sprite.sleeping  { background-image: url('assets/sleeping-sheet.png');  animation: sprite-x 1250ms steps(4) infinite, sprite-y 5000ms steps(4) infinite; }
-    .mori-sprite.recording { background-image: url('assets/recording-sheet.png'); animation: sprite-x 375ms steps(4) infinite, sprite-y 1500ms steps(4) infinite; }
-    .mori-sprite.thinking  { background-image: url('assets/thinking-sheet.png');  animation: sprite-x 500ms steps(4) infinite, sprite-y 2000ms steps(4) infinite; }
-    .mori-sprite.done      { background-image: url('assets/done-sheet.png');      animation: sprite-x 450ms steps(4) infinite, sprite-y 1800ms steps(4) infinite; }
-    .mori-sprite.error     { background-image: url('assets/error-sheet.png');     animation: sprite-x 500ms steps(4) infinite, sprite-y 2000ms steps(4) infinite; }
-    .mori-sprite.walking   { background-image: url('assets/walking-sheet.png');   animation: sprite-x 625ms steps(4) infinite, sprite-y 2500ms steps(4) infinite; }
-    .mori-sprite.dragging  { background-image: url('assets/dragging-sheet.png');  animation: sprite-x 400ms steps(4) infinite, sprite-y 1600ms steps(4) infinite; }
+    .mori-sprite { width: 120px; height: 120px; background-size: 480px 480px; background-repeat: no-repeat; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.2)); }
+    @keyframes sprite-x {
+      0%,   24.99% { background-position-x:    0px; }
+      25%,  49.99% { background-position-x: -120px; }
+      50%,  74.99% { background-position-x: -240px; }
+      75%,  100%   { background-position-x: -360px; }
+    }
+    @keyframes sprite-y {
+      0%,   24.99% { background-position-y:    0px; }
+      25%,  49.99% { background-position-y: -120px; }
+      50%,  74.99% { background-position-y: -240px; }
+      75%,  100%   { background-position-y: -360px; }
+    }
+    .mori-sprite.idle      { background-image: url('assets/idle-sheet.png');      animation: sprite-x 750ms infinite linear, sprite-y 3000ms infinite linear; }
+    .mori-sprite.sleeping  { background-image: url('assets/sleeping-sheet.png');  animation: sprite-x 1250ms infinite linear, sprite-y 5000ms infinite linear; }
+    .mori-sprite.recording { background-image: url('assets/recording-sheet.png'); animation: sprite-x 375ms infinite linear, sprite-y 1500ms infinite linear; }
+    .mori-sprite.thinking  { background-image: url('assets/thinking-sheet.png');  animation: sprite-x 500ms infinite linear, sprite-y 2000ms infinite linear; }
+    .mori-sprite.done      { background-image: url('assets/done-sheet.png');      animation: sprite-x 450ms infinite linear, sprite-y 1800ms infinite linear; }
+    .mori-sprite.error     { background-image: url('assets/error-sheet.png');     animation: sprite-x 500ms infinite linear, sprite-y 2000ms infinite linear; }
+    .mori-sprite.walking   { background-image: url('assets/walking-sheet.png');   animation: sprite-x 625ms infinite linear, sprite-y 2500ms infinite linear; }
+    .mori-sprite.dragging  { background-image: url('assets/dragging-sheet.png');  animation: sprite-x 400ms infinite linear, sprite-y 1600ms infinite linear; }
 
     .mori-walker {
       position: fixed; bottom: 1rem; left: 0;
       width: 130px; height: 130px;
       background-image: url('assets/walking-sheet.png');
-      background-size: 400% 400%; background-repeat: no-repeat;
+      background-size: 520px 520px; background-repeat: no-repeat;
       filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
       pointer-events: none; z-index: 50;
       animation:
-        walker-sprite-x 625ms steps(4) infinite,
-        walker-sprite-y 2500ms steps(4) infinite,
+        walker-sprite-x 625ms infinite linear,
+        walker-sprite-y 2500ms infinite linear,
         walker-stroll 38s linear infinite;
     }
-    @keyframes walker-sprite-x { to { background-position-x: -400%; } }
-    @keyframes walker-sprite-y { to { background-position-y: -400%; } }
+    @keyframes walker-sprite-x {
+      0%,   24.99% { background-position-x:    0px; }
+      25%,  49.99% { background-position-x: -130px; }
+      50%,  74.99% { background-position-x: -260px; }
+      75%,  100%   { background-position-x: -390px; }
+    }
+    @keyframes walker-sprite-y {
+      0%,   24.99% { background-position-y:    0px; }
+      25%,  49.99% { background-position-y: -130px; }
+      50%,  74.99% { background-position-y: -260px; }
+      75%,  100%   { background-position-y: -390px; }
+    }
     @keyframes walker-stroll {
       0%   { transform: translateX(-50px) scaleX(1); }
       48%  { transform: translateX(calc(100vw - 80px)) scaleX(1); }

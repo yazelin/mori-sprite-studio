@@ -465,13 +465,14 @@ export function StateView({ name }: { name: StateName }) {
                       參考線
                     </label>
                   </div>
-                  <div className="rounded-xl border border-border tx-checker p-2">
+                  <div className="w-full max-w-[224px] aspect-square rounded-xl border border-border tx-checker p-2">
                     <AnimationPreview
                       sheet={state.sheet}
                       durationMs={state.loopDurationMs}
                       size={224}
                       transform={state.transform}
                       showGuides={showGuides}
+                      fitParent
                     />
                   </div>
                   <p className="text-xs text-muted-foreground mt-1.5 max-w-full xl:max-w-[224px]">

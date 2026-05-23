@@ -11,6 +11,7 @@ interface Props {
   transform?: CellTransform
   /** Show horizontal/vertical reference guides for alignment tuning. */
   showGuides?: boolean
+  fitParent?: boolean
 }
 
 /**
@@ -30,6 +31,7 @@ export function AnimationPreview({
   sheet, durationMs, size = 256, paused = false,
   transform = IDENTITY_TRANSFORM,
   showGuides = false,
+  fitParent = false,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [hasSheet, setHasSheet] = useState(false)
@@ -133,7 +135,7 @@ export function AnimationPreview({
       width={size}
       height={size}
       className="rounded-lg"
-      style={{ width: size, height: size, imageRendering: 'auto' }}
+      style={{ width: fitParent ? '100%' : size, height: fitParent ? '100%' : size, imageRendering: 'auto' }}
     />
   )
 }

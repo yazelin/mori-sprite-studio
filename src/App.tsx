@@ -45,7 +45,7 @@ export default function App() {
                   <DialogTitle>手機版導覽選單</DialogTitle>
                   <DialogDescription>切換專案、狀態、預覽與匯出頁面</DialogDescription>
                 </DialogHeader>
-                <Sidebar />
+                <Sidebar onNavigate={() => setMobileNavOpen(false)} />
               </DialogContent>
             </Dialog>
           </div>

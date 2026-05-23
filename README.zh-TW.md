@@ -265,11 +265,40 @@ Studio code:MIT。
 
 ---
 
+## 跟 codex-image-service 串接(用自己的 ChatGPT 訂閱額度)
+
+不一定要用 Author Fallback(我的桶)。如果你有 ChatGPT Plus / Pro 訂閱,可以把這個 studio 跟 **[codex-image-service](https://github.com/yazelin/codex-image-service)** 串起來 — 它是 FastAPI wrapper,把 Codex CLI 的 `$imagegen` 包成 HTTP endpoint,讓你的訂閱額度直接餵給 studio 生圖。
+
+三種組合方式:
+
+| Setup | 你要準備什麼 | 適合誰 |
+|---|---|---|
+| **A. 直接用** | 啥都不用,開線上 studio 就跑 | 剛接觸 / 嚐鮮 / 偶爾用 |
+| **B. 線上 studio + 自架 codex-image-service** | 部署 codex-image-service + 發給自己一把 Bearer key | 有 ChatGPT Plus 想無限用 |
+| **C. 兩個都自架** | clone 兩個 repo 本機跑 | 全掌控、離線、不靠別人 |
+
+### B / C 設定步驟
+
+1. 部署 / 跑 codex-image-service([repo 說明](https://github.com/yazelin/codex-image-service))
+2. 在它的 admin UI 發一把 Bearer API key(格式 `cimg_…`)
+3. studio sidebar → **AI Provider** section → 選 **Codex-Image**
+4. 填:
+   - **Base URL**: 你 codex-image-service 的網址(例:`https://your-domain.example/codex-image`)
+   - **API Key**: 剛剛發的 `cimg_…`
+   - **Quality**: `auto`(預設)或 `low` / `medium` / `high`
+5. 正常生圖就好 — 走你自己的 codex-image-service,消耗你 ChatGPT 訂閱的 image quota,不燒 Author Fallback 的桶
+
+### CORS 提醒
+
+兩個都自架的話,codex-image-service 要允許 studio 的 origin。yazelin 部署的版本已經設好(`Access-Control-Allow-Origin` 反射 request origin);新自架請參考 codex-image-service repo 的 CORS middleware 設定。
+
+---
+
 ## 相關專案
 
 - [mori-desktop](https://github.com/yazelin/mori-desktop) — 森林精靈 Mori 的桌面身體。yazelin 的 Jarvis-style AI 夥伴。Rust + Tauri 2 + Whisper(耳)+ LLM(腦)。這個 studio 做她的可見 sprite 形態。
 - [world-tree](https://github.com/yazelin/world-tree) — Mori 的源頭 / 世界樹。Mori 來自的地方。
-- [codex-image-service](https://github.com/yazelin/codex-image-service) — 自架 ChatGPT Plus/Pro quota 當 image-gen API(其中一個 provider)
+- [codex-image-service](https://github.com/yazelin/codex-image-service) — 自架 ChatGPT Plus/Pro quota 當 image-gen API。跟這個 studio 天生對接(看上方串接 section)。
 - [line-sticker-studio](https://github.com/yazelin/line-sticker-studio) — 姐妹專案,LINE 貼圖製作(共用 prompt engineering pattern)
 - [emoji-slot-machine](https://github.com/yazelin/emoji-slot-machine) — 姐妹專案,3×3 emoji 拉霸生成器(共用 sprite-sheet 動畫 pattern)
 

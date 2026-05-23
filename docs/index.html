@@ -333,11 +333,33 @@ KV_REST_API_TOKEN=...</code></pre>
 </div>
 
 <section>
+  <h2>Using with codex-image-service (your own ChatGPT subscription quota)</h2>
+  <p>You don't have to use Author Fallback. If you have a ChatGPT Plus / Pro subscription, pair this studio with <a href="https://github.com/yazelin/codex-image-service">codex-image-service</a> — a FastAPI wrapper that exposes Codex CLI's <code>$imagegen</code> as an HTTP endpoint. Your subscription's image quota powers the studio's generations.</p>
+  <table>
+    <thead><tr><th>Setup</th><th>What you need</th><th>When it makes sense</th></tr></thead>
+    <tbody>
+      <tr><td><strong>A. Out of the box</strong></td><td>Nothing — just open the live studio</td><td>New users, exploring, low-volume</td></tr>
+      <tr><td><strong>B. Studio + your codex-image-service</strong></td><td>Run codex-image-service + issue a Bearer key</td><td>Have ChatGPT Plus + want unlimited use</td></tr>
+      <tr><td><strong>C. Both self-hosted</strong></td><td>Clone + run both repos</td><td>Full control, offline, no external dependencies</td></tr>
+    </tbody>
+  </table>
+  <h3>Setup steps (B / C)</h3>
+  <ol>
+    <li>Deploy / run codex-image-service (<a href="https://github.com/yazelin/codex-image-service">repo</a>)</li>
+    <li>In its admin UI, generate a Bearer key (<code>cimg_…</code>)</li>
+    <li>In studio sidebar → <strong>AI Provider</strong> section → select <strong>Codex-Image</strong></li>
+    <li>Fill in <strong>Base URL</strong> (e.g. <code>https://your-domain.example/codex-image</code>), <strong>API Key</strong>, and <strong>Quality</strong> (<code>auto</code> default)</li>
+    <li>Generate — calls now consume your ChatGPT subscription quota instead of the Author Fallback bucket</li>
+  </ol>
+  <p style="font-size: .85rem; color: var(--fg-muted);">CORS: yazelin's deployment already allows any origin (via reflected <code>Access-Control-Allow-Origin</code>); self-hosters should add CORS middleware to their codex-image-service.</p>
+</section>
+
+<section>
   <h2>Related projects</h2>
   <ul>
     <li><a href="https://github.com/yazelin/mori-desktop">mori-desktop</a> — 森林精靈 Mori 的桌面身體. yazelin's Jarvis-style AI partner. Rust + Tauri 2 + Whisper(耳)+ LLM(腦). This studio produces her visible sprite form.</li>
     <li><a href="https://github.com/yazelin/world-tree">world-tree</a> — Mori's origin / 世界樹. Where Mori 來自.</li>
-    <li><a href="https://github.com/yazelin/codex-image-service">codex-image-service</a> — self-host ChatGPT Plus/Pro quota as image-gen API (one of the providers)</li>
+    <li><a href="https://github.com/yazelin/codex-image-service">codex-image-service</a> — self-host ChatGPT Plus/Pro quota as image-gen API. Pairs naturally with this studio (see section above).</li>
     <li><a href="https://github.com/yazelin/line-sticker-studio">line-sticker-studio</a> — sister tool, LINE sticker authoring (some prompt engineering patterns shared)</li>
     <li><a href="https://github.com/yazelin/emoji-slot-machine">emoji-slot-machine</a> — sister tool, 3×3 emoji slot machine generator (some sprite-sheet animation patterns shared)</li>
   </ul>

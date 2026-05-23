@@ -67,16 +67,17 @@
     .mori-sprite.dragging  { background-image: url('assets/dragging-sheet.png');  animation: sprite-x 400ms infinite linear, sprite-y 1600ms infinite linear; }
 
     .mori-walker {
-      position: fixed; bottom: 1rem; left: 0;
+      position: fixed; top: 0; left: 0;
       width: 130px; height: 130px;
       background-image: url('assets/walking-sheet.png');
       background-size: 520px 520px; background-repeat: no-repeat;
       filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
       pointer-events: none; z-index: 50;
+      will-change: transform;
+      transform: translate(-200px, 80vh);
       animation:
         walker-sprite-x 625ms infinite linear,
-        walker-sprite-y 2500ms infinite linear,
-        walker-stroll 38s linear infinite;
+        walker-sprite-y 2500ms infinite linear;
     }
     @keyframes walker-sprite-x {
       0%,   24.99% { background-position-x:    0px; }
@@ -89,13 +90,6 @@
       25%,  49.99% { background-position-y: -130px; }
       50%,  74.99% { background-position-y: -260px; }
       75%,  100%   { background-position-y: -390px; }
-    }
-    @keyframes walker-stroll {
-      0%   { transform: translateX(-50px) scaleX(1); }
-      48%  { transform: translateX(calc(100vw - 80px)) scaleX(1); }
-      50%  { transform: translateX(calc(100vw - 80px)) scaleX(-1); }
-      98%  { transform: translateX(-50px) scaleX(-1); }
-      100% { transform: translateX(-50px) scaleX(1); }
     }
     @media (prefers-reduced-motion: reduce) { .mori-walker { display: none; } }
     @media (max-width: 480px) { .mori-walker { display: none; } }
@@ -328,8 +322,61 @@ KV_REST_API_TOKEN=...</code></pre>
 
 </main>
 
-<!-- Mori 在頁面底部走來走去,無限循環 -->
+<!-- Mori 在 viewport 裡走來走去,無限循環。JS 控制位置 + 翻面,
+     flip 在 off-screen 瞬間完成不會看到 scaleX(0) 變扁。 -->
 <div class="mori-walker" aria-hidden="true" title="Mori 路過 🍃"></div>
+
+<script>
+(function () {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.innerWidth <= 480) return;
+
+  const walker = document.querySelector('.mori-walker');
+  if (!walker) return;
+
+  const WIDTH = 130;
+  const SPEED = 90;            // px / 秒
+  const Y_MARGIN_TOP = 80;
+  const Y_MARGIN_BOTTOM = 30;
+
+  let x = -WIDTH - 20;
+  let y = window.innerHeight - WIDTH - Y_MARGIN_BOTTOM;
+  let direction = 1;
+  let lastFrame = performance.now();
+
+  function pickNewLane() {
+    const minY = Y_MARGIN_TOP;
+    const maxY = window.innerHeight - WIDTH - Y_MARGIN_BOTTOM;
+    y = minY + Math.random() * Math.max(0, maxY - minY);
+  }
+
+  function render() {
+    walker.style.transform = `translate(${x}px, ${y}px) scaleX(${direction})`;
+  }
+
+  function tick(now) {
+    const dt = Math.min(0.1, (now - lastFrame) / 1000);
+    lastFrame = now;
+    x += direction * SPEED * dt;
+    const vw = window.innerWidth;
+    if (direction === 1 && x > vw + 10) {
+      direction = -1; x = vw + WIDTH; pickNewLane();
+    } else if (direction === -1 && x < -WIDTH - 10) {
+      direction = 1; x = -WIDTH - 20; pickNewLane();
+    }
+    render();
+    requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('resize', () => {
+    const maxY = window.innerHeight - WIDTH - Y_MARGIN_BOTTOM;
+    if (y > maxY) y = Math.max(Y_MARGIN_TOP, maxY);
+  });
+
+  render();
+  requestAnimationFrame(tick);
+})();
+</script>
 
 </body>
 </html>

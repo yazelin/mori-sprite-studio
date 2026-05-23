@@ -72,18 +72,23 @@
     .mori-sprite.walking   { background-image: url('assets/walking-sheet.png');   animation: sprite-x 625ms infinite linear, sprite-y 2500ms infinite linear; }
     .mori-sprite.dragging  { background-image: url('assets/dragging-sheet.png');  animation: sprite-x 400ms infinite linear, sprite-y 1600ms infinite linear; }
 
-    /* Mori walker — 130×130 container, sheet scaled to 520×520, step = 130 px */
+    /* Mori walker — 130×130, sheet scaled to 520×520, step = 130 px.
+       JS controls position + direction (see <script> at bottom of body);
+       CSS only handles sprite-frame animation. JS approach gives us
+       instant flip with NO interpolation squish, plus random Y lanes
+       across the entire viewport. */
     .mori-walker {
-      position: fixed; bottom: 1rem; left: 0;
+      position: fixed; top: 0; left: 0;
       width: 130px; height: 130px;
       background-image: url('assets/walking-sheet.png');
       background-size: 520px 520px; background-repeat: no-repeat;
       filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
       pointer-events: none; z-index: 50;
+      will-change: transform;
+      transform: translate(-200px, 80vh);   /* initial: hidden left, near bottom */
       animation:
         walker-sprite-x 625ms infinite linear,
-        walker-sprite-y 2500ms infinite linear,
-        walker-stroll 38s linear infinite;
+        walker-sprite-y 2500ms infinite linear;
     }
     @keyframes walker-sprite-x {
       0%,   24.99% { background-position-x:    0px; }
@@ -96,13 +101,6 @@
       25%,  49.99% { background-position-y: -130px; }
       50%,  74.99% { background-position-y: -260px; }
       75%,  100%   { background-position-y: -390px; }
-    }
-    @keyframes walker-stroll {
-      0%   { transform: translateX(-50px) scaleX(1); }
-      48%  { transform: translateX(calc(100vw - 80px)) scaleX(1); }
-      50%  { transform: translateX(calc(100vw - 80px)) scaleX(-1); }
-      98%  { transform: translateX(-50px) scaleX(-1); }
-      100% { transform: translateX(-50px) scaleX(1); }
     }
     @media (prefers-reduced-motion: reduce) {
       .mori-walker { display: none; }
@@ -340,8 +338,78 @@ KV_REST_API_TOKEN=...</code></pre>
 
 </main>
 
-<!-- Mori walking across the page, looping endlessly -->
+<!-- Mori walking across the page, looping endlessly. Controlled by JS below
+     so the flip happens instantly off-screen with no CSS-interpolation squish. -->
 <div class="mori-walker" aria-hidden="true" title="Mori walking by 🍃"></div>
+
+<script>
+(function () {
+  // Skip animation if user prefers reduced motion OR screen is too narrow.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.innerWidth <= 480) return;
+
+  const walker = document.querySelector('.mori-walker');
+  if (!walker) return;
+
+  const WIDTH = 130;
+  const SPEED = 90;            // px / second
+  const Y_MARGIN_TOP = 80;     // keep clear of top edge
+  const Y_MARGIN_BOTTOM = 30;  // keep clear of bottom edge
+
+  let x = -WIDTH - 20;          // start fully off-screen left
+  let y = window.innerHeight - WIDTH - Y_MARGIN_BOTTOM;  // start near bottom
+  let direction = 1;            // 1 = right, -1 = left
+  let lastFrame = performance.now();
+
+  function pickNewLane() {
+    // Random Y position anywhere in the visible area (above the top margin,
+    // below the bottom margin). Each off-screen flip picks a new lane.
+    const minY = Y_MARGIN_TOP;
+    const maxY = window.innerHeight - WIDTH - Y_MARGIN_BOTTOM;
+    y = minY + Math.random() * Math.max(0, maxY - minY);
+  }
+
+  function render() {
+    // Use a single composite transform — no left/top changes (purely
+    // transform-based for GPU-accelerated movement).
+    walker.style.transform = `translate(${x}px, ${y}px) scaleX(${direction})`;
+  }
+
+  function tick(now) {
+    const dt = Math.min(0.1, (now - lastFrame) / 1000);  // clamp to avoid huge jumps after tab inactive
+    lastFrame = now;
+
+    x += direction * SPEED * dt;
+
+    const vw = window.innerWidth;
+
+    // Fully off-screen on the right → flip + new lane + restart from right edge
+    if (direction === 1 && x > vw + 10) {
+      direction = -1;
+      x = vw + WIDTH;
+      pickNewLane();
+    }
+    // Fully off-screen on the left → flip + new lane + restart from left edge
+    else if (direction === -1 && x < -WIDTH - 10) {
+      direction = 1;
+      x = -WIDTH - 20;
+      pickNewLane();
+    }
+
+    render();
+    requestAnimationFrame(tick);
+  }
+
+  // Re-evaluate Y when viewport resizes (so Mori doesn't end up outside the new viewport)
+  window.addEventListener('resize', () => {
+    const maxY = window.innerHeight - WIDTH - Y_MARGIN_BOTTOM;
+    if (y > maxY) y = Math.max(Y_MARGIN_TOP, maxY);
+  });
+
+  render();
+  requestAnimationFrame(tick);
+})();
+</script>
 
 </body>
 </html>

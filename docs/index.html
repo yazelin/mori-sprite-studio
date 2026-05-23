@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -21,20 +21,75 @@
       --bmc: #ffdd00;
     }
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; font-feature-settings: 'cv11', 'ss01'; -webkit-font-smoothing: antialiased; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; font-feature-settings: 'cv11', 'ss01'; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     body::before { content: ''; position: fixed; inset: 0; background-image: radial-gradient(circle at 1px 1px, rgba(120,113,108,.05) 1px, transparent 0); background-size: 24px 24px; pointer-events: none; z-index: 0; }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    main { position: relative; max-width: 960px; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+    main { position: relative; max-width: 960px; margin: 0 auto; padding: 4rem 1.5rem 8rem; }
     section { margin-block: 3.5rem; }
     h1 { font-size: 2.75rem; line-height: 1.15; margin: 0 0 .5rem; letter-spacing: -.02em; }
     h2 { font-size: 1.65rem; margin: 0 0 1rem; letter-spacing: -.01em; padding-bottom: .5rem; border-bottom: 1px solid var(--border); }
     h3 { font-size: 1.1rem; margin: 1.5rem 0 .5rem; }
     p, li { color: #44403c; }
     .tagline { font-size: 1.15rem; color: var(--fg-muted); margin-block: 0 1.5rem; max-width: 640px; }
+
+    /* Lang switcher */
+    .lang-switch { position: absolute; top: 1.5rem; right: 1.5rem; display: flex; gap: .5rem; font-size: .85rem; z-index: 10; }
+    .lang-switch a { padding: .3rem .75rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-card); color: var(--fg-muted); }
+    .lang-switch a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+    .lang-switch a.active { background: var(--accent); color: white; border-color: var(--accent); }
+
     .hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: 1rem; }
-    .hero-anim { display: flex; gap: 1rem; margin-block: 1rem 2rem; flex-wrap: wrap; justify-content: center; }
-    .hero-anim img { width: 180px; height: 180px; border-radius: 24px; background: repeating-conic-gradient(#f5f5f4 0 25%, #fafaf9 0 50%) 0 0 / 16px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 8px 24px rgba(120,113,108,.08); }
+    .hero-anim { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; margin-block: 1.5rem 2.5rem; max-width: 640px; width: 100%; }
+    .hero-anim .sprite-tile { display: flex; flex-direction: column; align-items: center; gap: .35rem; padding: .75rem; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .hero-anim .sprite-label { font-size: .7rem; color: var(--fg-muted); text-transform: capitalize; letter-spacing: .02em; }
+    .hero-anim .sprite-label .opt-tag { font-size: .55rem; color: var(--accent); background: var(--accent-bg); padding: 1px 5px; border-radius: 4px; margin-left: 3px; vertical-align: 1px; }
+
+    /* Sprite animation engine — same technique as mori-desktop floating.css */
+    .mori-sprite { width: 120px; height: 120px; background-size: 400% 400%; background-repeat: no-repeat; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.2)); }
+    @keyframes sprite-x { to { background-position-x: -400%; } }
+    @keyframes sprite-y { to { background-position-y: -400%; } }
+
+    /* Per-state durations match DEFAULT_LOOP_DURATIONS_MS */
+    .mori-sprite.idle      { background-image: url('assets/idle-sheet.png');      animation: sprite-x 750ms steps(4) infinite, sprite-y 3000ms steps(4) infinite; }
+    .mori-sprite.sleeping  { background-image: url('assets/sleeping-sheet.png');  animation: sprite-x 1250ms steps(4) infinite, sprite-y 5000ms steps(4) infinite; }
+    .mori-sprite.recording { background-image: url('assets/recording-sheet.png'); animation: sprite-x 375ms steps(4) infinite, sprite-y 1500ms steps(4) infinite; }
+    .mori-sprite.thinking  { background-image: url('assets/thinking-sheet.png');  animation: sprite-x 500ms steps(4) infinite, sprite-y 2000ms steps(4) infinite; }
+    .mori-sprite.done      { background-image: url('assets/done-sheet.png');      animation: sprite-x 450ms steps(4) infinite, sprite-y 1800ms steps(4) infinite; }
+    .mori-sprite.error     { background-image: url('assets/error-sheet.png');     animation: sprite-x 500ms steps(4) infinite, sprite-y 2000ms steps(4) infinite; }
+    .mori-sprite.walking   { background-image: url('assets/walking-sheet.png');   animation: sprite-x 625ms steps(4) infinite, sprite-y 2500ms steps(4) infinite; }
+    .mori-sprite.dragging  { background-image: url('assets/dragging-sheet.png');  animation: sprite-x 400ms steps(4) infinite, sprite-y 1600ms steps(4) infinite; }
+
+    /* Mori walker — walks across the page bottom, flips at edges */
+    .mori-walker {
+      position: fixed; bottom: 1rem; left: 0;
+      width: 130px; height: 130px;
+      background-image: url('assets/walking-sheet.png');
+      background-size: 400% 400%; background-repeat: no-repeat;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
+      pointer-events: none; z-index: 50;
+      animation:
+        walker-sprite-x 625ms steps(4) infinite,
+        walker-sprite-y 2500ms steps(4) infinite,
+        walker-stroll 38s linear infinite;
+    }
+    @keyframes walker-sprite-x { to { background-position-x: -400%; } }
+    @keyframes walker-sprite-y { to { background-position-y: -400%; } }
+    @keyframes walker-stroll {
+      0%   { transform: translateX(-50px) scaleX(1); }
+      48%  { transform: translateX(calc(100vw - 80px)) scaleX(1); }
+      50%  { transform: translateX(calc(100vw - 80px)) scaleX(-1); }
+      98%  { transform: translateX(-50px) scaleX(-1); }
+      100% { transform: translateX(-50px) scaleX(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .mori-walker { display: none; }
+    }
+    /* Hide walker on narrow screens to avoid cramping mobile UI */
+    @media (max-width: 480px) {
+      .mori-walker { display: none; }
+    }
+
     .cta { display: inline-flex; gap: .75rem; flex-wrap: wrap; justify-content: center; align-items: center; }
     .btn { display: inline-flex; align-items: center; gap: .5rem; padding: .7rem 1.25rem; border-radius: 10px; font-weight: 500; transition: all .15s; }
     .btn-primary { background: var(--accent); color: #fff !important; }
@@ -63,6 +118,12 @@
   </style>
 </head>
 <body>
+
+<div class="lang-switch">
+  <a href="index.html" class="active">EN</a>
+  <a href="index.zh-TW.html">繁中</a>
+</div>
+
 <main>
 
 <header class="hero">
@@ -72,19 +133,30 @@
     AI-powered. Browser-only. Transparent backgrounds. Multiple export formats.
   </p>
   <div class="hero-anim">
-    <img src="assets/mori-idle.png" alt="Mori idle animation">
-    <img src="assets/mori-sleeping.png" alt="Mori sleeping animation">
+    <div class="sprite-tile"><div class="mori-sprite idle"></div><div class="sprite-label">idle</div></div>
+    <div class="sprite-tile"><div class="mori-sprite sleeping"></div><div class="sprite-label">sleeping</div></div>
+    <div class="sprite-tile"><div class="mori-sprite recording"></div><div class="sprite-label">recording</div></div>
+    <div class="sprite-tile"><div class="mori-sprite thinking"></div><div class="sprite-label">thinking</div></div>
+    <div class="sprite-tile"><div class="mori-sprite done"></div><div class="sprite-label">done</div></div>
+    <div class="sprite-tile"><div class="mori-sprite error"></div><div class="sprite-label">error</div></div>
+    <div class="sprite-tile"><div class="mori-sprite walking"></div><div class="sprite-label">walking<span class="opt-tag">opt</span></div></div>
+    <div class="sprite-tile"><div class="mori-sprite dragging"></div><div class="sprite-label">dragging<span class="opt-tag">opt</span></div></div>
   </div>
   <div class="cta">
     <a class="btn btn-primary" href="https://mori-sprite-studio.vercel.app" target="_blank">▶ Try the live app</a>
     <a class="btn btn-outline" href="https://github.com/yazelin/mori-sprite-studio" target="_blank">⭐ GitHub repo</a>
     <a class="btn btn-bmc" href="https://buymeacoffee.com/yazelin" target="_blank">☕ Buy me a coffee</a>
   </div>
+  <p style="font-size: .8rem; color: var(--fg-muted); margin-top: 1.5rem;">↑ Live sprite-sheet animation playing via CSS <code>steps()</code> — same technique mori-desktop uses</p>
 </header>
 
 <section>
   <h2>What it does</h2>
-  <p>You give it <strong>one reference image</strong> of your character. It produces a complete sprite animation pack for <a href="https://github.com/yazelin/mori-desktop">mori-desktop</a> — 6 animated states (idle / sleeping / recording / thinking / done / error), each a 1024×1024 4×4 sprite sheet that the floating window plays back.</p>
+  <p>You give it <strong>one reference image</strong> of your character. It produces a complete sprite animation pack for <a href="https://github.com/yazelin/mori-desktop">mori-desktop</a> — <strong>6 required + 2 optional states</strong>, each a 1024×1024 4×4 sprite sheet that the floating window plays back.</p>
+  <ul>
+    <li><strong>Required (6):</strong> idle / sleeping / recording / thinking / done / error</li>
+    <li><strong>Optional (2):</strong> walking / dragging (cyclic locomotion — uses a separate W/Dr pipeline)</li>
+  </ul>
   <p>It's built for <a href="https://github.com/yazelin/mori-desktop"><strong>Mori</strong></a> — yazelin's 森林精靈 (forest spirit) Jarvis-style AI partner who lives on the desktop. <em>"Iron Man 有 Jarvis,我有 Mori。"</em> This studio makes Mori's <strong>visible body</strong> — her sprite form — that the mori-desktop floating window animates.</p>
   <p>The studio also works for <strong>any character you want to give a visible form to</strong>: your own AI partner / personal spirit / streamer overlay companion / character mascot. The Mori demo is one example of what's possible.</p>
   <p>You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG — useful for LINE animated stickers, Discord, OBS overlays, video editing, etc.</p>
@@ -95,13 +167,21 @@
   <h2>Workflow</h2>
   <div class="flow"><span class="accent">[character ref image]</span>
        │
-       │ (AI · 1 call)
+       │ (AI · 1 call → 6-cell grid)
        ▼
 <span class="accent">[6 static base poses]</span>    ← editable / re-rollable per state
        │
        │ (AI · 6 calls, one per state)
        ▼
 <span class="accent">[6 sprite sheets, 4×4 each]</span>    ← editable per cell, normalize across states
+       │
+       │ (optional) walking + dragging
+       ▼
+<span class="accent">[+2 cyclic-locomotion sheets]</span>    ← W/Dr standalone pipeline (no pre-tile)
+       │
+       │ (manual sort: reverse + swap)
+       ▼
+<span class="accent">[hand-tuned gait cycle]</span>
        │
        │ (bake transforms + zip)
        ▼
@@ -111,11 +191,12 @@
        ▼
 <span class="accent">[mori-{state}.png / .gif / .webm]</span>    →    LINE / Discord / OBS</div>
   <ol>
-    <li><strong>Upload character ref</strong> — any PNG/JPG of your character (cropped, any background).</li>
+    <li><strong>Upload character ref</strong> — any PNG/JPG of your character.</li>
     <li><strong>Generate 6 statics</strong> — one AI call produces a 3×2 grid the tool splits into 6 state poses.</li>
-    <li><strong>Per-state animation</strong> — pre-tiled placeholder + multi-anchor identity reference keeps the character locked in position with only subtle motion (blink, breath, gesture).</li>
-    <li><strong>Fine-tune</strong> — per-cell regen, loop config, cross-state normalize, scale/offset sliders with reference guides, manual upload/download round-trip.</li>
-    <li><strong>Backdrop</strong> (optional) — Light + Dark backdrop PNGs ship inside the pack.</li>
+    <li><strong>Per-state animation (required 6)</strong> — pre-tiled placeholder + multi-anchor identity reference keeps the character locked with subtle motion.</li>
+    <li><strong>Optional walking + dragging</strong> — separate W/Dr pipeline (no pre-tile, since gait cycles need free per-frame design). Reverse + swap buttons let you hand-sort cells until the walk looks right.</li>
+    <li><strong>Fine-tune</strong> — per-cell regen, loop config, cross-state normalize, scale/offset sliders.</li>
+    <li><strong>Backdrop</strong> (optional) — Light + Dark backdrop PNGs. Use <strong>桌面預覽</strong> view to see all states layered on backdrop with shape + theme toggles.</li>
     <li><strong>Export</strong> <code>.moripack.zip</code> for mori-desktop, or individual APNG / GIF / WebM for other platforms.</li>
   </ol>
   <img class="screen" src="assets/screen-02-state.png" alt="State editor with sprite sheet, loop preview, and transform sliders">
@@ -127,15 +208,19 @@
     <div class="feature-card"><h3>4 AI providers</h3><p>Author Fallback (free, no setup), Codex-Image (ChatGPT Plus quota), Vertex Gemini, Google Gemini Direct.</p></div>
     <div class="feature-card"><h3>Anti-jitter</h3><p>Pre-tiled placeholder sheet as AI reference locks character position across all 16 frames.</p></div>
     <div class="feature-card"><h3>Anti-character-drift</h3><p>Multi-anchor identity reference sends every other state's static so outfit/hair stays consistent.</p></div>
-    <div class="feature-card"><h3>Anatomy-agnostic</h3><p>Works for humanoid / plant / robot / blob / gem. Semantics describe motion abstractly.</p></div>
+    <div class="feature-card"><h3>Walking + Dragging pipeline</h3><p>Dedicated W/Dr standalone path. AI designs all 16 cells freely from character ref + neutral standing static. Cell-by-cell gait structure baked into template.</p></div>
+    <div class="feature-card"><h3>↺ Reverse cells</h3><p>One-click reverse all 16 cells. Rescues sheets that play in reverse direction.</p></div>
+    <div class="feature-card"><h3>✥ Swap mode</h3><p>Click cell A → click cell B → swap contents. Hand-tune the gait order until walking looks right.</p></div>
+    <div class="feature-card"><h3>Desktop preview view</h3><p>All 8 states laid out as floating widgets with shape (circle/rounded/square) × backplate (logo/plain) × app theme × OS theme toggles. Matches mori-desktop's render 1:1.</p></div>
+    <div class="feature-card"><h3>Anatomy-agnostic prompts</h3><p>Works for humanoid / plant / robot / blob / gem. Semantics describe motion abstractly.</p></div>
     <div class="feature-card"><h3>One-shot patterns</h3><p>BURST-AND-SETTLE for celebrations vs SUSTAINED-ENERGY for distress.</p></div>
     <div class="feature-card"><h3>Per-cell regen</h3><p>Click any frame to regen just that cell with prev+next frames as context.</p></div>
-    <div class="feature-card"><h3>Chroma key + edge erosion</h3><p>Green or magenta, 3 tolerance levels, 0-10 px erosion. Re-chroma replays from raw output (non-destructive).</p></div>
-    <div class="feature-card"><h3>Cross-state normalize</h3><p>One-click scans bboxes + computes per-state transform so all 6 states match in size + center.</p></div>
-    <div class="feature-card"><h3>Multiple export formats</h3><p>.moripack.zip / APNG / GIF / WebM with VP9 alpha / raw sheet / .moriproject.zip save-load.</p></div>
-    <div class="feature-card"><h3>Per-character backdrop</h3><p>Light + Dark backdrop PNGs ship per mori-desktop PR #107 backplate chain.</p></div>
-    <div class="feature-card"><h3>BYOG path</h3><p>Bring Your Own Generation — copy prompt + reference, run AI yourself, upload result.</p></div>
-    <div class="feature-card"><h3>Demo loader</h3><p>One-click loads a fully-configured 22 MB Mori demo so new visitors see everything immediately.</p></div>
+    <div class="feature-card"><h3>Chroma + edge erosion</h3><p>Green or magenta, 3 tolerance levels, 0-10 px erosion. Re-chroma non-destructive from raw.</p></div>
+    <div class="feature-card"><h3>Cross-state normalize</h3><p>One-click scans bboxes + computes per-state transform so all states match in size + center.</p></div>
+    <div class="feature-card"><h3>Multiple export formats</h3><p>.moripack.zip / APNG / GIF / WebM (VP9 alpha) / raw sheet / .moriproject.zip save-load.</p></div>
+    <div class="feature-card"><h3>Per-character backdrop</h3><p>Light + Dark backdrop PNGs ship per mori-desktop PR #107 3-tier backplate chain.</p></div>
+    <div class="feature-card"><h3>Persistent quota counter</h3><p>Sidebar countdown 50→0 of remaining Author-Fallback calls. Persisted via Vercel KV (Upstash Redis) — no resets across function cold starts.</p></div>
+    <div class="feature-card"><h3>Demo loader</h3><p>One-click loads a fully-configured 27 MB Mori demo so new visitors see everything immediately.</p></div>
   </div>
   <img class="screen" src="assets/screen-03-backdrop.png" alt="Backdrop uploader with Light + Dark slots">
 </section>
@@ -161,11 +246,11 @@
   <h3>Use the live app</h3>
   <ol>
     <li>Open <a href="https://mori-sprite-studio.vercel.app">mori-sprite-studio.vercel.app</a></li>
-    <li>Click <code>✦ 載入 Mori Demo</code> on the project page (one-click loads a fully-configured Mori character pack — 22 MB)</li>
+    <li>Click <code>✦ 載入 Mori 預設範本</code> on the project page (one-click loads a fully-configured Mori character pack — 27 MB)</li>
     <li>Browse around, see how it works</li>
     <li>To make your own: clear data (or use incognito), upload your character ref, click <code>生 6 狀態靜態</code> → per-state <code>生動畫</code></li>
   </ol>
-  <p>Author Fallback uses yazelin's own API key — no setup needed. <strong>I'm fronting the cost out of pocket so strangers can try the tool.</strong> ⚠ Per-IP cap is 100 req/day + 1 concurrent. Quota counter lives in the sidebar footer. <strong>When the budget runs out, it stops</strong> — not a long-term promise, just letting people experience the tool. If you want it to stay available, <a href="https://buymeacoffee.com/yazelin">☕ chip in</a>.</p>
+  <p>Author Fallback uses yazelin's own API key — no setup needed. <strong>I'm fronting the cost out of pocket so strangers can try the tool.</strong> ⚠ Per-IP cap is <strong>50 req/day + 1 concurrent</strong>, <strong>persistent via Vercel KV</strong> so it actually counts (no resetting on cold starts). Quota countdown counter lives in the sidebar footer. <strong>When the budget runs out, it stops</strong> — not a long-term promise, just letting people experience the tool. If you want it to stay available, <a href="https://buymeacoffee.com/yazelin">☕ chip in</a>.</p>
 
   <h3>Self-host</h3>
 <pre><code>git clone https://github.com/yazelin/mori-sprite-studio
@@ -177,9 +262,12 @@ npm run dev:vercel       # vercel dev — for testing /api/generate Author Fallb
 </code></pre>
   <p>Set env vars in <code>.env.local</code> if using Author Fallback locally:</p>
 <pre><code>AUTHOR_FALLBACK_PROVIDER=vertex-gemini
-AUTHOR_API_KEY=AIza...
+AUTHOR_API_KEY=AQ.AAAA...    # Vertex AI Express keys start AQ
 AUTHOR_MODEL=gemini-3-pro-image-preview
-AUTHOR_IMAGE_SIZE=1K</code></pre>
+AUTHOR_IMAGE_SIZE=1K
+# Optional — persistent rate limit (Upstash Redis via Vercel KV integration)
+KV_REST_API_URL=...
+KV_REST_API_TOKEN=...</code></pre>
 </section>
 
 <section>
@@ -190,10 +278,12 @@ AUTHOR_IMAGE_SIZE=1K</code></pre>
       <tr><td>UI</td><td>Vite + React 19 + TypeScript + Tailwind CSS + shadcn/ui</td></tr>
       <tr><td>State</td><td>Zustand + IndexedDB (idb-keyval) for Blob-native persistence</td></tr>
       <tr><td>AI providers</td><td>Abstract <code>ImageProvider</code> interface, 4 impls</td></tr>
+      <tr><td>Animation pipelines</td><td>C template (pre-tiled idle-family) + W/Dr template (standalone gait/swing)</td></tr>
       <tr><td>Chroma key</td><td>2-pass per-channel dominance + despill + edge erosion</td></tr>
+      <tr><td>Cell manipulation</td><td>Canvas-based reorder / swap / reverse via <code>imageOps.ts</code></td></tr>
       <tr><td>Animation preview</td><td>Canvas + requestAnimationFrame (16-frame row-major)</td></tr>
       <tr><td>Export encoders</td><td>upng-js (APNG), gifenc (GIF), MediaRecorder + VP9 (WebM), JSZip</td></tr>
-      <tr><td>Server-side</td><td>Vercel Function <code>/api/generate</code> — Author Fallback proxy</td></tr>
+      <tr><td>Server-side</td><td>Vercel Function <code>/api/generate</code> — Author Fallback proxy + KV-backed rate limit (Upstash Redis with in-memory fallback)</td></tr>
     </tbody>
   </table>
   <p>Output spec: 1024×1024 PNG-32, 4×4 grid, 256×256 per cell, row-major frame order, transparent background. Conforms to mori-desktop's <code>character-pack.md</code> v1.0.</p>
@@ -227,5 +317,9 @@ AUTHOR_IMAGE_SIZE=1K</code></pre>
 </footer>
 
 </main>
+
+<!-- Mori walking across the page, looping endlessly -->
+<div class="mori-walker" aria-hidden="true" title="Mori walking by 🍃"></div>
+
 </body>
 </html>

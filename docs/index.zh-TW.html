@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mori Sprite Studio — 角色 sprite 動畫包製作器</title>
+  <meta name="description" content="從一張角色 ref 圖,一鍵生成 1024×1024 的 4×4 sprite 動畫包。AI 驅動,純瀏覽器,透明背景,多種匯出格式。">
+  <meta property="og:title" content="Mori Sprite Studio">
+  <meta property="og:description" content="從一張角色 ref 圖,一鍵生成 1024×1024 的 4×4 sprite 動畫包。AI 驅動。">
+  <meta property="og:image" content="assets/screen-01-project.png">
+  <link rel="icon" href="assets/mori-idle.png">
+  <style>
+    :root {
+      --fg: #1c1917;
+      --fg-muted: #78716c;
+      --bg: #fbfaf7;
+      --bg-card: #ffffff;
+      --border: #e7e5e4;
+      --accent: #047857;
+      --accent-bg: #ecfdf5;
+      --bmc: #ffdd00;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.7; font-feature-settings: 'cv11', 'ss01'; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: radial-gradient(circle at 1px 1px, rgba(120,113,108,.05) 1px, transparent 0); background-size: 24px 24px; pointer-events: none; z-index: 0; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    main { position: relative; max-width: 960px; margin: 0 auto; padding: 4rem 1.5rem 8rem; }
+    section { margin-block: 3.5rem; }
+    h1 { font-size: 2.75rem; line-height: 1.15; margin: 0 0 .5rem; letter-spacing: -.02em; }
+    h2 { font-size: 1.65rem; margin: 0 0 1rem; letter-spacing: -.01em; padding-bottom: .5rem; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 1.1rem; margin: 1.5rem 0 .5rem; }
+    p, li { color: #44403c; }
+    .tagline { font-size: 1.15rem; color: var(--fg-muted); margin-block: 0 1.5rem; max-width: 640px; }
+
+    .lang-switch { position: absolute; top: 1.5rem; right: 1.5rem; display: flex; gap: .5rem; font-size: .85rem; z-index: 10; }
+    .lang-switch a { padding: .3rem .75rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-card); color: var(--fg-muted); }
+    .lang-switch a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+    .lang-switch a.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+    .hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: 1rem; }
+    .hero-anim { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; margin-block: 1.5rem 2.5rem; max-width: 640px; width: 100%; }
+    .hero-anim .sprite-tile { display: flex; flex-direction: column; align-items: center; gap: .35rem; padding: .75rem; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .hero-anim .sprite-label { font-size: .75rem; color: var(--fg-muted); letter-spacing: .02em; }
+    .hero-anim .sprite-label .opt-tag { font-size: .55rem; color: var(--accent); background: var(--accent-bg); padding: 1px 5px; border-radius: 4px; margin-left: 3px; vertical-align: 1px; }
+
+    .mori-sprite { width: 120px; height: 120px; background-size: 400% 400%; background-repeat: no-repeat; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.2)); }
+    @keyframes sprite-x { to { background-position-x: -400%; } }
+    @keyframes sprite-y { to { background-position-y: -400%; } }
+    .mori-sprite.idle      { background-image: url('assets/idle-sheet.png');      animation: sprite-x 750ms steps(4) infinite, sprite-y 3000ms steps(4) infinite; }
+    .mori-sprite.sleeping  { background-image: url('assets/sleeping-sheet.png');  animation: sprite-x 1250ms steps(4) infinite, sprite-y 5000ms steps(4) infinite; }
+    .mori-sprite.recording { background-image: url('assets/recording-sheet.png'); animation: sprite-x 375ms steps(4) infinite, sprite-y 1500ms steps(4) infinite; }
+    .mori-sprite.thinking  { background-image: url('assets/thinking-sheet.png');  animation: sprite-x 500ms steps(4) infinite, sprite-y 2000ms steps(4) infinite; }
+    .mori-sprite.done      { background-image: url('assets/done-sheet.png');      animation: sprite-x 450ms steps(4) infinite, sprite-y 1800ms steps(4) infinite; }
+    .mori-sprite.error     { background-image: url('assets/error-sheet.png');     animation: sprite-x 500ms steps(4) infinite, sprite-y 2000ms steps(4) infinite; }
+    .mori-sprite.walking   { background-image: url('assets/walking-sheet.png');   animation: sprite-x 625ms steps(4) infinite, sprite-y 2500ms steps(4) infinite; }
+    .mori-sprite.dragging  { background-image: url('assets/dragging-sheet.png');  animation: sprite-x 400ms steps(4) infinite, sprite-y 1600ms steps(4) infinite; }
+
+    .mori-walker {
+      position: fixed; bottom: 1rem; left: 0;
+      width: 130px; height: 130px;
+      background-image: url('assets/walking-sheet.png');
+      background-size: 400% 400%; background-repeat: no-repeat;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
+      pointer-events: none; z-index: 50;
+      animation:
+        walker-sprite-x 625ms steps(4) infinite,
+        walker-sprite-y 2500ms steps(4) infinite,
+        walker-stroll 38s linear infinite;
+    }
+    @keyframes walker-sprite-x { to { background-position-x: -400%; } }
+    @keyframes walker-sprite-y { to { background-position-y: -400%; } }
+    @keyframes walker-stroll {
+      0%   { transform: translateX(-50px) scaleX(1); }
+      48%  { transform: translateX(calc(100vw - 80px)) scaleX(1); }
+      50%  { transform: translateX(calc(100vw - 80px)) scaleX(-1); }
+      98%  { transform: translateX(-50px) scaleX(-1); }
+      100% { transform: translateX(-50px) scaleX(1); }
+    }
+    @media (prefers-reduced-motion: reduce) { .mori-walker { display: none; } }
+    @media (max-width: 480px) { .mori-walker { display: none; } }
+
+    .cta { display: inline-flex; gap: .75rem; flex-wrap: wrap; justify-content: center; align-items: center; }
+    .btn { display: inline-flex; align-items: center; gap: .5rem; padding: .7rem 1.25rem; border-radius: 10px; font-weight: 500; transition: all .15s; }
+    .btn-primary { background: var(--accent); color: #fff !important; }
+    .btn-primary:hover { background: #065f46; text-decoration: none; transform: translateY(-1px); }
+    .btn-outline { background: var(--bg-card); color: var(--fg) !important; border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--accent); text-decoration: none; }
+    .btn-bmc { background: var(--bmc); color: #1c1917 !important; }
+    .btn-bmc:hover { background: #ffd000; text-decoration: none; transform: translateY(-1px); }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    .feature-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem 1.5rem; }
+    .feature-card h3 { margin: 0 0 .5rem; color: var(--accent); font-size: 1rem; }
+    .feature-card p { margin: 0; font-size: .9rem; color: var(--fg-muted); }
+    img.screen { width: 100%; max-width: 100%; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 16px rgba(120,113,108,.06); margin-block: 1rem; }
+    pre { background: #1c1917; color: #f5f5f4; padding: 1rem 1.25rem; border-radius: 10px; overflow-x: auto; font-size: .85rem; line-height: 1.5; }
+    code { background: #f5f5f4; padding: .15rem .4rem; border-radius: 4px; font-size: .9em; font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; }
+    pre code { background: transparent; padding: 0; }
+    .flow { background: #1c1917; color: #d6d3d1; padding: 1.5rem; border-radius: 12px; font-family: 'JetBrains Mono', Consolas, monospace; font-size: .85rem; line-height: 1.6; white-space: pre; overflow-x: auto; }
+    .flow .accent { color: #6ee7b7; }
+    table { width: 100%; border-collapse: collapse; margin-block: 1rem; background: var(--bg-card); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+    th, td { padding: .75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); font-size: .9rem; }
+    th { background: #f5f5f4; font-weight: 600; }
+    tr:last-child td { border-bottom: none; }
+    .support-box { background: linear-gradient(135deg, #fefce8, #fef3c7); border: 1px solid #fcd34d; border-radius: 14px; padding: 1.5rem 2rem; text-align: center; margin-block: 2rem; }
+    .support-box h2 { border: none; margin: 0 0 .5rem; }
+    footer { text-align: center; color: var(--fg-muted); font-size: .85rem; padding: 2rem 0; border-top: 1px solid var(--border); margin-top: 4rem; }
+  </style>
+</head>
+<body>
+
+<div class="lang-switch">
+  <a href="index.html">EN</a>
+  <a href="index.zh-TW.html" class="active">繁中</a>
+</div>
+
+<main>
+
+<header class="hero">
+  <h1>Mori Sprite Studio</h1>
+  <p class="tagline">
+    從一張角色 ref 圖,一鍵生成 1024×1024 的 4×4 sprite 動畫包。
+    AI 驅動。純瀏覽器。透明背景。多種匯出格式。
+  </p>
+  <div class="hero-anim">
+    <div class="sprite-tile"><div class="mori-sprite idle"></div><div class="sprite-label">idle 站著</div></div>
+    <div class="sprite-tile"><div class="mori-sprite sleeping"></div><div class="sprite-label">sleeping 睡覺</div></div>
+    <div class="sprite-tile"><div class="mori-sprite recording"></div><div class="sprite-label">recording 聽你說話</div></div>
+    <div class="sprite-tile"><div class="mori-sprite thinking"></div><div class="sprite-label">thinking 思考</div></div>
+    <div class="sprite-tile"><div class="mori-sprite done"></div><div class="sprite-label">done 完成歡呼</div></div>
+    <div class="sprite-tile"><div class="mori-sprite error"></div><div class="sprite-label">error 慌張</div></div>
+    <div class="sprite-tile"><div class="mori-sprite walking"></div><div class="sprite-label">walking 走路<span class="opt-tag">opt</span></div></div>
+    <div class="sprite-tile"><div class="mori-sprite dragging"></div><div class="sprite-label">dragging 被抓<span class="opt-tag">opt</span></div></div>
+  </div>
+  <div class="cta">
+    <a class="btn btn-primary" href="https://mori-sprite-studio.vercel.app" target="_blank">▶ 試玩線上 app</a>
+    <a class="btn btn-outline" href="https://github.com/yazelin/mori-sprite-studio" target="_blank">⭐ GitHub repo</a>
+    <a class="btn btn-bmc" href="https://buymeacoffee.com/yazelin" target="_blank">☕ 請我喝咖啡</a>
+  </div>
+  <p style="font-size: .8rem; color: var(--fg-muted); margin-top: 1.5rem;">↑ 真實 sprite-sheet 用 CSS <code>steps()</code> 播放中 — 跟 mori-desktop 用的同一套技術。看下方有沒有看到 Mori 走過去 🍃</p>
+</header>
+
+<section>
+  <h2>這個工具做什麼</h2>
+  <p>給它<strong>一張你的角色 ref 圖</strong>,它幫你生出完整給 <a href="https://github.com/yazelin/mori-desktop">mori-desktop</a> 用的 sprite 動畫包 — <strong>6 個必要 + 2 個可選 state</strong>,每個都是 1024×1024 的 4×4 sprite sheet,mori-desktop 浮動視窗會播放。</p>
+  <ul>
+    <li><strong>必要 6 個:</strong>idle(站著)/ sleeping(睡覺)/ recording(聽)/ thinking(思考)/ done(完成歡呼)/ error(出包慌張)</li>
+    <li><strong>可選 2 個:</strong>walking(走路)/ dragging(被滑鼠拎起來)— 循環運動類,走獨立的 W/Dr pipeline</li>
+  </ul>
+  <p>這個專案是為 <a href="https://github.com/yazelin/mori-desktop"><strong>Mori</strong></a> 而生 — yazelin 的<strong>森林精靈</strong> Jarvis-style AI 夥伴,住在桌面上。<em>「Iron Man 有 Jarvis,我有 Mori。」</em>這個 studio 做的就是 Mori 的<strong>可見身體</strong> — 她的 sprite 形態,mori-desktop 浮動視窗會把她動畫化。</p>
+  <p>當然這工具也適合<strong>任何你想給「可見身體」的角色</strong>:你自己的 AI 夥伴 / 個人精靈 / 直播 overlay / 角色 mascot 都可以。Mori demo 只是一個範例。</p>
+  <p>也可以單獨把每個 state 匯出成 APNG / GIF / WebM / 原始 sheet PNG — 用在 LINE 動態貼圖、Discord、OBS overlay、影片剪輯等等。</p>
+  <img class="screen" src="assets/screen-01-project.png" alt="專案設定畫面 + 載入 demo 橫幅">
+</section>
+
+<section>
+  <h2>工作流程</h2>
+  <div class="flow"><span class="accent">[角色 ref 圖]</span>
+       │
+       │ (AI · 1 call → 6 格 grid)
+       ▼
+<span class="accent">[6 個靜態 base pose]</span>    ← 每個 state 可獨立重生
+       │
+       │ (AI · 6 calls,每 state 一次)
+       ▼
+<span class="accent">[6 張 sprite sheet,4×4]</span>    ← 每格可獨立編輯、跨 state normalize
+       │
+       │ (可選) walking + dragging
+       ▼
+<span class="accent">[+2 張 循環運動 sheet]</span>    ← W/Dr 獨立 pipeline(不 pre-tile)
+       │
+       │ (手動排序: 反向 + 換位)
+       ▼
+<span class="accent">[手調過的 gait cycle]</span>
+       │
+       │ (bake transforms + zip)
+       ▼
+<span class="accent">[mori.moripack.zip]</span>    →    mori-desktop
+       │
+       │ (每 state 可選)
+       ▼
+<span class="accent">[mori-{state}.png / .gif / .webm]</span>    →    LINE / Discord / OBS</div>
+  <ol>
+    <li><strong>上傳角色 ref</strong> — 任何 PNG / JPG,任何背景都行。</li>
+    <li><strong>生 6 個靜態</strong> — 一次 AI call 出 3×2 grid,自動切成 6 個 state pose。</li>
+    <li><strong>每 state 生動畫(必要 6 個)</strong> — 用 pre-tile placeholder + 多 anchor identity ref,把角色位置鎖住,只加微擾(眨眼、呼吸、小手勢)。</li>
+    <li><strong>可選的 walking + dragging</strong> — 走獨立 W/Dr pipeline(不 pre-tile,因為步行循環需要每格都不同 pose)。「反向順序」+「換位模式」buttons 讓你手動排序到走路看起來對為止。</li>
+    <li><strong>細調</strong> — 每格獨立重生、loop 設定、跨 state normalize 尺寸、scale / offset sliders。</li>
+    <li><strong>角色背板</strong>(可選)— 上傳 Light + Dark 兩張背板。用<strong>桌面預覽</strong>分頁看所有 state 疊在背板上的樣子,可切 shape / theme。</li>
+    <li><strong>匯出</strong> <code>.moripack.zip</code> 給 mori-desktop,或每 state 單獨匯出 APNG / GIF / WebM 給其他平台。</li>
+  </ol>
+  <img class="screen" src="assets/screen-02-state.png" alt="State 編輯器 + sprite sheet + loop preview + transform sliders">
+</section>
+
+<section>
+  <h2>功能</h2>
+  <div class="feature-grid">
+    <div class="feature-card"><h3>4 個 AI provider</h3><p>Author Fallback(免設定預設)、Codex-Image(用你 ChatGPT Plus 額度)、Vertex Gemini、Google Gemini Direct。</p></div>
+    <div class="feature-card"><h3>防抖動</h3><p>Pre-tile placeholder sheet 當 AI ref,鎖住角色 16 格內位置不會飄。</p></div>
+    <div class="feature-card"><h3>防角色 drift</h3><p>多 anchor identity ref — 其他 state 的 staticBase 都當 outfit anchor 一起送給 AI,衣服 / 髮型不會亂變。</p></div>
+    <div class="feature-card"><h3>Walking + Dragging 獨立 pipeline</h3><p>W / Dr template 不走 pre-tile。AI 從 character ref + neutral 全身站姿自由設計 16 格,template 內含逐格 gait 結構。</p></div>
+    <div class="feature-card"><h3>↺ 反向順序</h3><p>一鍵反向 16 cells。救「動畫看起來在後退」的情況。</p></div>
+    <div class="feature-card"><h3>✥ 換位模式</h3><p>點 cell A → 點 cell B → 兩格內容互換。手動排到走路看起來對為止。</p></div>
+    <div class="feature-card"><h3>桌面預覽分頁</h3><p>8 個 state 同時排成 floating widget mockup,可切 shape(圓 / 圓角 / 方)× backplate(顯示 / 關閉)× App theme × OS theme。跟 mori-desktop 真實 render 1:1 對應。</p></div>
+    <div class="feature-card"><h3>身體結構無關 prompt</h3><p>人形 / 植物 / 機器人 / 史萊姆 / 寶石都能用。Semantic 描述抽象 motion,不綁定 anatomy。</p></div>
+    <div class="feature-card"><h3>One-shot 兩種 pattern</h3><p>BURST-AND-SETTLE(歡呼)vs SUSTAINED-ENERGY(慌張)— 自動依 state semantic 選對的。</p></div>
+    <div class="feature-card"><h3>每格獨立重生</h3><p>點任一 frame → 只重生那格,用前後 frame + static base 當 context smooth 過渡。</p></div>
+    <div class="feature-card"><h3>Chroma + 邊緣 erosion</h3><p>綠或洋紅,3 級 tolerance,0-10 px erosion。「重新去背」從原始 raw 重跑,非破壞性,erosion 可上下調。</p></div>
+    <div class="feature-card"><h3>跨 state Normalize</h3><p>一鍵掃描每 state 的角色 bbox,算出 per-state transform(scale + offset),讓 mori-desktop 切 state 時不跳。</p></div>
+    <div class="feature-card"><h3>多種匯出格式</h3><p>.moripack.zip / APNG / GIF / WebM(VP9 + alpha)/ 原始 sheet / .moriproject.zip 存讀檔。</p></div>
+    <div class="feature-card"><h3>角色背板</h3><p>Light + Dark 兩張背板 PNG 一起打包,跟 mori-desktop PR #107 的 3-tier backplate chain 對應。</p></div>
+    <div class="feature-card"><h3>持久 Quota counter</h3><p>Sidebar 倒數 50→0 Author-Fallback 剩餘呼叫。用 Vercel KV(Upstash Redis)持久化 — Vercel function cold start 不會 reset。</p></div>
+    <div class="feature-card"><h3>Demo loader</h3><p>一鍵載入完整 27 MB Mori demo,新 visitor 馬上就能看全套運作。</p></div>
+  </div>
+  <img class="screen" src="assets/screen-03-backdrop.png" alt="背板上傳:Light + Dark 兩個 slot">
+</section>
+
+<section>
+  <h2>檔案格式</h2>
+  <table>
+    <thead><tr><th>格式</th><th>用途</th><th>哪裡能播</th></tr></thead>
+    <tbody>
+      <tr><td><code>.moripack.zip</code></td><td>Consumer 格式 — 拖進 mori-desktop characters 資料夾</td><td>mori-desktop 浮動視窗</td></tr>
+      <tr><td><code>.moriproject.zip</code></td><td>Author 格式 — 之後可載回繼續編輯</td><td>本 studio(「載入」按鈕)</td></tr>
+      <tr><td><strong>APNG</strong> (.png)</td><td>透明 + 循環。LINE 動態貼圖、Discord、Slack、Twitter inline</td><td>瀏覽器 + LINE + Discord</td></tr>
+      <tr><td><strong>GIF</strong> (.gif)</td><td>相容性最廣。1-bit alpha 所以邊緣稍粗</td><td>Mac Preview、Windows Photos、什麼都行</td></tr>
+      <tr><td><strong>WebM</strong> (.webm)</td><td>VP9 + alpha。OBS 串流 overlay、QuickTime</td><td>瀏覽器、OBS、影片剪輯</td></tr>
+      <tr><td>原始 sheet (.png)</td><td>1024×1024 4×4 sheet 本身</td><td>Photoshop / 外部編輯</td></tr>
+    </tbody>
+  </table>
+  <img class="screen" src="assets/screen-04-export.png" alt="匯出畫面:完整度檢查 + .moripack 下載">
+</section>
+
+<section>
+  <h2>快速上手</h2>
+  <h3>用線上 app</h3>
+  <ol>
+    <li>開 <a href="https://mori-sprite-studio.vercel.app">mori-sprite-studio.vercel.app</a></li>
+    <li>專案頁點 <code>✦ 載入 Mori 預設範本</code>(一鍵載入完整 Mori 角色包 — 27 MB)</li>
+    <li>到處逛逛看怎麼跑</li>
+    <li>要做自己的:清資料(或開 incognito),上傳你的角色 ref,點 <code>生 6 狀態靜態</code> → 每 state 點 <code>生動畫</code></li>
+  </ol>
+  <p>Author Fallback 用 yazelin 自己的 API key — 免設定。<strong>我自掏腰包暫時開放給大家試用。</strong>⚠ 每 IP 上限 <strong>50 次/day + 同時 1 張</strong>,**用 Vercel KV 持久化**所以真的會扣(Vercel cold start 不會 reset)。Sidebar 底部有倒數 counter。<strong>錢花完就會關掉</strong> — 不是長期承諾,只是讓陌生人也能試一下。想讓它繼續開著,請 <a href="https://buymeacoffee.com/yazelin">☕ 補點咖啡錢</a>。</p>
+
+  <h3>自架</h3>
+<pre><code>git clone https://github.com/yazelin/mori-sprite-studio
+cd mori-sprite-studio
+npm install
+npm run dev              # Vite dev server
+# 或
+npm run dev:vercel       # vercel dev — 測 /api/generate Author Fallback proxy 用
+</code></pre>
+  <p>本機跑 Author Fallback 在 <code>.env.local</code> 設:</p>
+<pre><code>AUTHOR_FALLBACK_PROVIDER=vertex-gemini
+AUTHOR_API_KEY=AQ.AAAA...    # Vertex AI Express key 開頭是 AQ
+AUTHOR_MODEL=gemini-3-pro-image-preview
+AUTHOR_IMAGE_SIZE=1K
+# 可選 — 持久 rate limit(用 Vercel KV integration 接 Upstash Redis)
+KV_REST_API_URL=...
+KV_REST_API_TOKEN=...</code></pre>
+</section>
+
+<section>
+  <h2>架構</h2>
+  <table>
+    <thead><tr><th>Layer</th><th>Tech</th></tr></thead>
+    <tbody>
+      <tr><td>UI</td><td>Vite + React 19 + TypeScript + Tailwind CSS + shadcn/ui</td></tr>
+      <tr><td>State</td><td>Zustand + IndexedDB(idb-keyval)Blob 原生持久化</td></tr>
+      <tr><td>AI providers</td><td>抽象 <code>ImageProvider</code> 介面 + 4 個實作</td></tr>
+      <tr><td>動畫 pipeline</td><td>C template(pre-tile,idle 類)+ W/Dr template(獨立,gait/swing 類)</td></tr>
+      <tr><td>Chroma key</td><td>2-pass per-channel dominance + despill + 邊緣 erosion</td></tr>
+      <tr><td>Cell 操作</td><td>Canvas 為基底的 reorder / swap / reverse(<code>imageOps.ts</code>)</td></tr>
+      <tr><td>動畫預覽</td><td>Canvas + requestAnimationFrame(16-frame row-major)</td></tr>
+      <tr><td>匯出 encoder</td><td>upng-js(APNG)、gifenc(GIF)、MediaRecorder + VP9(WebM)、JSZip</td></tr>
+      <tr><td>Server-side</td><td>Vercel Function <code>/api/generate</code> — Author Fallback proxy + KV-backed rate limit(Upstash Redis,fallback in-memory)</td></tr>
+    </tbody>
+  </table>
+  <p>輸出規格:1024×1024 PNG-32,4×4 grid,每格 256×256,row-major frame order,透明背景。對應 mori-desktop 的 <code>character-pack.md</code> v1.0。</p>
+</section>
+
+<div class="support-box">
+  <h2>用愛跟咖啡跑著的 ☕</h2>
+  <p>這是個人 passion project。如果你覺得實用,可以:</p>
+  <div class="cta">
+    <a class="btn btn-bmc" href="https://buymeacoffee.com/yazelin" target="_blank">☕ 請我喝咖啡</a>
+    <a class="btn btn-outline" href="https://github.com/yazelin/mori-sprite-studio" target="_blank">⭐ Star on GitHub</a>
+  </div>
+  <p style="font-size: .85rem; color: var(--fg-muted); margin: 1rem 0 0;">
+    自掏腰包做的。咖啡錢直接拿去:Author Fallback 的 API quota(讓新人不會剛來就沒得抽)、Vercel / domain 開銷、time + caffeine 繼續寫。
+  </p>
+</div>
+
+<section>
+  <h2>相關專案</h2>
+  <ul>
+    <li><a href="https://github.com/yazelin/mori-desktop">mori-desktop</a> — 森林精靈 Mori 的桌面身體。yazelin 的 Jarvis-style AI 夥伴。Rust + Tauri 2 + Whisper(耳)+ LLM(腦)。這個 studio 做她的可見 sprite 形態。</li>
+    <li><a href="https://github.com/yazelin/world-tree">world-tree</a> — Mori 的源頭 / 世界樹。Mori 來自的地方。</li>
+    <li><a href="https://github.com/yazelin/codex-image-service">codex-image-service</a> — 自架 ChatGPT Plus/Pro quota 當 image-gen API(其中一個 provider 接它)</li>
+    <li><a href="https://github.com/yazelin/line-sticker-studio">line-sticker-studio</a> — 姐妹專案,LINE 貼圖製作(共用一些 prompt engineering pattern)</li>
+    <li><a href="https://github.com/yazelin/emoji-slot-machine">emoji-slot-machine</a> — 姐妹專案,3×3 emoji 拉霸生成器(共用一些 sprite-sheet 動畫 pattern)</li>
+  </ul>
+</section>
+
+<footer>
+  由 <a href="https://github.com/yazelin">yazelin</a> 帶著 🌿 做出來 · MIT License
+</footer>
+
+</main>
+
+<!-- Mori 在頁面底部走來走去,無限循環 -->
+<div class="mori-walker" aria-hidden="true" title="Mori 路過 🍃"></div>
+
+</body>
+</html>

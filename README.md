@@ -2,6 +2,8 @@
 
 # Mori Sprite Studio
 
+🌐 **English** · [繁體中文](./README.zh-TW.md)
+
 **Web tool to build 1024×1024 4×4 sprite animation packs from a single character reference image.**
 
 AI-powered. Browser-only. Transparent backgrounds. Multiple export formats.
@@ -16,7 +18,11 @@ AI-powered. Browser-only. Transparent backgrounds. Multiple export formats.
 
 ## What it does
 
-You give it **one reference image** of your character. It produces a complete sprite animation pack for [mori-desktop](https://github.com/yazelin/mori-desktop) — 6 animated states (idle / sleeping / recording / thinking / done / error), each a 1024×1024 4×4 sprite sheet that the floating window plays back.
+You give it **one reference image** of your character. It produces a complete sprite animation pack for [mori-desktop](https://github.com/yazelin/mori-desktop) — **6 required + 2 optional animated states**, each a 1024×1024 4×4 sprite sheet that the floating window plays back.
+
+| Required (6) | Optional (2) |
+|---|---|
+| idle / sleeping / recording / thinking / done / error | walking / dragging |
 
 It's built for [**Mori**](https://github.com/yazelin/mori-desktop) — yazelin's 森林精靈 (forest spirit) Jarvis-style AI partner who lives on the desktop. _"Iron Man 有 Jarvis,我有 Mori。"_ This studio makes Mori's visible body — her sprite form — that the mori-desktop floating window animates.
 
@@ -33,13 +39,21 @@ You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG —
 ```
 [character ref image]
        │
-       │ (AI · 1 call)
+       │ (AI · 1 call → 6-cell grid)
        ▼
 [6 static base poses]    ← editable / re-rollable per state
        │
        │ (AI · 6 calls, one per state)
        ▼
 [6 sprite sheets, 4×4 each]    ← editable per cell, normalize across states
+       │
+       │ (optional) walking + dragging
+       ▼
+[+2 cyclic-locomotion sheets]    ← W / Dr standalone pipeline (no pre-tile)
+       │
+       │ (manual sort: 反向 + 換位)
+       ▼
+[hand-tuned gait cycle]
        │
        │ (bake transforms + zip)
        ▼
@@ -52,10 +66,11 @@ You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG —
 
 1. **Upload character ref** — any PNG/JPG of your character (cropped, any background).
 2. **Generate 6 statics** — one AI call produces a 3×2 grid the tool splits into 6 state poses (idle / sleeping / recording / thinking / done / error).
-3. **Per-state animation** — click `生 <state> 動畫` to produce the 4×4 sprite sheet for that state. Uses pre-tiled placeholder + multi-anchor identity reference to keep the character locked in position with only subtle motion (blink, breath, gesture).
-4. **Fine-tune** — click any cell to regen just that frame; adjust loop duration / mode; normalize size across states; per-state scale/offset sliders with reference guides; manual upload / download of any sheet for Photoshop round-trip.
-5. **Backdrop** (optional) — upload Light + Dark backdrop PNGs that ship inside the pack and render behind the sprite in mori-desktop.
-6. **Export** `.moripack.zip` — drop into mori-desktop's character folder.
+3. **Per-state animation (6 required states)** — click `生 <state> 動畫` to produce the 4×4 sprite sheet. Uses pre-tiled placeholder + multi-anchor identity reference to keep the character locked in position with subtle motion (blink, breath, gesture).
+4. **Optional: walking + dragging** — separate W / Dr pipeline (NO pre-tile, since cyclic locomotion needs free per-frame design). Generate neutral full-body static → 4×4 gait/swing sheet → manually reorder cells with reverse + swap buttons to get a clean cycle.
+5. **Fine-tune** — click any cell to regen just that frame; adjust loop duration / mode; normalize size across states; per-state scale/offset sliders with reference guides; manual upload / download of any sheet for Photoshop round-trip.
+6. **Backdrop** (optional) — upload Light + Dark backdrop PNGs that ship inside the pack. Use **桌面預覽** view to preview the 6+2 states layered on backdrop with shape (round/rounded/square) + theme (light/dark) toggles.
+7. **Export** `.moripack.zip` — drop into mori-desktop's character folder.
 
 ![State editor](docs/assets/screen-02-state.png)
 
@@ -65,11 +80,30 @@ You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG —
 
 **Generation**
 - 4 AI providers: **Author Fallback** (default, free no-setup), **Codex-Image** (your ChatGPT Plus/Pro quota via [yazelin/codex-image-service](https://github.com/yazelin/codex-image-service)), **Vertex Gemini**, **Google Gemini Direct**
-- Anti-jitter: pre-tiled placeholder sheet as AI reference locks character position across all 16 frames
+- Anti-jitter: pre-tiled placeholder sheet as AI reference locks character position across all 16 frames (idle-family states)
 - Anti-character-drift: multi-anchor identity reference (sends all other state staticBases as outfit anchors)
 - Anatomy-agnostic prompts: works for humanoid / plant / robot / blob / gem characters — semantics describe motion abstractly
 - Two one-shot sub-patterns: BURST-AND-SETTLE (done celebrations) vs SUSTAINED-ENERGY (error / panic)
 - BYOG path: copy prompt + reference, run AI yourself, upload result
+
+**Walking + Dragging (optional cyclic-locomotion states)**
+- Dedicated **W / Dr standalone pipeline** — no pre-tile (which would lock the character to one pose). AI designs all 16 cells freely from character ref + neutral standing static.
+- Embedded explicit gait/swing cycle structure in template (16-frame breakdown: cell 1 = left foot fwd, cell 7 = right foot fwd, etc.)
+- Strong identity lock: 'character design / hair / clothes / art style stay locked across all 16 cells, ONLY legs + arms + body tilt change'
+- Walking sprite designed facing RIGHT — mori-desktop engine mirrors via `scaleX(-1)` for leftward motion
+
+**Manual cell sorting (post-generation tuning)**
+- **↺ 反向順序** — one-click reverse all 16 cells (rescues sheets that play in reverse direction)
+- **✥ 換位模式** — toggle on, click cell A → click cell B → contents swap. Stay on for multiple swaps. Hand-tune the gait order until the walk looks right.
+
+**桌面預覽 view (desktop simulation)**
+- 6+2 floating-widget mockups laid out simultaneously, exactly matching mori-desktop's render:
+  - 200×200 stage with backdrop (`object-cover` cover full window)
+  - 130×130 sprite centered (`drop-shadow` matches floating.css)
+  - 1px outline (matches XShape clip)
+  - Real 3-layer backdrop composition (vignette + PNG + base gradient — copied 1:1 from mori-desktop's computed style)
+- Independent toggles: **mori-desktop App theme** (light/dark backdrop) × **OS theme** (light/dark wallpaper) × **shape** (circle/rounded/square) × **backplate mode** (logo/plain)
+- Inline technical explainer: why backdrop exists at all (Linux X11 + WebKit2GTK alpha-compositing bug workaround), how the 3-tier backplate fallback chain works
 
 **Editing**
 - Per-cell regeneration with `prev frame + next frame + staticBase` references for smooth interpolation
@@ -88,13 +122,23 @@ You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG —
 - Reference guide overlay on Loop preview for visual alignment
 
 **Export**
-- `.moripack.zip` — character pack for mori-desktop (manifest + 6 sheets + 2 backdrops)
+- `.moripack.zip` — character pack for mori-desktop (manifest + 6 required sheets + 0/1/2 optional walking/dragging + 2 backdrops)
 - Per state: APNG (transparent, LINE/Discord), GIF (universal, 1-bit alpha), WebM (VP9 + alpha, OBS overlay)
 - Raw sheet download (1024×1024 PNG) for external editing
 - `.moriproject.zip` save/load — full author state (sheets + raw + settings) for resuming work or sharing
 
+**Demo loader**
+- One-click `✦ 載入 Mori 預設範本` button on the project page — loads a fully-configured Mori character (27 MB) so you can play around without generating from scratch. Confirmation dialog warns about overwriting current data.
+
 **Per-character backdrop**
 - Upload Light + Dark backdrop PNGs, ships inside `.moripack` per [mori-desktop PR #107](https://github.com/yazelin/mori-desktop/pull/107) 3-tier backplate chain
+
+**Quota counter + rate limit (Author Fallback)**
+- Sidebar footer shows live countdown `50 → 0` of remaining Author-Fallback calls today (per-IP)
+- Persistent via Vercel KV (Upstash Redis) — counter doesn't reset across Vercel function cold starts
+- Graceful fallback to in-memory if KV env vars not provisioned
+- 1 concurrent request per IP (prevents multi-tab parallel abuse)
+- `GET /api/generate` returns current quota without consuming a slot — used by sidebar polling + post-generation refresh
 
 ![Backdrop uploader](docs/assets/screen-03-backdrop.png)
 
@@ -109,7 +153,7 @@ You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG —
 3. Browse around, see how it works
 4. To make your own: clear data (or use incognito), upload your character ref, click 生 6 狀態靜態 → per-state 生動畫
 
-Author Fallback uses yazelin's own API key — no setup needed. **I'm fronting the cost out of pocket so strangers can try the tool.** ⚠ Per-IP cap is 100 req/day + 1 concurrent. Quota counter lives in the sidebar footer. **When the budget runs out, it stops** — not a long-term promise, just letting people experience the tool. If you want it to stay available, ☕ [chip in](https://buymeacoffee.com/yazelin).
+Author Fallback uses yazelin's own API key — no setup needed. **I'm fronting the cost out of pocket so strangers can try the tool.** ⚠ Per-IP cap is **50 req/day + 1 concurrent**, **persistent via Vercel KV** so it actually counts (no resetting on cold starts). Quota countdown counter lives in the sidebar footer. **When the budget runs out, it stops** — not a long-term promise, just letting people experience the tool. If you want it to stay available, ☕ [chip in](https://buymeacoffee.com/yazelin).
 
 ### Self-host
 
@@ -174,14 +218,18 @@ Output spec: 1024×1024 PNG-32, 4×4 grid, 256×256 per cell, row-major frame or
 
 ## Per-state details (out-of-the-box defaults for the Mori character)
 
-| State | Loop mode | Duration | Pose hint |
-|---|---|---|---|
-| idle | loop | 3000 ms | Standing front-facing, gentle smile, calm welcoming |
-| sleeping | loop | 5000 ms | Cross-legged, eyes closed, hands in lap, floating Z |
-| recording | loop | 1500 ms | Hand cupped to ear (LISTENING to user, not holding a mic), wide alert eyes |
-| thinking | loop | 2000 ms | Finger to temple, eyes glancing up, thought sparkles |
-| done | one-shot (sub-pattern A burst-and-settle) | 1800 ms | Both hands raised in victory cheer, joyful ^v^ smile |
-| error | one-shot (sub-pattern B sustained-energy) | 2000 ms | Hands to head in cute distressed "oh no!" pose, tear-drop / tension lines |
+| State | Required | Loop mode | Duration | Pose hint |
+|---|---|---|---|---|
+| idle | ✓ | loop | 3000 ms | Standing front-facing, gentle smile, calm welcoming |
+| sleeping | ✓ | loop | 5000 ms | Cross-legged, eyes closed, hands in lap, floating Z |
+| recording | ✓ | loop | 1500 ms | Hand cupped to ear (LISTENING to user, not holding a mic), wide alert eyes |
+| thinking | ✓ | loop | 2000 ms | Finger to temple, eyes glancing up, thought sparkles |
+| done | ✓ | one-shot (sub-pattern A burst-and-settle) | 1800 ms | Both hands raised in victory cheer, joyful ^v^ smile |
+| error | ✓ | one-shot (sub-pattern B sustained-energy) | 2000 ms | Hands to head in cute distressed "oh no!" pose, tear-drop / tension lines |
+| walking | opt | loop | 2500 ms | Neutral full-body standing reference (facing right). Actual gait cycle rendered in 16 frames via W template. |
+| dragging | opt | loop | 1600 ms | Neutral full-body reference (feet planted in static, suspended swing in 16-frame animation via Dr template). |
+
+Required = mori-desktop expects these 6. Optional = if missing, mori-desktop falls back to idle.png + CSS transforms.
 
 State semantics are editable per project — see `src/defaults/semantics.ts` for defaults.
 

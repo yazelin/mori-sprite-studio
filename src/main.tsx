@@ -33,3 +33,9 @@ async function bootstrap() {
 }
 
 void bootstrap()
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('/sw.js')
+  })
+}

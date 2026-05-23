@@ -179,7 +179,7 @@ function DemoLoaderBanner() {
   return (
     <div className="rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50/40 p-5">
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="space-y-1 flex-1 min-w-[280px]">
+        <div className="space-y-1 flex-1 min-w-0">
           <h2 className="text-base font-semibold text-emerald-900">第一次用?載 Mori 預設 Demo</h2>
           <p className="text-sm text-emerald-800/80 max-w-prose">
             完整 Mori 角色 pack(6 個 state 動畫 + character ref + 2 個背板),

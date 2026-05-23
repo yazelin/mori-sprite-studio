@@ -10,13 +10,13 @@ export function ChromaConfig() {
   const set = useAppStore((s) => s.setChroma)
 
   return (
-    <div className="space-y-3 max-w-md">
+    <div className="space-y-3 w-full max-w-md">
       <div className="space-y-2">
         <Label className="text-sm">Chroma key 顏色</Label>
         <RadioGroup
           value={chroma.key}
           onValueChange={(v) => set({ key: v as ChromaKeyName })}
-          className="flex gap-4"
+          className="flex flex-col sm:flex-row gap-3 sm:gap-4"
         >
           <div className="flex items-center gap-2">
             <RadioGroupItem value="green" id="chroma-green" />
@@ -36,7 +36,7 @@ export function ChromaConfig() {
         <p className="text-xs text-slate-500">角色顏色含此色會被誤刪,擇一避開。</p>
       </div>
 
-      <div className="grid grid-cols-[100px_1fr] items-center gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] items-center gap-3">
         <Label className="text-sm">Tolerance</Label>
         <Select
           value={chroma.tolerance}
@@ -51,7 +51,7 @@ export function ChromaConfig() {
         </Select>
       </div>
 
-      <div className="grid grid-cols-[100px_1fr] items-start gap-3 pt-1">
+      <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] items-start gap-3 pt-1">
         <Label className="text-sm pt-2">Edge erosion</Label>
         <div className="space-y-1.5">
           <div className="flex items-center gap-3">

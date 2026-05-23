@@ -113,7 +113,7 @@ export function PreviewView() {
             每種組合都要看一下,確認 backdrop 設計在所有場景都不至於消失或太突兀。
           </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
             {STATE_NAMES.map((name) => (
               <FloatingWidgetMockup
                 key={name} state={name}

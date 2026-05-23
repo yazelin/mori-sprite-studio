@@ -56,7 +56,7 @@ export function ExportView() {
             return (
               <div
                 key={n}
-                className="grid grid-cols-[28px_120px_140px_1fr] gap-3 items-center py-2 px-2 rounded-md hover:bg-stone-50/80"
+                className="grid grid-cols-1 sm:grid-cols-[28px_120px_140px_1fr] gap-3 items-center py-2 px-2 rounded-md hover:bg-stone-50/80"
               >
                 <Icon size={20} strokeWidth={1.75} className={row.tone} />
                 <span className="capitalize font-medium text-stone-800">{n}</span>

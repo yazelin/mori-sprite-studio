@@ -20,7 +20,7 @@ export function ProviderConfig() {
   const update = useAppStore((s) => s.updateProviderConfig)
 
   return (
-    <div className="space-y-4 max-w-xl">
+    <div className="space-y-4 w-full max-w-xl">
       <RadioGroup
         value={provider.active}
         onValueChange={(v) => setActive(v as ProviderName)}
@@ -176,7 +176,7 @@ export function ProviderConfig() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[100px_1fr] items-center gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] items-center gap-3">
       <Label className="text-xs text-slate-600">{label}</Label>
       <div>{children}</div>
     </div>

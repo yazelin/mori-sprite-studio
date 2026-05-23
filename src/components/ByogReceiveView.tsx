@@ -27,7 +27,7 @@ export function ByogReceiveView({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-1">
       <div className="text-sm space-y-1">
         <div>{promptCopied ? '✓' : '…'} Prompt 已複製到剪貼簿</div>
         <div>✓ Reference 圖已下載</div>
@@ -53,16 +53,16 @@ export function ByogReceiveView({
       <UploadDropzone
         onFile={handleUpload}
         label={uploading ? '處理中…' : '⬇ 拖檔或點此上傳結果 ⬇'}
-        previewSize={300}
+        previewSize={220}
       />
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-start sm:items-center gap-2">
         <Checkbox
           id="skip-chroma"
           checked={skipChroma}
           onCheckedChange={(v) => setSkipChroma(Boolean(v))}
         />
-        <Label htmlFor="skip-chroma" className="text-sm">背景已是透明,跳過 chroma key</Label>
+        <Label htmlFor="skip-chroma" className="text-sm leading-relaxed">背景已是透明,跳過 chroma key</Label>
       </div>
 
       {error && <p className="text-sm text-red-600">⚠ {error}</p>}

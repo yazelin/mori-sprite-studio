@@ -8,7 +8,7 @@ export function MetadataForm() {
   const update = useAppStore((s) => s.updateMetadata)
 
   return (
-    <div className="space-y-3 max-w-md">
+    <div className="space-y-3 w-full max-w-md">
       <Row label="package_name">
         <Input
           value={metadata.packageName}
@@ -61,7 +61,7 @@ export function MetadataForm() {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[140px_1fr] items-center gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] items-center gap-3">
       <Label className="text-sm text-slate-600">{label}</Label>
       <div>{children}</div>
     </div>

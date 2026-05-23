@@ -86,7 +86,7 @@ export function PromptEditorModal({ open, onClose, context, onGenerate }: Props)
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto">
+      <DialogContent className="w-[96vw] sm:w-full max-w-3xl max-h-[92vh] overflow-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>
             {byogMode ? `BYOG 模式:${context.opLabel}` : `編輯 Prompt:${context.opLabel}(模板 ${context.templateKey})`}
@@ -107,7 +107,7 @@ export function PromptEditorModal({ open, onClose, context, onGenerate }: Props)
               <Label className="text-sm font-semibold">可用變數(當前 context 值)</Label>
               <div className="text-xs font-mono bg-slate-50 p-2 rounded-md space-y-1">
                 {Object.entries(context.vars).map(([k, v]) => (
-                  <div key={k} className="grid grid-cols-[200px_1fr] gap-2">
+                  <div key={k} className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-1 sm:gap-2">
                     <span className="text-slate-600">{`{{${k}}}`}</span>
                     <span className="text-slate-900 break-words whitespace-pre-wrap">
                       {v.length > 200 ? v.slice(0, 200) + '…' : v}
@@ -141,11 +141,11 @@ export function PromptEditorModal({ open, onClose, context, onGenerate }: Props)
               </pre>
             </section>
 
-            <div className="flex justify-between items-end pt-3 border-t border-border">
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-end gap-3 pt-3 border-t border-border">
               <Button variant="ghost" size="sm" onClick={() => setDraft(DEFAULT_TEMPLATES[context!.templateKey])}>
                 回預設
               </Button>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button variant="outline" onClick={onClose}>取消</Button>
                 <Button variant="outline" onClick={() => { save(); onClose() }}>儲存</Button>
                 <Button onClick={saveAndGenerate}>儲存並立即生圖 ✦</Button>

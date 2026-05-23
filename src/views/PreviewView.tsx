@@ -335,12 +335,15 @@ function FloatingWidgetMockup({
           backgroundSize:     backdropSizes.join(', ') || undefined,
           backgroundPosition: backdropPositions.join(', ') || undefined,
           backgroundRepeat:   backdropRepeats.join(', ') || undefined,
-          // 1 px outline that mori-desktop's XShape clip leaves visible at
-          // the window edge. Tone flips with OS theme so it shows on both
-          // light and dark simulated wallpapers.
-          boxShadow: osTheme === 'light'
-            ? 'inset 0 0 0 1px rgba(0,0,0,0.18)'
-            : 'inset 0 0 0 1px rgba(255,255,255,0.22)',
+          // 1 px outline (frame edge). When backdrop is on, let edge tone
+          // follow app theme; when backdrop is off, keep contrast by OS theme.
+          boxShadow: showBackdrop
+            ? (appTheme === 'light'
+                ? 'inset 0 0 0 1px rgba(120,113,108,0.28)'
+                : 'inset 0 0 0 1px rgba(226,232,240,0.28)')
+            : (osTheme === 'light'
+                ? 'inset 0 0 0 1px rgba(0,0,0,0.18)'
+                : 'inset 0 0 0 1px rgba(255,255,255,0.22)'),
         }}
       >
         {/* Sprite — 130×130 centered + drop shadow */}

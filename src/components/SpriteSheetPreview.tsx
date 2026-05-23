@@ -18,12 +18,10 @@ export function SpriteSheetPreview({ sheet, selectedCell, onCellClick, size = 38
     return () => URL.revokeObjectURL(u)
   }, [sheet])
 
-  const cellSize = size / 4
-
   return (
     <div
-      className="relative inline-block rounded-xl border border-border overflow-hidden tx-checker"
-      style={{ width: size, height: size }}
+      className="relative inline-block w-full max-w-full rounded-xl border border-border overflow-hidden tx-checker aspect-square"
+      style={{ width: `min(100%, ${size}px)` }}
     >
       {url ? (
         <img src={url} alt="sheet" className="absolute inset-0 w-full h-full" />
@@ -43,7 +41,6 @@ export function SpriteSheetPreview({ sheet, selectedCell, onCellClick, size = 38
                 ? 'ring-2 ring-inset ring-emerald-500 bg-emerald-500/10 z-10'
                 : 'hover:bg-emerald-500/5 hover:border-emerald-400/40',
             )}
-            style={{ width: cellSize, height: cellSize }}
             aria-label={`Frame ${i + 1}`}
             aria-pressed={selectedCell === i}
           >

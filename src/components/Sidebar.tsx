@@ -25,7 +25,7 @@ const STATUS_DOT_COLOR: Record<SheetStatus, string> = {
   animated:    'bg-emerald-500',
 }
 
-export function Sidebar() {
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const view = useAppStore((s) => s.ui.view)
   const setView = useAppStore((s) => s.setView)
   const states = useAppStore((s) => s.project.states)
@@ -58,7 +58,7 @@ export function Sidebar() {
       </div>
 
       <div className="flex-1 overflow-auto px-3 py-4 space-y-1">
-        <Item active={view.kind === 'project'} onClick={() => setView({ kind: 'project' })} icon={<Home size={16} strokeWidth={1.75} />} label="專案設定" />
+        <Item active={view.kind === 'project'} onClick={() => { setView({ kind: 'project' }); onNavigate?.() }} icon={<Home size={16} strokeWidth={1.75} />} label="專案設定" />
         <SectionLabel>States(必要 6 個)</SectionLabel>
         {REQUIRED_STATE_NAMES.map((name) => {
           const state = states[name]
@@ -66,7 +66,7 @@ export function Sidebar() {
             <StateItem
               key={name}
               active={view.kind === 'state' && view.name === name}
-              onClick={() => setView({ kind: 'state', name })}
+              onClick={() => { setView({ kind: 'state', name }); onNavigate?.() }}
               label={STATE_LABEL[name]}
               status={state.status}
               thumbBlob={state.staticBase ?? state.sheet}
@@ -80,7 +80,7 @@ export function Sidebar() {
             <StateItem
               key={name}
               active={view.kind === 'state' && view.name === name}
-              onClick={() => setView({ kind: 'state', name })}
+              onClick={() => { setView({ kind: 'state', name }); onNavigate?.() }}
               label={STATE_LABEL[name]}
               status={state.status}
               thumbBlob={state.staticBase ?? state.sheet}
@@ -88,10 +88,10 @@ export function Sidebar() {
           )
         })}
         <SectionLabel>Extras</SectionLabel>
-        <Item active={view.kind === 'backdrop'} onClick={() => setView({ kind: 'backdrop' })} icon={<ImagePlus size={16} strokeWidth={1.75} />} label="角色背板" />
-        <Item active={view.kind === 'preview'} onClick={() => setView({ kind: 'preview' })} icon={<Eye size={16} strokeWidth={1.75} />} label="桌面預覽" />
+        <Item active={view.kind === 'backdrop'} onClick={() => { setView({ kind: 'backdrop' }); onNavigate?.() }} icon={<ImagePlus size={16} strokeWidth={1.75} />} label="角色背板" />
+        <Item active={view.kind === 'preview'} onClick={() => { setView({ kind: 'preview' }); onNavigate?.() }} icon={<Eye size={16} strokeWidth={1.75} />} label="桌面預覽" />
         <SectionLabel>Output</SectionLabel>
-        <Item active={view.kind === 'export'} onClick={() => setView({ kind: 'export' })} icon={<Download size={16} strokeWidth={1.75} />} label="匯出 .moripack" />
+        <Item active={view.kind === 'export'} onClick={() => { setView({ kind: 'export' }); onNavigate?.() }} icon={<Download size={16} strokeWidth={1.75} />} label="匯出 .moripack" />
       </div>
 
       <div className="mt-auto px-3 py-3 border-t border-border space-y-2 text-xs">

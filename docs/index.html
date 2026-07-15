@@ -84,14 +84,14 @@
     }
 
     /* Per-state durations match DEFAULT_LOOP_DURATIONS_MS — sprite-x is duration/4 */
-    .mori-sprite.idle      { background-image: url('assets/idle-sheet.png');      animation: sprite-x 750ms infinite linear, sprite-y 3000ms infinite linear; }
-    .mori-sprite.sleeping  { background-image: url('assets/sleeping-sheet.png');  animation: sprite-x 1250ms infinite linear, sprite-y 5000ms infinite linear; }
-    .mori-sprite.recording { background-image: url('assets/recording-sheet.png'); animation: sprite-x 375ms infinite linear, sprite-y 1500ms infinite linear; }
-    .mori-sprite.thinking  { background-image: url('assets/thinking-sheet.png');  animation: sprite-x 500ms infinite linear, sprite-y 2000ms infinite linear; }
-    .mori-sprite.done      { background-image: url('assets/done-sheet.png');      animation: sprite-x 450ms infinite linear, sprite-y 1800ms infinite linear; }
-    .mori-sprite.error     { background-image: url('assets/error-sheet.png');     animation: sprite-x 500ms infinite linear, sprite-y 2000ms infinite linear; }
-    .mori-sprite.walking   { background-image: url('assets/walking-sheet.png');   animation: sprite-x 625ms infinite linear, sprite-y 2500ms infinite linear; }
-    .mori-sprite.dragging  { background-image: url('assets/dragging-sheet.png');  animation: sprite-x 400ms infinite linear, sprite-y 1600ms infinite linear; }
+    .mori-sprite.idle      { background-image: url('assets/idle-sheet.webp');      animation: sprite-x 750ms infinite linear, sprite-y 3000ms infinite linear; }
+    .mori-sprite.sleeping  { background-image: url('assets/sleeping-sheet.webp');  animation: sprite-x 1250ms infinite linear, sprite-y 5000ms infinite linear; }
+    .mori-sprite.recording { background-image: url('assets/recording-sheet.webp'); animation: sprite-x 375ms infinite linear, sprite-y 1500ms infinite linear; }
+    .mori-sprite.thinking  { background-image: url('assets/thinking-sheet.webp');  animation: sprite-x 500ms infinite linear, sprite-y 2000ms infinite linear; }
+    .mori-sprite.done      { background-image: url('assets/done-sheet.webp');      animation: sprite-x 450ms infinite linear, sprite-y 1800ms infinite linear; }
+    .mori-sprite.error     { background-image: url('assets/error-sheet.webp');     animation: sprite-x 500ms infinite linear, sprite-y 2000ms infinite linear; }
+    .mori-sprite.walking   { background-image: url('assets/walking-sheet.webp');   animation: sprite-x 625ms infinite linear, sprite-y 2500ms infinite linear; }
+    .mori-sprite.dragging  { background-image: url('assets/dragging-sheet.webp');  animation: sprite-x 400ms infinite linear, sprite-y 1600ms infinite linear; }
 
     /* Mori walker — 130×130, sheet scaled to 520×520, step = 130 px.
        JS controls position + direction (see <script> at bottom of body);
@@ -101,7 +101,7 @@
     .mori-walker {
       position: fixed; top: 0; left: 0;
       width: 130px; height: 130px;
-      background-image: url('assets/walking-sheet.png');
+      background-image: url('assets/walking-sheet.webp');
       background-size: 520px 520px; background-repeat: no-repeat;
       filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
       cursor: grab;
@@ -117,7 +117,7 @@
     }
     .mori-walker.is-dragging {
       cursor: grabbing;
-      background-image: url('assets/dragging-sheet.png');
+      background-image: url('assets/dragging-sheet.webp');
       animation:
         walker-sprite-x 400ms infinite linear,
         walker-sprite-y 1600ms infinite linear;
@@ -265,7 +265,7 @@
   <p>It's built for <a href="https://github.com/yazelin/mori-desktop"><strong>Mori</strong></a> — yazelin's 森林精靈 (forest spirit) Jarvis-style AI partner who lives on the desktop. <em>"Iron Man 有 Jarvis,我有 Mori。"</em> This studio makes Mori's <strong>visible body</strong> — her sprite form — that the mori-desktop floating window animates.</p>
   <p>The studio also works for <strong>any character you want to give a visible form to</strong>: your own AI partner / personal spirit / streamer overlay companion / character mascot. The Mori demo is one example of what's possible.</p>
   <p>You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG — useful for LINE animated stickers, Discord, OBS overlays, video editing, etc.</p>
-  <img class="screen" src="assets/screen-01-project.png" alt="Project setup screen with demo loader banner">
+  <img class="screen" src="assets/screen-01-project.webp" alt="Project setup screen with demo loader banner">
 </section>
 
 <section>
@@ -304,7 +304,7 @@
     <li><strong>Backdrop</strong> (optional) — Light + Dark backdrop PNGs. Use <strong>桌面預覽</strong> view to see all states layered on backdrop with shape + theme toggles.</li>
     <li><strong>Export</strong> <code>.moripack.zip</code> for mori-desktop, or individual APNG / GIF / WebM for other platforms.</li>
   </ol>
-  <img class="screen" src="assets/screen-02-state.png" alt="State editor with sprite sheet, loop preview, and transform sliders">
+  <img class="screen" src="assets/screen-02-state.webp" alt="State editor with sprite sheet, loop preview, and transform sliders">
 </section>
 
 <section>
@@ -327,7 +327,7 @@
     <div class="feature-card"><h3>Persistent quota counter</h3><p>Sidebar countdown 50→0 of remaining Author-Fallback calls. Persisted via Vercel KV (Upstash Redis) — no resets across function cold starts.</p></div>
     <div class="feature-card"><h3>Demo loader</h3><p>One-click loads a fully-configured 27 MB Mori demo so new visitors see everything immediately.</p></div>
   </div>
-  <img class="screen" src="assets/screen-03-backdrop.png" alt="Backdrop uploader with Light + Dark slots">
+  <img class="screen" src="assets/screen-03-backdrop.webp" alt="Backdrop uploader with Light + Dark slots">
 </section>
 
 <section>
@@ -343,7 +343,7 @@
       <tr><td>Raw sheet (.png)</td><td>The 1024×1024 4×4 sheet itself</td><td>Photoshop / external edit</td></tr>
     </tbody>
   </table>
-  <img class="screen" src="assets/screen-04-export.png" alt="Export view showing completeness check and .moripack download">
+  <img class="screen" src="assets/screen-04-export.webp" alt="Export view showing completeness check and .moripack download">
 </section>
 
 <section>

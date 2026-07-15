@@ -78,19 +78,19 @@
       50%,  74.99% { background-position-y: var(--sprite-step-2); }
       75%,  100%   { background-position-y: var(--sprite-step-3); }
     }
-    .mori-sprite.idle      { background-image: url('assets/idle-sheet.png');      animation: sprite-x 750ms infinite linear, sprite-y 3000ms infinite linear; }
-    .mori-sprite.sleeping  { background-image: url('assets/sleeping-sheet.png');  animation: sprite-x 1250ms infinite linear, sprite-y 5000ms infinite linear; }
-    .mori-sprite.recording { background-image: url('assets/recording-sheet.png'); animation: sprite-x 375ms infinite linear, sprite-y 1500ms infinite linear; }
-    .mori-sprite.thinking  { background-image: url('assets/thinking-sheet.png');  animation: sprite-x 500ms infinite linear, sprite-y 2000ms infinite linear; }
-    .mori-sprite.done      { background-image: url('assets/done-sheet.png');      animation: sprite-x 450ms infinite linear, sprite-y 1800ms infinite linear; }
-    .mori-sprite.error     { background-image: url('assets/error-sheet.png');     animation: sprite-x 500ms infinite linear, sprite-y 2000ms infinite linear; }
-    .mori-sprite.walking   { background-image: url('assets/walking-sheet.png');   animation: sprite-x 625ms infinite linear, sprite-y 2500ms infinite linear; }
-    .mori-sprite.dragging  { background-image: url('assets/dragging-sheet.png');  animation: sprite-x 400ms infinite linear, sprite-y 1600ms infinite linear; }
+    .mori-sprite.idle      { background-image: url('assets/idle-sheet.webp');      animation: sprite-x 750ms infinite linear, sprite-y 3000ms infinite linear; }
+    .mori-sprite.sleeping  { background-image: url('assets/sleeping-sheet.webp');  animation: sprite-x 1250ms infinite linear, sprite-y 5000ms infinite linear; }
+    .mori-sprite.recording { background-image: url('assets/recording-sheet.webp'); animation: sprite-x 375ms infinite linear, sprite-y 1500ms infinite linear; }
+    .mori-sprite.thinking  { background-image: url('assets/thinking-sheet.webp');  animation: sprite-x 500ms infinite linear, sprite-y 2000ms infinite linear; }
+    .mori-sprite.done      { background-image: url('assets/done-sheet.webp');      animation: sprite-x 450ms infinite linear, sprite-y 1800ms infinite linear; }
+    .mori-sprite.error     { background-image: url('assets/error-sheet.webp');     animation: sprite-x 500ms infinite linear, sprite-y 2000ms infinite linear; }
+    .mori-sprite.walking   { background-image: url('assets/walking-sheet.webp');   animation: sprite-x 625ms infinite linear, sprite-y 2500ms infinite linear; }
+    .mori-sprite.dragging  { background-image: url('assets/dragging-sheet.webp');  animation: sprite-x 400ms infinite linear, sprite-y 1600ms infinite linear; }
 
     .mori-walker {
       position: fixed; top: 0; left: 0;
       width: 130px; height: 130px;
-      background-image: url('assets/walking-sheet.png');
+      background-image: url('assets/walking-sheet.webp');
       background-size: 520px 520px; background-repeat: no-repeat;
       filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
       cursor: grab;
@@ -106,7 +106,7 @@
     }
     .mori-walker.is-dragging {
       cursor: grabbing;
-      background-image: url('assets/dragging-sheet.png');
+      background-image: url('assets/dragging-sheet.webp');
       animation:
         walker-sprite-x 400ms infinite linear,
         walker-sprite-y 1600ms infinite linear;
@@ -249,7 +249,7 @@
   <p>這個專案是為 <a href="https://github.com/yazelin/mori-desktop"><strong>Mori</strong></a> 而生 — yazelin 的<strong>森林精靈</strong> Jarvis-style AI 夥伴,住在桌面上。<em>「Iron Man 有 Jarvis,我有 Mori。」</em>這個 studio 做的就是 Mori 的<strong>可見身體</strong> — 她的 sprite 形態,mori-desktop 浮動視窗會把她動畫化。</p>
   <p>當然這工具也適合<strong>任何你想給「可見身體」的角色</strong>:你自己的 AI 夥伴 / 個人精靈 / 直播 overlay / 角色 mascot 都可以。Mori demo 只是一個範例。</p>
   <p>也可以單獨把每個 state 匯出成 APNG / GIF / WebM / 原始 sheet PNG — 用在 LINE 動態貼圖、Discord、OBS overlay、影片剪輯等等。</p>
-  <img class="screen" src="assets/screen-01-project.png" alt="專案設定畫面 + 載入 demo 橫幅">
+  <img class="screen" src="assets/screen-01-project.webp" alt="專案設定畫面 + 載入 demo 橫幅">
 </section>
 
 <section>
@@ -288,7 +288,7 @@
     <li><strong>角色背板</strong>(可選)— 上傳 Light + Dark 兩張背板。用<strong>桌面預覽</strong>分頁看所有 state 疊在背板上的樣子,可切 shape / theme。</li>
     <li><strong>匯出</strong> <code>.moripack.zip</code> 給 mori-desktop,或每 state 單獨匯出 APNG / GIF / WebM 給其他平台。</li>
   </ol>
-  <img class="screen" src="assets/screen-02-state.png" alt="State 編輯器 + sprite sheet + loop preview + transform sliders">
+  <img class="screen" src="assets/screen-02-state.webp" alt="State 編輯器 + sprite sheet + loop preview + transform sliders">
 </section>
 
 <section>
@@ -311,7 +311,7 @@
     <div class="feature-card"><h3>持久 Quota counter</h3><p>Sidebar 倒數 50→0 Author-Fallback 剩餘呼叫。用 Vercel KV(Upstash Redis)持久化 — Vercel function cold start 不會 reset。</p></div>
     <div class="feature-card"><h3>Demo loader</h3><p>一鍵載入完整 27 MB Mori demo,新 visitor 馬上就能看全套運作。</p></div>
   </div>
-  <img class="screen" src="assets/screen-03-backdrop.png" alt="背板上傳:Light + Dark 兩個 slot">
+  <img class="screen" src="assets/screen-03-backdrop.webp" alt="背板上傳:Light + Dark 兩個 slot">
 </section>
 
 <section>
@@ -327,7 +327,7 @@
       <tr><td>原始 sheet (.png)</td><td>1024×1024 4×4 sheet 本身</td><td>Photoshop / 外部編輯</td></tr>
     </tbody>
   </table>
-  <img class="screen" src="assets/screen-04-export.png" alt="匯出畫面:完整度檢查 + .moripack 下載">
+  <img class="screen" src="assets/screen-04-export.webp" alt="匯出畫面:完整度檢查 + .moripack 下載">
 </section>
 
 <section>

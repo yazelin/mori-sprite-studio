@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mori-sprite-studio-v1'
+const CACHE_NAME = 'mori-sprite-studio-v2'
 const STATIC_ASSETS = ['/', '/manifest.webmanifest', '/favicon-192.png', '/favicon-512.png', '/favicon-32.png']
 
 self.addEventListener('install', (event) => {

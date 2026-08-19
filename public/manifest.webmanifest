@@ -27,5 +27,22 @@
       "purpose": "maskable"
     }
   ],
-  "scope": "/"
+  "scope": "/",
+  "id": "/",
+  "screenshots": [
+    {
+      "src": "screenshot-wide.webp",
+      "sizes": "1280x800",
+      "type": "image/webp",
+      "form_factor": "wide",
+      "label": "Sprite Studio 桌面"
+    },
+    {
+      "src": "screenshot-narrow.webp",
+      "sizes": "1170x1992",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Sprite Studio 手機"
+    }
+  ]
 }

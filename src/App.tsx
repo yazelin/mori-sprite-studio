@@ -28,7 +28,7 @@ export default function App() {
       </div>
 
       <main className="flex-1 overflow-auto">
-        <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur md:hidden">
+        <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur md:hidden pt-[env(safe-area-inset-top)]">
           <div className="flex items-center justify-between px-4 py-3">
             <div>
               <p className="text-sm font-semibold leading-tight">Mori Sprite Studio</p>

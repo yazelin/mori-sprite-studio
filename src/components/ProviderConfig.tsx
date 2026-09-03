@@ -6,13 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { ProviderName } from '@/types/provider'
 
 const PROVIDER_LABELS: Record<ProviderName, string> = {
-  'author-fallback': 'Author Fallback (預設,免設定)',
+  'google-gemini':   'Google Gemini Direct (AI Studio)',
   'codex-image':     'Codex-Image (ChatGPT 訂閱)',
   'vertex-gemini':   'Vertex Gemini (Google Cloud)',
-  'google-gemini':   'Google Gemini Direct (AI Studio)',
 }
 
-const ORDER: ProviderName[] = ['author-fallback', 'codex-image', 'vertex-gemini', 'google-gemini']
+const ORDER: ProviderName[] = ['google-gemini', 'codex-image', 'vertex-gemini']
 
 export function ProviderConfig() {
   const provider = useAppStore((s) => s.provider)
@@ -34,27 +33,6 @@ export function ProviderConfig() {
             </div>
             {provider.active === name && (
               <div className="ml-6 space-y-2 p-3 bg-slate-50 rounded-md">
-                {name === 'author-fallback' && (
-                  <div className="text-xs text-slate-600 space-y-1">
-                    <p>使用 yazelin 的 API key(server-side env var,你不用設定)。我自掏腰包暫時開放給大家試用。</p>
-                    <p className="text-amber-700">
-                      ⚠ 每 IP 每日上限 50 次 · 同時並行 1 張。
-                      <br />
-                      **錢花完就會關掉**,不是長期承諾,只是讓陌生人也能試一下這個工具。如果你會大量用,建議切其他 provider 自帶 key。
-                    </p>
-                    <p>
-                      想讓它繼續開著?{' '}
-                      <a
-                        href="https://buymeacoffee.com/yazelin"
-                        target="_blank" rel="noreferrer"
-                        className="underline text-emerald-700 hover:text-emerald-800"
-                      >
-                        ☕ buymeacoffee.com/yazelin
-                      </a>{' '}
-                      補一點咖啡錢,我才能繼續把 quota 加進來。
-                    </p>
-                  </div>
-                )}
                 {name === 'codex-image' && (
                   <>
                     <p className="text-xs text-slate-600">
@@ -126,6 +104,15 @@ export function ProviderConfig() {
                         </a>{' '}
                         建立。免費 tier 有 daily req 上限。
                       </p>
+                    )}
+                    {name === 'google-gemini' && (
+                      <Field label="Base URL(選填,GenAI 相容 gateway)">
+                        <Input
+                          value={provider.googleGemini.baseUrl ?? ''}
+                          onChange={(e) => update('googleGemini', { baseUrl: e.target.value })}
+                          placeholder="https://generativelanguage.googleapis.com"
+                        />
+                      </Field>
                     )}
                     <Field label="API Key">
                       <Input

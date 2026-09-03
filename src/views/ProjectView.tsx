@@ -116,7 +116,7 @@ export function ProjectView() {
 
       <Section
         title="AI Provider"
-        subtitle="預設 Author Fallback 免設定可直接用。其他 3 個自填 key。"
+        subtitle="全部自帶 key(BYOK)。免費試用通道已停止提供。"
         icon={<Wand2 {...ICON_PROPS} />}
       >
         <ProviderConfig />

@@ -294,7 +294,7 @@
 <section>
   <h2>功能</h2>
   <div class="feature-grid">
-    <div class="feature-card"><h3>4 個 AI provider</h3><p>Author Fallback(免設定預設)、Codex-Image(用你 ChatGPT Plus 額度)、Vertex Gemini、Google Gemini Direct。</p></div>
+    <div class="feature-card"><h3>3 個 AI provider(BYOK)</h3><p>Google Gemini Direct(AI Studio key)、Codex-Image(用你 ChatGPT Plus 額度)、Vertex Gemini — 全部自帶 key。</p></div>
     <div class="feature-card"><h3>防抖動</h3><p>Pre-tile placeholder sheet 當 AI ref,鎖住角色 16 格內位置不會飄。</p></div>
     <div class="feature-card"><h3>防角色 drift</h3><p>多 anchor identity ref — 其他 state 的 staticBase 都當 outfit anchor 一起送給 AI,衣服 / 髮型不會亂變。</p></div>
     <div class="feature-card"><h3>Walking + Dragging 獨立 pipeline</h3><p>W / Dr template 不走 pre-tile。AI 從 character ref + neutral 全身站姿自由設計 16 格,template 內含逐格 gait 結構。</p></div>
@@ -308,7 +308,6 @@
     <div class="feature-card"><h3>跨 state Normalize</h3><p>一鍵掃描每 state 的角色 bbox,算出 per-state transform(scale + offset),讓 mori-desktop 切 state 時不跳。</p></div>
     <div class="feature-card"><h3>多種匯出格式</h3><p>.moripack.zip / APNG / GIF / WebM(VP9 + alpha)/ 原始 sheet / .moriproject.zip 存讀檔。</p></div>
     <div class="feature-card"><h3>角色背板</h3><p>Light + Dark 兩張背板 PNG 一起打包,跟 mori-desktop PR #107 的 3-tier backplate chain 對應。</p></div>
-    <div class="feature-card"><h3>持久 Quota counter</h3><p>Sidebar 倒數 50→0 Author-Fallback 剩餘呼叫。用 Vercel KV(Upstash Redis)持久化 — Vercel function cold start 不會 reset。</p></div>
     <div class="feature-card"><h3>Demo loader</h3><p>一鍵載入完整 27 MB Mori demo,新 visitor 馬上就能看全套運作。</p></div>
   </div>
   <img class="screen" src="https://cdn.jsdelivr.net/gh/yazelin/mori-sprite-studio@main/docs/assets/screen-03-backdrop.webp" alt="背板上傳:Light + Dark 兩個 slot">
@@ -339,24 +338,14 @@
     <li>到處逛逛看怎麼跑</li>
     <li>要做自己的:清資料(或開 incognito),上傳你的角色 ref,點 <code>生 6 狀態靜態</code> → 每 state 點 <code>生動畫</code></li>
   </ol>
-  <p>Author Fallback 用 yazelin 自己的 API key — 免設定。<strong>我自掏腰包暫時開放給大家試用。</strong>⚠ 每 IP 上限 <strong>50 次/day + 同時 1 張</strong>,**用 Vercel KV 持久化**所以真的會扣(Vercel cold start 不會 reset)。Sidebar 底部有倒數 counter。<strong>錢花完就會關掉</strong> — 不是長期承諾,只是讓陌生人也能試一下。想讓它繼續開著,請 <a href="https://buymeacoffee.com/yazelin">☕ 補點咖啡錢</a>。</p>
+  <p>所有 provider 都要自帶 key(BYOK)— 免費試用通道(Author Fallback)已停止提供。在 sidebar 的 AI Provider 區選一個 provider 填自己的 key(Google Gemini Direct 只要一把免費的 <a href="https://aistudio.google.com/">AI Studio</a> API key)。</p>
 
   <h3>自架</h3>
 <pre><code>git clone https://github.com/yazelin/mori-sprite-studio
 cd mori-sprite-studio
 npm install
 npm run dev              # Vite dev server
-# 或
-npm run dev:vercel       # vercel dev — 測 /api/generate Author Fallback proxy 用
 </code></pre>
-  <p>本機跑 Author Fallback 在 <code>.env.local</code> 設:</p>
-<pre><code>AUTHOR_FALLBACK_PROVIDER=vertex-gemini
-AUTHOR_API_KEY=AQ.AAAA...    # Vertex AI Express key 開頭是 AQ
-AUTHOR_MODEL=gemini-3-pro-image-preview
-AUTHOR_IMAGE_SIZE=1K
-# 可選 — 持久 rate limit(用 Vercel KV integration 接 Upstash Redis)
-KV_REST_API_URL=...
-KV_REST_API_TOKEN=...</code></pre>
 </section>
 
 <section>
@@ -372,7 +361,7 @@ KV_REST_API_TOKEN=...</code></pre>
       <tr><td>Cell 操作</td><td>Canvas 為基底的 reorder / swap / reverse(<code>imageOps.ts</code>)</td></tr>
       <tr><td>動畫預覽</td><td>Canvas + requestAnimationFrame(16-frame row-major)</td></tr>
       <tr><td>匯出 encoder</td><td>upng-js(APNG)、gifenc(GIF)、MediaRecorder + VP9(WebM)、JSZip</td></tr>
-      <tr><td>Server-side</td><td>Vercel Function <code>/api/generate</code> — Author Fallback proxy + KV-backed rate limit(Upstash Redis,fallback in-memory)</td></tr>
+      <tr><td>Server-side</td><td>無 — 純靜態前端,AI 呼叫從瀏覽器直打你自己的 provider(BYOK)</td></tr>
     </tbody>
   </table>
   <p>輸出規格:1024×1024 PNG-32,4×4 grid,每格 256×256,row-major frame order,透明背景。對應 mori-desktop 的 <code>character-pack.md</code> v1.0。</p>
@@ -386,17 +375,17 @@ KV_REST_API_TOKEN=...</code></pre>
     <a class="btn btn-outline" href="https://github.com/yazelin/mori-sprite-studio" target="_blank">⭐ Star on GitHub</a>
   </div>
   <p style="font-size: .85rem; color: var(--fg-muted); margin: 1rem 0 0;">
-    自掏腰包做的。咖啡錢直接拿去:Author Fallback 的 API quota(讓新人不會剛來就沒得抽)、Vercel / domain 開銷、time + caffeine 繼續寫。
+    自掏腰包做的。咖啡錢直接拿去:Vercel / domain 開銷、time + caffeine 繼續寫。
   </p>
 </div>
 
 <section>
   <h2>跟 codex-image-service 串接(用你自己的 ChatGPT 訂閱額度)</h2>
-  <p>不一定要用 Author Fallback。如果你有 ChatGPT Plus / Pro 訂閱,可以把這個 studio 跟 <a href="https://github.com/yazelin/codex-image-service">codex-image-service</a> 串起來 — 它是 FastAPI wrapper,把 Codex CLI 的 <code>$imagegen</code> 包成 HTTP endpoint,讓你訂閱的 image quota 直接餵 studio。</p>
+  <p>如果你有 ChatGPT Plus / Pro 訂閱,可以把這個 studio 跟 <a href="https://github.com/yazelin/codex-image-service">codex-image-service</a> 串起來 — 它是 FastAPI wrapper,把 Codex CLI 的 <code>$imagegen</code> 包成 HTTP endpoint,讓你訂閱的 image quota 直接餵 studio。</p>
   <table>
     <thead><tr><th>Setup</th><th>你要準備什麼</th><th>適合誰</th></tr></thead>
     <tbody>
-      <tr><td><strong>A. 直接用</strong></td><td>啥都不用,開線上 studio</td><td>剛接觸 / 嚐鮮 / 偶爾用</td></tr>
+      <tr><td><strong>A. 線上 studio + 自己的 Gemini key</strong></td><td>一把免費的 AI Studio API key</td><td>剛接觸 / 嚐鮮 / 偶爾用</td></tr>
       <tr><td><strong>B. 線上 studio + 自架 codex-image-service</strong></td><td>部署 service + 發給自己一把 Bearer key</td><td>有 ChatGPT Plus 想無限用</td></tr>
       <tr><td><strong>C. 兩個都自架</strong></td><td>clone 兩個 repo 本機跑</td><td>全掌控、離線、不靠別人</td></tr>
     </tbody>
@@ -407,7 +396,7 @@ KV_REST_API_TOKEN=...</code></pre>
     <li>在它的 admin UI 發一把 Bearer API key(格式 <code>cimg_…</code>)</li>
     <li>studio sidebar → <strong>AI Provider</strong> section → 選 <strong>Codex-Image</strong></li>
     <li>填 <strong>Base URL</strong>(例 <code>https://your-domain.example/codex-image</code>)、<strong>API Key</strong>、<strong>Quality</strong>(<code>auto</code> 預設)</li>
-    <li>正常生圖 — 走你自己的 service,消耗你訂閱的額度,不燒 Author Fallback 的桶</li>
+    <li>正常生圖 — 走你自己的 service,消耗你訂閱的額度</li>
   </ol>
   <p style="font-size: .85rem; color: var(--fg-muted);">CORS:yazelin 部署的版本允許任何 origin(用 <code>Access-Control-Allow-Origin</code> reflect);自架請參考 codex-image-service repo 加 CORS middleware。</p>
 </section>

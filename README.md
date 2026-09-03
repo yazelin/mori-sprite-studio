@@ -79,7 +79,7 @@ You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG —
 ## Features
 
 **Generation**
-- 4 AI providers: **Author Fallback** (default, free no-setup), **Codex-Image** (your ChatGPT Plus/Pro quota via [yazelin/codex-image-service](https://github.com/yazelin/codex-image-service)), **Vertex Gemini**, **Google Gemini Direct**
+- 3 AI providers, all BYOK (bring your own key): **Google Gemini Direct** (AI Studio key, default), **Codex-Image** (your ChatGPT Plus/Pro quota via [yazelin/codex-image-service](https://github.com/yazelin/codex-image-service)), **Vertex Gemini**
 - Anti-jitter: pre-tiled placeholder sheet as AI reference locks character position across all 16 frames (idle-family states)
 - Anti-character-drift: multi-anchor identity reference (sends all other state staticBases as outfit anchors)
 - Anatomy-agnostic prompts: works for humanoid / plant / robot / blob / gem characters — semantics describe motion abstractly
@@ -133,13 +133,6 @@ You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG —
 **Per-character backdrop**
 - Upload Light + Dark backdrop PNGs, ships inside `.moripack` per [mori-desktop PR #107](https://github.com/yazelin/mori-desktop/pull/107) 3-tier backplate chain
 
-**Quota counter + rate limit (Author Fallback)**
-- Sidebar footer shows live countdown `50 → 0` of remaining Author-Fallback calls today (per-IP)
-- Persistent via Vercel KV (Upstash Redis) — counter doesn't reset across Vercel function cold starts
-- Graceful fallback to in-memory if KV env vars not provisioned
-- 1 concurrent request per IP (prevents multi-tab parallel abuse)
-- `GET /api/generate` returns current quota without consuming a slot — used by sidebar polling + post-generation refresh
-
 ![Backdrop uploader](docs/assets/screen-03-backdrop.png)
 
 ---
@@ -153,7 +146,7 @@ You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG —
 3. Browse around, see how it works
 4. To make your own: clear data (or use incognito), upload your character ref, click 生 6 狀態靜態 → per-state 生動畫
 
-Author Fallback uses yazelin's own API key — no setup needed. **I'm fronting the cost out of pocket so strangers can try the tool.** ⚠ Per-IP cap is **50 req/day + 1 concurrent**, **persistent via Vercel KV** so it actually counts (no resetting on cold starts). Quota countdown counter lives in the sidebar footer. **When the budget runs out, it stops** — not a long-term promise, just letting people experience the tool. If you want it to stay available, ☕ [chip in](https://buymeacoffee.com/yazelin).
+All providers are BYOK (bring your own key) — the free Author Fallback trial channel has been discontinued. Pick a provider in the sidebar's **AI Provider** section and fill in your own key (Google Gemini Direct only needs a free [AI Studio](https://aistudio.google.com/) API key).
 
 ### Self-host
 
@@ -162,17 +155,6 @@ git clone https://github.com/yazelin/mori-sprite-studio
 cd mori-sprite-studio
 npm install
 npm run dev              # Vite dev server
-# OR
-npm run dev:vercel       # vercel dev — needed if testing the /api/generate Author Fallback proxy
-```
-
-Set env vars in `.env.local` if using Author Fallback locally:
-
-```env
-AUTHOR_FALLBACK_PROVIDER=vertex-gemini
-AUTHOR_API_KEY=AIza...
-AUTHOR_MODEL=gemini-3-pro-image-preview
-AUTHOR_IMAGE_SIZE=1K
 ```
 
 Deploy to Vercel:
@@ -191,11 +173,11 @@ Set the same env vars in Vercel Dashboard → Settings → Environment Variables
 |---|---|
 | UI | Vite + React 19 + TypeScript + Tailwind CSS + shadcn/ui |
 | State | Zustand + IndexedDB (idb-keyval) for Blob-native persistence |
-| AI providers | abstract `ImageProvider` interface, 4 impls (Author Fallback / Codex-Image / Vertex Gemini / Google Gemini) |
+| AI providers | abstract `ImageProvider` interface, 3 BYOK impls (Google Gemini / Codex-Image / Vertex Gemini) |
 | Chroma key | 2-pass per-channel dominance + despill + edge erosion (ported from line-sticker-studio) |
 | Sprite-sheet anim preview | Canvas + requestAnimationFrame (16-frame row-major) |
 | Export encoders | upng-js (APNG), gifenc (GIF), MediaRecorder + VP9 (WebM), JSZip (.moripack / .moriproject) |
-| Server-side | Vercel Function (`/api/generate`) — Author Fallback proxy |
+| Server-side | none — pure static frontend, all AI calls go browser → your provider (BYOK) |
 
 Output spec: 1024×1024 PNG-32, 4×4 grid, 256×256 per cell, row-major frame order, transparent background. Conforms to mori-desktop's `character-pack.md` v1.0.
 
@@ -250,7 +232,6 @@ Building this is running on love + caffeine. If you find it useful:
 <a href="https://buymeacoffee.com/yazelin"><img src="https://img.shields.io/badge/Buy_me_a_coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy me a coffee" height="36"></a>
 
 This is self-funded out of pocket. Coffee = direct support for:
-- More API quota in the Author Fallback bucket (so it doesn't run dry for newcomers)
 - Vercel / domain costs
 - Time + caffeine to keep building
 
@@ -260,13 +241,13 @@ You can also ⭐ this repo + share with anyone building their own AI companion /
 
 ## Using with codex-image-service (use your own ChatGPT subscription quota)
 
-You don't have to use Author Fallback (yazelin's bucket). If you have a ChatGPT Plus / Pro subscription, you can pair this studio with **[codex-image-service](https://github.com/yazelin/codex-image-service)** — a FastAPI wrapper that exposes Codex CLI's `$imagegen` as an HTTP endpoint, so your subscription's image-gen quota powers studio's generations.
+If you have a ChatGPT Plus / Pro subscription, you can pair this studio with **[codex-image-service](https://github.com/yazelin/codex-image-service)** — a FastAPI wrapper that exposes Codex CLI's `$imagegen` as an HTTP endpoint, so your subscription's image-gen quota powers studio's generations.
 
 Three ways to combine them:
 
 | Setup | What you need | When it makes sense |
 |---|---|---|
-| **A. Out-of-the-box** | Nothing — just open the live studio | New users, exploring, low-volume |
+| **A. Studio (hosted) + your own Gemini key** | A free [AI Studio](https://aistudio.google.com/) API key | New users, exploring, low-volume |
 | **B. Studio (hosted) + your own codex-image-service** | Run codex-image-service somewhere reachable + issue yourself a Bearer key | You have ChatGPT Plus + want unlimited use |
 | **C. Both self-hosted** | Clone + run both repos locally | Full control, offline, no external dependencies |
 
@@ -279,7 +260,7 @@ Three ways to combine them:
    - **Base URL**: your codex-image-service URL (e.g. `https://your-domain.example/codex-image`)
    - **API Key**: the `cimg_…` you just issued
    - **Quality**: `auto` (default) or `low` / `medium` / `high`
-5. Generate as normal — calls go through your codex-image-service, consuming your ChatGPT subscription's image quota instead of the Author Fallback bucket
+5. Generate as normal — calls go through your codex-image-service, consuming your ChatGPT subscription's image quota
 
 ### CORS reminder
 

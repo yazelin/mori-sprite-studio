@@ -11,7 +11,7 @@ function aspectFor(outputSize: GenerateOpts['outputSize']): '1:1' | '3:2' | '2:3
 
 export abstract class GoogleGeminiBaseProvider implements ImageProvider {
   abstract readonly name: ProviderName
-  protected abstract endpointUrl(model: string, apiKey: string): string
+  protected abstract endpointUrl(model: string): string
 
   constructor(protected config: GoogleGeminiConfig) {}
 
@@ -39,13 +39,14 @@ export abstract class GoogleGeminiBaseProvider implements ImageProvider {
       },
     }
 
-    const url = this.endpointUrl(this.config.model, this.config.apiKey)
+    const url = this.endpointUrl(this.config.model)
 
     let resp: Response
     try {
+      // key 走 header 不走 ?key=,避免明文進伺服器 access log
       resp = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': this.config.apiKey },
         body: JSON.stringify(body),
       })
     } catch (e) {

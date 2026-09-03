@@ -3,8 +3,8 @@ import { GoogleGeminiBaseProvider } from './googleGeminiBaseProvider'
 export class GoogleGeminiProvider extends GoogleGeminiBaseProvider {
   readonly name = 'google-gemini' as const
 
-  protected endpointUrl(model: string, apiKey: string): string {
+  protected endpointUrl(model: string): string {
     const base = (this.config.baseUrl || 'https://generativelanguage.googleapis.com').replace(/\/$/, '')
-    return `${base}/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`
+    return `${base}/v1beta/models/${encodeURIComponent(model)}:generateContent`
   }
 }

@@ -6,7 +6,6 @@ import {
   type StateName, type SheetStatus,
 } from '@/types/project'
 import { cn } from '@/lib/utils'
-import { QuotaIndicator } from '@/components/QuotaIndicator'
 
 const STATE_LABEL: Record<StateName, string> = {
   idle:      'Idle',
@@ -95,8 +94,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <div className="mt-auto px-3 py-3 border-t border-border space-y-2 text-xs">
-        <QuotaIndicator />
-        <a href="https://buymeacoffee.com/yazelin" target="_blank" rel="noreferrer" className="flex items-center gap-2 px-2 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 transition-colors" title="支持作者繼續開發 + 維持 Author Fallback API quota">
+        <a href="https://buymeacoffee.com/yazelin" target="_blank" rel="noreferrer" className="flex items-center gap-2 px-2 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 transition-colors" title="支持作者繼續開發">
           <span className="text-base leading-none">☕</span>
           <span className="font-medium">Buy me a coffee</span>
         </a>

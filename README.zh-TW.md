@@ -79,7 +79,7 @@ AI 驅動。純瀏覽器。透明背景。多種匯出格式。
 ## 功能
 
 **生成**
-- 4 個 AI provider:**Author Fallback**(免設定預設)、**Codex-Image**(用你 ChatGPT Plus/Pro 額度,透過 [yazelin/codex-image-service](https://github.com/yazelin/codex-image-service))、**Vertex Gemini**、**Google Gemini Direct**
+- 3 個 AI provider,全部自帶 key(BYOK):**Google Gemini Direct**(AI Studio key,預設)、**Codex-Image**(用你 ChatGPT Plus/Pro 額度,透過 [yazelin/codex-image-service](https://github.com/yazelin/codex-image-service))、**Vertex Gemini**
 - 防抖動:pre-tile placeholder sheet 當 AI ref,鎖住角色 16 格內位置不會飄
 - 防角色 drift:多 anchor identity ref(其他 state 的 staticBase 都當 outfit anchor 一起送)
 - 身體結構無關 prompt:人形 / 植物 / 機器人 / 史萊姆 / 寶石都能用 — semantic 描述抽象 motion
@@ -133,13 +133,6 @@ AI 驅動。純瀏覽器。透明背景。多種匯出格式。
 **角色背板**
 - 上傳 Light + Dark 兩張背板 PNG,一起打包進 `.moripack`,對應 [mori-desktop PR #107](https://github.com/yazelin/mori-desktop/pull/107) 的 3-tier backplate chain
 
-**Quota counter + rate limit(Author Fallback)**
-- Sidebar 底部即時倒數 `50 → 0` 顯示今日剩餘 Author-Fallback 呼叫(per IP)
-- 用 Vercel KV(Upstash Redis)持久化 — Vercel function cold start 不會 reset counter
-- KV env var 沒設時 graceful fallback in-memory
-- 每 IP 同時 1 張(防多 tab 並行濫用)
-- `GET /api/generate` 回傳當前 quota,不耗額度(sidebar polling + 生成後刷新用)
-
 ![背板上傳](docs/assets/screen-03-backdrop.png)
 
 ---
@@ -153,7 +146,7 @@ AI 驅動。純瀏覽器。透明背景。多種匯出格式。
 3. 到處逛逛看怎麼跑
 4. 要做自己的:清資料(或開 incognito),上傳你的角色 ref,點 `生 6 狀態靜態` → 每 state `生動畫`
 
-Author Fallback 用 yazelin 自己的 API key — 免設定。**我自掏腰包暫時開放給大家試用。** ⚠ 每 IP 上限 **50 次/day + 同時 1 張**,**用 Vercel KV 持久化**所以真的會扣(Vercel cold start 不會 reset)。Sidebar 底部有倒數 counter。**錢花完就會關掉** — 不是長期承諾,只是讓陌生人也能試一下。想讓它繼續開著,請 ☕ [補點咖啡錢](https://buymeacoffee.com/yazelin)。
+所有 provider 都要自帶 key(BYOK)— 免費試用通道(Author Fallback)已停止提供。在 sidebar 的 **AI Provider** 區選一個 provider 填自己的 key(Google Gemini Direct 只要一把免費的 [AI Studio](https://aistudio.google.com/) API key)。
 
 ### 自架
 
@@ -162,20 +155,6 @@ git clone https://github.com/yazelin/mori-sprite-studio
 cd mori-sprite-studio
 npm install
 npm run dev              # Vite dev server
-# 或
-npm run dev:vercel       # vercel dev — 測 /api/generate Author Fallback proxy 用
-```
-
-本機跑 Author Fallback 在 `.env.local` 設:
-
-```env
-AUTHOR_FALLBACK_PROVIDER=vertex-gemini
-AUTHOR_API_KEY=AQ.AAAA...    # Vertex AI Express key 開頭是 AQ
-AUTHOR_MODEL=gemini-3-pro-image-preview
-AUTHOR_IMAGE_SIZE=1K
-# 可選 — 持久 rate limit
-KV_REST_API_URL=...
-KV_REST_API_TOKEN=...
 ```
 
 部署到 Vercel:
@@ -202,7 +181,7 @@ vercel --prod
 | Cell 操作 | Canvas 為基底的 reorder / swap / reverse(`imageOps.ts`)|
 | 動畫預覽 | Canvas + requestAnimationFrame(16-frame row-major)|
 | 匯出 encoder | upng-js(APNG)、gifenc(GIF)、MediaRecorder + VP9(WebM)、JSZip |
-| Server-side | Vercel Function `/api/generate` — Author Fallback proxy + KV-backed rate limit(Upstash Redis,fallback in-memory)|
+| Server-side | 無 — 純靜態前端,AI 呼叫從瀏覽器直打你自己的 provider(BYOK)|
 
 輸出規格:1024×1024 PNG-32,4×4 grid,每格 256×256,row-major frame order,透明背景。對應 mori-desktop 的 `character-pack.md` v1.0。
 
@@ -257,7 +236,6 @@ Studio code:MIT。
 <a href="https://buymeacoffee.com/yazelin"><img src="https://img.shields.io/badge/Buy_me_a_coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy me a coffee" height="36"></a>
 
 自掏腰包做的。咖啡錢直接拿去:
-- Author Fallback 的 API quota(讓新人不會剛來就沒得抽)
 - Vercel / domain 開銷
 - Time + caffeine 繼續寫
 
@@ -267,13 +245,13 @@ Studio code:MIT。
 
 ## 跟 codex-image-service 串接(用自己的 ChatGPT 訂閱額度)
 
-不一定要用 Author Fallback(我的桶)。如果你有 ChatGPT Plus / Pro 訂閱,可以把這個 studio 跟 **[codex-image-service](https://github.com/yazelin/codex-image-service)** 串起來 — 它是 FastAPI wrapper,把 Codex CLI 的 `$imagegen` 包成 HTTP endpoint,讓你的訂閱額度直接餵給 studio 生圖。
+如果你有 ChatGPT Plus / Pro 訂閱,可以把這個 studio 跟 **[codex-image-service](https://github.com/yazelin/codex-image-service)** 串起來 — 它是 FastAPI wrapper,把 Codex CLI 的 `$imagegen` 包成 HTTP endpoint,讓你的訂閱額度直接餵給 studio 生圖。
 
 三種組合方式:
 
 | Setup | 你要準備什麼 | 適合誰 |
 |---|---|---|
-| **A. 直接用** | 啥都不用,開線上 studio 就跑 | 剛接觸 / 嚐鮮 / 偶爾用 |
+| **A. 線上 studio + 自己的 Gemini key** | 一把免費的 [AI Studio](https://aistudio.google.com/) API key | 剛接觸 / 嚐鮮 / 偶爾用 |
 | **B. 線上 studio + 自架 codex-image-service** | 部署 codex-image-service + 發給自己一把 Bearer key | 有 ChatGPT Plus 想無限用 |
 | **C. 兩個都自架** | clone 兩個 repo 本機跑 | 全掌控、離線、不靠別人 |
 
@@ -286,7 +264,7 @@ Studio code:MIT。
    - **Base URL**: 你 codex-image-service 的網址(例:`https://your-domain.example/codex-image`)
    - **API Key**: 剛剛發的 `cimg_…`
    - **Quality**: `auto`(預設)或 `low` / `medium` / `high`
-5. 正常生圖就好 — 走你自己的 codex-image-service,消耗你 ChatGPT 訂閱的 image quota,不燒 Author Fallback 的桶
+5. 正常生圖就好 — 走你自己的 codex-image-service,消耗你 ChatGPT 訂閱的 image quota
 
 ### CORS 提醒
 

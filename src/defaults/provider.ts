@@ -1,7 +1,7 @@
 import type { ProviderState } from '@/types/provider'
 
 export const DEFAULT_PROVIDER_STATE: ProviderState = {
-  active: 'author-fallback',
+  active: 'google-gemini',
   codexImage: {
     baseUrl: 'https://ching-tech.ddns.net/codex-image',
     apiKey: '',

@@ -36,6 +36,8 @@ describe('persist (IndexedDB-backed)', () => {
     expect(restored!.project!.metadata.packageName).toBe('mori')
     expect(restored!.prompts!.templates!.B1).toBe('b1')
     expect(restored!.chroma!.key).toBe('green')
+    // 舊存檔的 author-fallback(已停止提供)要遷到 google-gemini
+    expect((restored!.provider as any).active).toBe('google-gemini')
   })
 
   it('clearStore removes saved data', async () => {

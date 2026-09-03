@@ -71,6 +71,10 @@ function migrate(data: Partial<PersistedShape>): Partial<PersistedShape> {
     if (provider.codexImage && (provider.codexImage.quality === 'standard' || !provider.codexImage.quality)) {
       provider.codexImage.quality = 'auto'
     }
+    // Author Fallback 已停止提供(2026-09):舊存檔遷到 BYOK 預設
+    if (provider.active === 'author-fallback') {
+      provider.active = 'google-gemini'
+    }
   }
 
   // Prompts: backfill stateSemantics + templates for keys missing from

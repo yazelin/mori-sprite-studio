@@ -1,5 +1,5 @@
 export type ProviderName =
-  | 'codex-image' | 'vertex-gemini' | 'google-gemini' | 'author-fallback'
+  | 'codex-image' | 'vertex-gemini' | 'google-gemini'
 
 export type OutputSize = '1024x1024' | '1024x1536' | '1536x1024'
 // Codex-Image-Service expects one of low/medium/high/auto per its FastAPI
@@ -25,6 +25,8 @@ export interface GoogleGeminiConfig {
   apiKey: string
   model: string
   imageSize: ImageSize
+  /** google-gemini only: GenAI 相容 gateway 的 base URL(空 = 官方)*/
+  baseUrl?: string
 }
 
 export interface ProviderState {

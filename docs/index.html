@@ -310,7 +310,7 @@
 <section>
   <h2>Features</h2>
   <div class="feature-grid">
-    <div class="feature-card"><h3>4 AI providers</h3><p>Author Fallback (free, no setup), Codex-Image (ChatGPT Plus quota), Vertex Gemini, Google Gemini Direct.</p></div>
+    <div class="feature-card"><h3>3 AI providers (BYOK)</h3><p>Google Gemini Direct (AI Studio key), Codex-Image (ChatGPT Plus quota), Vertex Gemini — all bring-your-own-key.</p></div>
     <div class="feature-card"><h3>Anti-jitter</h3><p>Pre-tiled placeholder sheet as AI reference locks character position across all 16 frames.</p></div>
     <div class="feature-card"><h3>Anti-character-drift</h3><p>Multi-anchor identity reference sends every other state's static so outfit/hair stays consistent.</p></div>
     <div class="feature-card"><h3>Walking + Dragging pipeline</h3><p>Dedicated W/Dr standalone path. AI designs all 16 cells freely from character ref + neutral standing static. Cell-by-cell gait structure baked into template.</p></div>
@@ -324,7 +324,6 @@
     <div class="feature-card"><h3>Cross-state normalize</h3><p>One-click scans bboxes + computes per-state transform so all states match in size + center.</p></div>
     <div class="feature-card"><h3>Multiple export formats</h3><p>.moripack.zip / APNG / GIF / WebM (VP9 alpha) / raw sheet / .moriproject.zip save-load.</p></div>
     <div class="feature-card"><h3>Per-character backdrop</h3><p>Light + Dark backdrop PNGs ship per mori-desktop PR #107 3-tier backplate chain.</p></div>
-    <div class="feature-card"><h3>Persistent quota counter</h3><p>Sidebar countdown 50→0 of remaining Author-Fallback calls. Persisted via Vercel KV (Upstash Redis) — no resets across function cold starts.</p></div>
     <div class="feature-card"><h3>Demo loader</h3><p>One-click loads a fully-configured 27 MB Mori demo so new visitors see everything immediately.</p></div>
   </div>
   <img class="screen" src="https://cdn.jsdelivr.net/gh/yazelin/mori-sprite-studio@main/docs/assets/screen-03-backdrop.webp" alt="Backdrop uploader with Light + Dark slots">
@@ -355,24 +354,14 @@
     <li>Browse around, see how it works</li>
     <li>To make your own: clear data (or use incognito), upload your character ref, click <code>生 6 狀態靜態</code> → per-state <code>生動畫</code></li>
   </ol>
-  <p>Author Fallback uses yazelin's own API key — no setup needed. <strong>I'm fronting the cost out of pocket so strangers can try the tool.</strong> ⚠ Per-IP cap is <strong>50 req/day + 1 concurrent</strong>, <strong>persistent via Vercel KV</strong> so it actually counts (no resetting on cold starts). Quota countdown counter lives in the sidebar footer. <strong>When the budget runs out, it stops</strong> — not a long-term promise, just letting people experience the tool. If you want it to stay available, <a href="https://buymeacoffee.com/yazelin">☕ chip in</a>.</p>
+  <p>All providers are BYOK (bring your own key) — the free Author Fallback trial channel has been discontinued. Pick a provider in the sidebar's AI Provider section and fill in your own key (Google Gemini Direct only needs a free <a href="https://aistudio.google.com/">AI Studio</a> API key).</p>
 
   <h3>Self-host</h3>
 <pre><code>git clone https://github.com/yazelin/mori-sprite-studio
 cd mori-sprite-studio
 npm install
 npm run dev              # Vite dev server
-# OR
-npm run dev:vercel       # vercel dev — for testing /api/generate Author Fallback proxy
 </code></pre>
-  <p>Set env vars in <code>.env.local</code> if using Author Fallback locally:</p>
-<pre><code>AUTHOR_FALLBACK_PROVIDER=vertex-gemini
-AUTHOR_API_KEY=AQ.AAAA...    # Vertex AI Express keys start AQ
-AUTHOR_MODEL=gemini-3-pro-image-preview
-AUTHOR_IMAGE_SIZE=1K
-# Optional — persistent rate limit (Upstash Redis via Vercel KV integration)
-KV_REST_API_URL=...
-KV_REST_API_TOKEN=...</code></pre>
 </section>
 
 <section>
@@ -388,7 +377,7 @@ KV_REST_API_TOKEN=...</code></pre>
       <tr><td>Cell manipulation</td><td>Canvas-based reorder / swap / reverse via <code>imageOps.ts</code></td></tr>
       <tr><td>Animation preview</td><td>Canvas + requestAnimationFrame (16-frame row-major)</td></tr>
       <tr><td>Export encoders</td><td>upng-js (APNG), gifenc (GIF), MediaRecorder + VP9 (WebM), JSZip</td></tr>
-      <tr><td>Server-side</td><td>Vercel Function <code>/api/generate</code> — Author Fallback proxy + KV-backed rate limit (Upstash Redis with in-memory fallback)</td></tr>
+      <tr><td>Server-side</td><td>none — pure static frontend, all AI calls go browser → your provider (BYOK)</td></tr>
     </tbody>
   </table>
   <p>Output spec: 1024×1024 PNG-32, 4×4 grid, 256×256 per cell, row-major frame order, transparent background. Conforms to mori-desktop's <code>character-pack.md</code> v1.0.</p>
@@ -402,13 +391,13 @@ KV_REST_API_TOKEN=...</code></pre>
     <a class="btn btn-outline" href="https://github.com/yazelin/mori-sprite-studio" target="_blank">⭐ Star on GitHub</a>
   </div>
   <p style="font-size: .85rem; color: var(--fg-muted); margin: 1rem 0 0;">
-    Self-funded out of pocket. Coffee = direct support for more API quota in the Author Fallback bucket (so it doesn't run dry for newcomers), Vercel / domain costs, and time + caffeine to keep building.
+    Self-funded out of pocket. Coffee = direct support for Vercel / domain costs, and time + caffeine to keep building.
   </p>
 </div>
 
 <section>
   <h2>Using with codex-image-service (your own ChatGPT subscription quota)</h2>
-  <p>You don't have to use Author Fallback. If you have a ChatGPT Plus / Pro subscription, pair this studio with <a href="https://github.com/yazelin/codex-image-service">codex-image-service</a> — a FastAPI wrapper that exposes Codex CLI's <code>$imagegen</code> as an HTTP endpoint. Your subscription's image quota powers the studio's generations.</p>
+  <p>If you have a ChatGPT Plus / Pro subscription, pair this studio with <a href="https://github.com/yazelin/codex-image-service">codex-image-service</a> — a FastAPI wrapper that exposes Codex CLI's <code>$imagegen</code> as an HTTP endpoint. Your subscription's image quota powers the studio's generations.</p>
   <table>
     <thead><tr><th>Setup</th><th>What you need</th><th>When it makes sense</th></tr></thead>
     <tbody>
@@ -423,7 +412,7 @@ KV_REST_API_TOKEN=...</code></pre>
     <li>In its admin UI, generate a Bearer key (<code>cimg_…</code>)</li>
     <li>In studio sidebar → <strong>AI Provider</strong> section → select <strong>Codex-Image</strong></li>
     <li>Fill in <strong>Base URL</strong> (e.g. <code>https://your-domain.example/codex-image</code>), <strong>API Key</strong>, and <strong>Quality</strong> (<code>auto</code> default)</li>
-    <li>Generate — calls now consume your ChatGPT subscription quota instead of the Author Fallback bucket</li>
+    <li>Generate — calls now consume your ChatGPT subscription quota</li>
   </ol>
   <p style="font-size: .85rem; color: var(--fg-muted);">CORS: yazelin's deployment already allows any origin (via reflected <code>Access-Control-Allow-Origin</code>); self-hosters should add CORS middleware to their codex-image-service.</p>
 </section>

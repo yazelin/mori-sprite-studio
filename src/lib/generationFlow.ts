@@ -1,5 +1,5 @@
 import type { StateName } from '@/types/project'
-import { STATE_NAMES } from '@/types/project'
+import { STATE_NAMES, REQUIRED_STATE_NAMES } from '@/types/project'
 import type { TemplateKey } from '@/types/prompts'
 import type { OutputSize } from '@/types/provider'
 import { useAppStore } from '@/store'
@@ -204,8 +204,9 @@ export async function applyResult(
     // 1536×1024 (for storage so re-chroma can re-process). 6 cells each.
     const cleanedCells = await splitGrid(cleanedBlob, 3, 2)
     const rawCells = rawBlob ? await splitGrid(rawBlob, 3, 2) : null
-    for (let i = 0; i < STATE_NAMES.length; i++) {
-      const name = STATE_NAMES[i]
+    // B1 grid is 3×2 = the 6 required states only; walking/dragging get statics via B2.
+    for (let i = 0; i < REQUIRED_STATE_NAMES.length; i++) {
+      const name = REQUIRED_STATE_NAMES[i]
       const rawStaticBase = rawCells ? await cropToSize(rawCells[i], 256, 256) : null
       const staticBaseNoErode = await cropToSize(cleanedCells[i], 256, 256)
       const staticBase = erodePx > 0 ? await erodeSingleCellEdges(staticBaseNoErode, erodePx) : staticBaseNoErode

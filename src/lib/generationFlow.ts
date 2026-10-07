@@ -243,10 +243,12 @@ export async function applyResult(
     // Same post-processing for all 'animation sheet' outputs.
     // W (walking) and Dr (dragging) produce the same 1024×1024 4×4 sheet
     // format as C, just via a different prompt/pipeline upstream.
-    const eroded = erodePx > 0 ? await erodeCellEdges(cleanedBlob, erodePx) : cleanedBlob
+    // codex-image returns 1254×1254 for a 1024 request; pasteIntoSheet / exports assume 1024.
+    const sized = await cropToSize(cleanedBlob, 1024, 1024)
+    const eroded = erodePx > 0 ? await erodeCellEdges(sized, erodePx) : sized
     store.updateState(stateName, {
       sheet: eroded,
-      ...(rawBlob ? { rawSheet: rawBlob } : {}),
+      ...(rawBlob ? { rawSheet: await cropToSize(rawBlob, 1024, 1024) } : {}),
       status: 'animated',
     })
     return

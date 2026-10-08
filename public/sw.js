@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mori-sprite-studio-v3'
+const CACHE_NAME = 'mori-sprite-studio-v4'
 const STATIC_ASSETS = ['/', '/manifest.webmanifest', '/favicon-192.png', '/favicon-512.png', '/favicon-32.png']
 
 self.addEventListener('install', (event) => {
@@ -22,5 +22,10 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return
+  // 頁面走網路優先:cache-first 會讓裝過的人永遠拿到舊版 index.html,新部署進不去。離線才退回快取。
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request).catch(() => caches.match('/')))
+    return
+  }
   event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)))
 })

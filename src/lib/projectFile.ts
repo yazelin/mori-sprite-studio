@@ -83,7 +83,7 @@ export async function downloadProjectFile(project: Project): Promise<void> {
   saveAs(blob, filename)
 }
 
-export async function loadProjectFile(file: Blob): Promise<void> {
+export async function loadProjectFile(file: Blob | ArrayBuffer): Promise<void> {
   const zip = await JSZip.loadAsync(file)
   const jsonFile = zip.file('project.json')
   if (!jsonFile) throw new Error('project.json not found — not a valid .moriproject.zip')
@@ -140,6 +140,6 @@ export async function loadProjectFile(file: Blob): Promise<void> {
 export async function loadDemoProject(url: string): Promise<void> {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`failed to fetch demo: HTTP ${res.status}`)
-  const blob = await res.blob()
-  await loadProjectFile(blob)
+  // arrayBuffer 不用 blob:snap Chromium 對 27MB 的 res.blob() 直接 Failed to fetch(10/8 實測),arrayBuffer 正常
+  await loadProjectFile(await res.arrayBuffer())
 }

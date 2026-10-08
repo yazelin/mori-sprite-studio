@@ -36,13 +36,19 @@ describe('buildManifest', () => {
     expect(m.author).toBe('yazelin')
     expect(m.license).toBe('CC-BY-NC-SA-4.0')
     expect(m.states).toEqual(['idle', 'sleeping', 'recording', 'thinking', 'done', 'error'])
-    expect(m.optional_states).toEqual(['walking', 'dragging'])
+    expect(m.optional_states).toEqual([])  // only listed once a sheet exists
     expect(m.loop_modes.idle).toBe('loop')
     expect(m.loop_modes.done).toBe('one-shot')
     expect(m.sprite_spec.format).toBe('PNG-32')
     expect(m.sprite_spec.grid).toBe('4x4')
     expect(m.sprite_spec.total_size).toBe('1024x1024')
     expect(m.sprite_spec.background).toBe('transparent')
+  })
+
+  it('lists an optional state once it has a sheet', () => {
+    const project = makeProject()
+    project.states.walking.sheet = new Blob()
+    expect(buildManifest(project).optional_states).toEqual(['walking'])
   })
 
   it('carries through per-state loop overrides', () => {

@@ -35,5 +35,8 @@ describe('promptRenderer', () => {
     expect(out).toContain('POSE: confused')
     // Middle row check
     expect(out).toContain('[D] bottom-left cell — state "thinking":')
+    // 3×2 grid holds only the 6 required states (optional ones crashed B1 split)
+    expect(out).not.toContain('walking')
+    expect(out).not.toContain('undefined')
   })
 })

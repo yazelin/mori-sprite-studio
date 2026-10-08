@@ -1,5 +1,5 @@
 import type { StateName } from '@/types/project'
-import { STATE_NAMES } from '@/types/project'
+import { STATE_NAMES, REQUIRED_STATE_NAMES } from '@/types/project'
 import type { TemplateKey } from '@/types/prompts'
 import type { OutputSize } from '@/types/provider'
 import { useAppStore } from '@/store'
@@ -204,8 +204,9 @@ export async function applyResult(
     // 1536×1024 (for storage so re-chroma can re-process). 6 cells each.
     const cleanedCells = await splitGrid(cleanedBlob, 3, 2)
     const rawCells = rawBlob ? await splitGrid(rawBlob, 3, 2) : null
-    for (let i = 0; i < STATE_NAMES.length; i++) {
-      const name = STATE_NAMES[i]
+    // B1 grid is 3×2 = the 6 required states only; walking/dragging get statics via B2.
+    for (let i = 0; i < REQUIRED_STATE_NAMES.length; i++) {
+      const name = REQUIRED_STATE_NAMES[i]
       const rawStaticBase = rawCells ? await cropToSize(rawCells[i], 256, 256) : null
       const staticBaseNoErode = await cropToSize(cleanedCells[i], 256, 256)
       const staticBase = erodePx > 0 ? await erodeSingleCellEdges(staticBaseNoErode, erodePx) : staticBaseNoErode
@@ -242,10 +243,12 @@ export async function applyResult(
     // Same post-processing for all 'animation sheet' outputs.
     // W (walking) and Dr (dragging) produce the same 1024×1024 4×4 sheet
     // format as C, just via a different prompt/pipeline upstream.
-    const eroded = erodePx > 0 ? await erodeCellEdges(cleanedBlob, erodePx) : cleanedBlob
+    // codex-image returns 1254×1254 for a 1024 request; pasteIntoSheet / exports assume 1024.
+    const sized = await cropToSize(cleanedBlob, 1024, 1024)
+    const eroded = erodePx > 0 ? await erodeCellEdges(sized, erodePx) : sized
     store.updateState(stateName, {
       sheet: eroded,
-      ...(rawBlob ? { rawSheet: rawBlob } : {}),
+      ...(rawBlob ? { rawSheet: await cropToSize(rawBlob, 1024, 1024) } : {}),
       status: 'animated',
     })
     return

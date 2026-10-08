@@ -1,5 +1,5 @@
 import type { StateName } from '@/types/project'
-import { STATE_NAMES } from '@/types/project'
+import { REQUIRED_STATE_NAMES } from '@/types/project'
 
 export function render(template: string, vars: Record<string, string>): string {
   return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
@@ -25,7 +25,7 @@ const CELL_POSITIONS = [
  * has no excuse to merge / swap / shrink cells.
  */
 export function renderStateDescriptions(semantics: Record<StateName, string>): string {
-  return STATE_NAMES.map((s, i) => {
+  return REQUIRED_STATE_NAMES.map((s, i) => {
     const letter = CELL_LETTERS[i]
     const pos = CELL_POSITIONS[i]
     return `  [${letter}] ${pos} cell — state "${s}":\n      POSE: ${semantics[s]}`

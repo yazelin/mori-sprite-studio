@@ -531,7 +531,7 @@ export function LiveDemoView() {
             )}
           </section>
 
-          <div className="pointer-events-none min-h-0 flex-1 space-y-4 overflow-y-auto bg-stone-50/55 px-4 py-4 sm:px-6 sm:py-6" aria-live="polite" aria-label="對話內容">
+          <div className="pointer-events-none min-h-0 flex-1 space-y-4 overflow-y-auto bg-transparent px-4 py-4 sm:px-6 sm:py-6" aria-live="polite" aria-label="對話內容">
             {messages.map((message, index) => (
               <div key={`${index}-${message.role}`} className={`flex min-w-0 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`pointer-events-auto min-w-0 w-fit max-w-[96%] whitespace-pre-wrap break-words [overflow-wrap:anywhere] rounded-2xl px-4 py-3 text-sm leading-6 ${message.role === 'user' ? 'rounded-br-md bg-emerald-700 text-white' : 'rounded-bl-md border border-stone-200 bg-white text-stone-800 shadow-sm'}`}>

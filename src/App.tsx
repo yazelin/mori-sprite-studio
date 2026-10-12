@@ -7,6 +7,7 @@ import { StateView } from '@/views/StateView'
 import { BackdropView } from '@/views/BackdropView'
 import { PreviewView } from '@/views/PreviewView'
 import { ExportView } from '@/views/ExportView'
+import { LiveDemoView } from '@/views/LiveDemoView'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -57,6 +58,7 @@ export default function App() {
           {view.kind === 'backdrop' && <BackdropView />}
           {view.kind === 'preview' && <PreviewView />}
           {view.kind === 'export' && <ExportView />}
+          {view.kind === 'live-demo' && <LiveDemoView />}
         </div>
       </main>
     </div>

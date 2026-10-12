@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Home, Download, Leaf, ImagePlus, Eye } from 'lucide-react'
+import { Home, Download, Leaf, ImagePlus, Eye, MessageCircle } from 'lucide-react'
 import { useAppStore } from '@/store'
 import {
   REQUIRED_STATE_NAMES, OPTIONAL_STATE_NAMES,
@@ -91,6 +91,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <Item active={view.kind === 'preview'} onClick={() => { setView({ kind: 'preview' }); onNavigate?.() }} icon={<Eye size={16} strokeWidth={1.75} />} label="桌面預覽" />
         <SectionLabel>Output</SectionLabel>
         <Item active={view.kind === 'export'} onClick={() => { setView({ kind: 'export' }); onNavigate?.() }} icon={<Download size={16} strokeWidth={1.75} />} label="匯出 .moripack" />
+        <Item active={view.kind === 'live-demo'} onClick={() => { setView({ kind: 'live-demo' }); onNavigate?.() }} icon={<MessageCircle size={16} strokeWidth={1.75} />} label="Live Demo" />
       </div>
 
       <div className="mt-auto px-3 py-3 border-t border-border space-y-2 text-xs">

@@ -385,7 +385,6 @@ export function LiveDemoView() {
         <p className="mt-1.5 hidden max-w-prose text-sm text-emerald-950/70 sm:block">
           跟 Mori 聊天、查新聞或問天氣。她會在場景裡散步，也會回應你的語音輸入。
         </p>
-        <p className="mt-1 text-xs font-medium text-emerald-950/75">{statusLabel}</p>
       </header>
 
       <div className="absolute inset-0">
@@ -397,10 +396,6 @@ export function LiveDemoView() {
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-[linear-gradient(180deg,rgba(83,130,87,0)_0%,rgba(83,130,87,0.17)_100%)]" />
           <div className="pointer-events-none absolute left-[8%] top-[13%] h-28 w-28 rounded-full bg-white/40 blur-3xl" />
           <div className="pointer-events-none absolute right-[12%] top-[23%] h-40 w-40 rounded-full bg-emerald-100/45 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-5 left-5 z-10 flex items-center gap-2 rounded-full border border-white/60 bg-white/55 px-3 py-1.5 text-[10px] text-emerald-950/65 backdrop-blur">
-            <span className={`h-1.5 w-1.5 rounded-full ${activity === 'thinking' ? 'animate-pulse bg-amber-500' : 'bg-emerald-600'}`} />
-            {currentProjectHasIdle ? '預覽目前專案角色' : '預覽 Mori 範例角色'}
-          </div>
 
           {sprite?.sheet ? (
             <div
@@ -445,7 +440,11 @@ export function LiveDemoView() {
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-semibold text-stone-900">和 Mori 聊聊</h2>
-              <p className="text-[11px] text-stone-500">聊天 · 新聞 · 天氣</p>
+              <p className="flex items-center gap-1.5 text-[11px] text-stone-500">
+                <span>聊天 · 新聞 · 天氣</span>
+                <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${activity === 'thinking' ? 'animate-pulse bg-amber-500' : activity === 'error' ? 'bg-rose-500' : 'bg-emerald-600'}`} />
+                <span aria-live="polite" className={`font-medium ${activity === 'thinking' ? 'text-amber-700' : activity === 'error' ? 'text-rose-700' : 'text-emerald-700'}`}>{statusLabel}</span>
+              </p>
             </div>
             <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[10px] text-stone-500">Gemini-Web</span>
           </header>

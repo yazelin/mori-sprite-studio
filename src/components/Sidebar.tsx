@@ -100,7 +100,19 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           className="w-full group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left text-stone-700 transition-all hover:bg-accent/60 hover:text-accent-foreground"
         >
           <span className="shrink-0 w-5 flex items-center justify-center opacity-70"><MonitorDown size={16} strokeWidth={1.75} /></span>
-          <span className="flex-1 truncate">下載桌面 Player</span>
+          <span className="flex-1 truncate">下載 Mori Pet Player</span>
+          <ExternalLink size={13} className="shrink-0 opacity-50" aria-hidden="true" />
+        </a>
+        <a
+          href="https://github.com/yazelin/mori-desktop/releases/latest"
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => onNavigate?.()}
+          className="w-full group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left text-stone-700 transition-all hover:bg-accent/60 hover:text-accent-foreground"
+          title="完整桌面 AI Agent，可執行任務；支援 Codex CLI 等 provider"
+        >
+          <span className="shrink-0 w-5 flex items-center justify-center opacity-70"><MonitorDown size={16} strokeWidth={1.75} /></span>
+          <span className="flex-1 truncate">下載 Mori Desktop Agent</span>
           <ExternalLink size={13} className="shrink-0 opacity-50" aria-hidden="true" />
         </a>
       </div>

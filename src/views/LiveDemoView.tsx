@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent, type ReactNode } from 'react'
 import JSZip from 'jszip'
-import { Eye, EyeOff, LoaderCircle, MessageCircle, Mic, MicOff, Send } from 'lucide-react'
+import { Eye, EyeOff, ImagePlus, LoaderCircle, MessageCircle, Mic, MicOff, Music2, Send } from 'lucide-react'
 import { AnimationPreview } from '@/components/AnimationPreview'
 import { useAppStore } from '@/store'
 import { STATE_NAMES, type CellTransform, type StateName } from '@/types/project'
 
-type ChatMessage = { role: 'user' | 'model'; text: string }
+type GeneratedMedia = { type: 'image' | 'audio'; src: string; filename: string }
+type ChatMessage = { role: 'user' | 'model'; text: string; media?: GeneratedMedia[] }
+type ComposerMode = 'chat' | 'image' | 'music'
 type Activity = 'idle' | 'recording' | 'thinking' | 'done' | 'error'
 type Sprite = { sheet: Blob | null; durationMs: number; transform: CellTransform }
 type SpritePack = { displayName: string; states: Record<StateName, Sprite> }
@@ -45,6 +47,40 @@ const WELCOME: ChatMessage = {
   text: '嗨，我是 Mori。想聊聊、看看最近的新聞，或問我今天的天氣？',
 }
 let bundledDemoPromise: Promise<SpritePack> | null = null
+
+function geminiWebEndpoint(baseUrl: string, path: string) {
+  const value = baseUrl.trim()
+  if (!value) throw new Error('請先填入 Gemini-Web Base URL。')
+  const normalized = value.endsWith('/') ? value : `${value}/`
+  const url = new URL(path.replace(/^\/+/, ''), normalized)
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new Error('Gemini-Web Base URL 必須使用 HTTP 或 HTTPS。')
+  }
+  return url.toString()
+}
+
+function responseError(result: Record<string, unknown> | null) {
+  const detail = result?.detail
+  if (typeof detail === 'string') return detail
+  if (detail && typeof detail === 'object' && 'message' in detail && typeof detail.message === 'string') return detail.message
+  for (const key of ['error', 'message']) {
+    if (typeof result?.[key] === 'string') return result[key] as string
+  }
+  return ''
+}
+
+async function readGeminiWebResult(response: Response) {
+  const result = await response.json().catch(() => null) as Record<string, unknown> | null
+  if (!response.ok || result?.success === false) {
+    throw new Error(responseError(result) || `Gemini-Web 請求失敗（${response.status}）。`)
+  }
+  if (!result) throw new Error('Gemini-Web 回傳的資料格式無法讀取。')
+  return result
+}
+
+function asDataUrl(value: string, mime: string) {
+  return value.startsWith('data:') ? value : `data:${mime};base64,${value}`
+}
 
 function loadConnectionSettings(): ConnectionSettings {
   if (typeof window === 'undefined') return DEFAULT_CONNECTION_SETTINGS
@@ -280,6 +316,7 @@ export function LiveDemoView() {
   const [demoError, setDemoError] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME])
   const [draft, setDraft] = useState('')
+  const [composerMode, setComposerMode] = useState<ComposerMode>('chat')
   const [activity, setActivity] = useState<Activity>('idle')
   const [isWalking, setIsWalking] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -463,6 +500,7 @@ export function LiveDemoView() {
     event.preventDefault()
     const text = draft.trim()
     if (!text || activity === 'thinking') return
+    const mode = composerMode
     stopVoiceInput(true)
     setVoiceError('')
     const nextMessages = [...messages, { role: 'user' as const, text }]
@@ -472,28 +510,70 @@ export function LiveDemoView() {
     setActivity('thinking')
 
     if (!connection.apiKey.trim()) {
-      setMessages((current) => [...current, { role: 'model', text: '先在上方連線設定填入 Gemini-Web API Key，再送出訊息。' }])
+      setConnectionSettingsOpen(true)
+      setMessages((current) => [...current, { role: 'model', text: '請先在上方連線設定填入 Gemini-Web API Key，再試一次。' }])
       setTransientActivity('error', 2200)
       return
     }
 
     try {
-      const response = await fetch('/api/live-demo/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: nextMessages,
-          baseUrl: connection.baseUrl,
-          apiKey: connection.apiKey,
-        }),
-      })
-      const result = await response.json() as { text?: string; error?: string }
-      if (!response.ok) throw new Error(result.error || 'Mori 暫時沒有回應，請稍後再試。')
-      if (!result.text?.trim()) throw new Error('Mori 這次沒有回覆內容，請再試一次。')
-      setMessages((current) => [...current, { role: 'model', text: formatAssistantReply(result.text!, text) }])
+      if (mode === 'chat') {
+        const response = await fetch('/api/live-demo/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: nextMessages.map(({ role, text: messageText }) => ({ role, text: messageText })),
+            baseUrl: connection.baseUrl,
+            apiKey: connection.apiKey,
+          }),
+        })
+        const result = await response.json() as { text?: string; error?: string }
+        if (!response.ok) throw new Error(result.error || 'Mori 暫時沒有回應，請稍後再試。')
+        if (!result.text?.trim()) throw new Error('Mori 這次沒有回覆內容，請再試一次。')
+        setMessages((current) => [...current, { role: 'model', text: formatAssistantReply(result.text!, text) }])
+      } else {
+        const isImage = mode === 'image'
+        const endpoint = geminiWebEndpoint(connection.baseUrl, isImage ? 'api/generate' : 'api/music')
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': connection.apiKey,
+          },
+          body: JSON.stringify({ prompt: text, timeout: isImage ? 180 : 600 }),
+        })
+        const result = await readGeminiWebResult(response)
+        if (isImage) {
+          const images = Array.isArray(result.images)
+            ? result.images.filter((image): image is string => typeof image === 'string' && image.length > 0)
+            : []
+          if (images.length === 0) throw new Error('Gemini-Web 沒有回傳圖片，請調整描述後再試一次。')
+          const media = images.map((image, index) => {
+            const mimeSubtype = image.match(/^data:image\/([^;,]+)/i)?.[1]?.toLowerCase()
+            const extension = mimeSubtype === 'jpeg' ? 'jpg' : mimeSubtype || 'png'
+            return {
+              type: 'image' as const,
+              src: asDataUrl(image, 'image/png'),
+              filename: `mori-image-${index + 1}.${extension}`,
+            }
+          })
+          setMessages((current) => [...current, { role: 'model', text: `圖片生成完成，共 ${media.length} 張。`, media }])
+        } else {
+          if (typeof result.audio !== 'string' || !result.audio) throw new Error('Gemini-Web 沒有回傳音訊，請調整描述後再試一次。')
+          const mime = typeof result.mime === 'string' && result.mime.startsWith('audio/') ? result.mime : 'audio/mpeg'
+          const extension = mime === 'audio/wav' ? 'wav' : mime === 'audio/mp4' ? 'm4a' : 'mp3'
+          setMessages((current) => [...current, {
+            role: 'model',
+            text: '音樂生成完成。',
+            media: [{ type: 'audio', src: asDataUrl(result.audio as string, mime), filename: `mori-music.${extension}` }],
+          }])
+        }
+      }
       setTransientActivity('done', 1800)
     } catch (error) {
-      const message = error instanceof Error ? error.message : '連線發生問題，請稍後再試。'
+      const message = error instanceof TypeError
+        ? '無法連線到 Gemini-Web。請確認 Base URL、API Key，以及服務是否允許這個網站跨來源連線。'
+        : error instanceof Error ? error.message : '連線發生問題，請稍後再試。'
       setMessages((current) => [...current, { role: 'model', text: message }])
       setTransientActivity('error', 2200)
     }
@@ -536,6 +616,15 @@ export function LiveDemoView() {
           : activity === 'error' ? '遇到問題'
             : isWalking ? hasWalking ? '散步中' : 'Mori'
               : '休息中'
+  const modeStatus = composerMode === 'image' ? '正在生成圖片…' : composerMode === 'music' ? '正在創作音樂…' : '正在思考…'
+  const composerPlaceholder = composerMode === 'image'
+    ? '描述想生成的圖片…'
+    : composerMode === 'music' ? '描述想生成的音樂…' : '跟 Mori 說說話…'
+  const modeHint = composerMode === 'chat'
+    ? '對話會經 Live Demo 後端傳送至 Gemini-Web。'
+    : composerMode === 'image'
+      ? '圖片會由瀏覽器直接傳送至 Gemini-Web，並使用服務預設設定。'
+      : '音樂會由瀏覽器直接傳送至 Gemini-Web，並使用服務預設設定。'
 
   return (
     <div className="relative h-full min-h-0 w-full overflow-hidden bg-[radial-gradient(ellipse_at_20%_8%,rgba(255,255,255,0.92),transparent_42%),linear-gradient(155deg,#edf5e9_0%,#c6ddc1_54%,#a9c9ac_100%)]">
@@ -603,7 +692,7 @@ export function LiveDemoView() {
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-semibold text-stone-900">和 Mori 聊聊</h2>
               <p className="flex items-center gap-1.5 text-[11px] text-stone-500">
-                <span>聊天 · 新聞 · 天氣</span>
+                <span>{composerMode === 'chat' ? '聊天 · 新聞 · 天氣' : composerMode === 'image' ? 'Gemini-Web 生圖' : 'Gemini-Web 音樂'}</span>
                 <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${activity === 'thinking' ? 'animate-pulse bg-amber-500' : activity === 'error' ? 'bg-rose-500' : 'bg-emerald-600'}`} />
                 <span aria-live="polite" className={`font-medium ${activity === 'thinking' ? 'text-amber-700' : activity === 'error' ? 'text-rose-700' : 'text-emerald-700'}`}>{statusLabel}</span>
               </p>
@@ -616,7 +705,7 @@ export function LiveDemoView() {
               <div className="min-w-0 flex-1">
                 <h3 className="text-xs font-semibold text-stone-800">Gemini-Web 連線設定</h3>
                 <p className={`mt-0.5 text-[11px] ${connection.apiKey.trim() ? 'text-emerald-700' : 'text-amber-700'}`}>
-                  {connection.apiKey.trim() ? 'API Key 已儲存在這個瀏覽器' : '填入測試用 API Key 後即可聊天'}
+                  {connection.apiKey.trim() ? 'API Key 已儲存；可使用聊天、生圖與音樂' : '填入測試用 API Key 後即可使用聊天、生圖與音樂'}
                 </p>
               </div>
               <button
@@ -675,7 +764,7 @@ export function LiveDemoView() {
 
                 <div className="flex items-start justify-between gap-3">
                   <p className="max-w-sm text-[10px] leading-relaxed text-stone-500">
-                    設定只存在這個瀏覽器。送出訊息時，連線網址和 API Key 會傳給 Live Demo 後端，再由後端呼叫 Gemini-Web。
+                    設定只存在這個瀏覽器。聊天經 Live Demo 後端轉送；生圖與音樂會由瀏覽器直接帶 API Key 呼叫 Gemini-Web。
                   </p>
                   <button
                     type="button"
@@ -697,13 +786,25 @@ export function LiveDemoView() {
               <div key={`${index}-${message.role}`} className={`flex min-w-0 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`pointer-events-auto min-w-0 w-fit max-w-[96%] ${message.role === 'user' ? 'whitespace-pre-wrap rounded-br-md bg-emerald-700 text-white' : 'rounded-bl-md border border-stone-200 bg-white text-stone-800 shadow-sm'} break-words [overflow-wrap:anywhere] px-4 py-3 text-sm leading-6`}>
                   {message.role === 'model' ? renderAssistantMarkdown(message.text) : message.text}
+                  {message.media?.map((media, mediaIndex) => (
+                    <div key={`${media.filename}-${mediaIndex}`} className="mt-3 space-y-2">
+                      {media.type === 'image' ? (
+                        <img src={media.src} alt="Mori 生成的圖片" className="max-h-[min(60vh,32rem)] max-w-full rounded-xl border border-stone-200 object-contain" />
+                      ) : (
+                        <audio controls preload="metadata" src={media.src} className="max-w-full" aria-label="Mori 生成的音樂" />
+                      )}
+                      <a href={media.src} download={media.filename} className="pointer-events-auto inline-flex rounded-lg bg-stone-100 px-3 py-1.5 text-xs font-medium text-stone-700 transition-colors hover:bg-stone-200">
+                        下載{media.type === 'image' ? '圖片' : '音樂'}
+                      </a>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
             {activity === 'thinking' && (
               <div className="flex justify-start">
                 <div className="pointer-events-auto flex items-center gap-2 rounded-2xl rounded-bl-md border border-stone-200 bg-white px-3.5 py-2.5 text-xs text-stone-500 shadow-sm">
-                  <LoaderCircle size={14} className="animate-spin" /> Mori 正在想…
+                  <LoaderCircle size={14} className="animate-spin" /> Mori {modeStatus}
                 </div>
               </div>
             )}
@@ -711,6 +812,24 @@ export function LiveDemoView() {
           </div>
 
           <form className="pointer-events-none shrink-0 border-t border-stone-100 bg-white/90 p-3 sm:p-4" onSubmit={(event) => void sendMessage(event)}>
+            <div role="group" aria-label="選擇 Mori 功能" className="pointer-events-none mb-2 flex gap-1.5">
+              {([
+                { id: 'chat', label: '聊天', Icon: MessageCircle },
+                { id: 'image', label: '生圖', Icon: ImagePlus },
+                { id: 'music', label: '音樂', Icon: Music2 },
+              ] as const).map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setComposerMode(id)}
+                  disabled={activity === 'thinking'}
+                  aria-pressed={composerMode === id}
+                  className={`pointer-events-auto inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${composerMode === id ? 'bg-emerald-700 text-white shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}
+                >
+                  <Icon size={14} strokeWidth={1.8} />{label}
+                </button>
+              ))}
+            </div>
             <div className="pointer-events-none flex items-end gap-2 rounded-2xl border border-stone-200 bg-white p-2 shadow-sm focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100">
               <textarea
                 value={draft}
@@ -723,8 +842,8 @@ export function LiveDemoView() {
                 }}
                 rows={2}
                 maxLength={1500}
-                aria-label="輸入訊息"
-                placeholder="跟 Mori 說說話…"
+                aria-label={composerPlaceholder}
+                placeholder={composerPlaceholder}
                 className="pointer-events-auto max-h-32 min-h-12 min-w-0 flex-1 resize-none border-0 bg-transparent px-2 py-1.5 text-sm text-stone-800 outline-none placeholder:text-stone-400 focus:ring-0 focus-visible:!outline-none"
               />
               <button
@@ -740,14 +859,14 @@ export function LiveDemoView() {
               <button
                 type="submit"
                 disabled={!draft.trim() || activity === 'thinking'}
-                aria-label="送出訊息"
+                aria-label={composerMode === 'chat' ? '送出訊息' : composerMode === 'image' ? '生成圖片' : '生成音樂'}
                 className="pointer-events-auto mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
               >
                 <Send size={16} />
               </button>
             </div>
             <div className="mt-2 flex items-center justify-between gap-3 px-1 text-[10px] text-stone-400">
-              <span>{voiceError || (!voiceSupported ? '此瀏覽器不支援語音輸入，請使用 Chrome 或 Edge。' : '展示版不讀取私人記憶；對話會送往 Gemini-Web。')}</span>
+              <span>{voiceError || (!voiceSupported ? '此瀏覽器不支援語音輸入，請使用 Chrome 或 Edge。' : modeHint)}</span>
               <span className="shrink-0">{draft.length}/1500</span>
             </div>
           </form>

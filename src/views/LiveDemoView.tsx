@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent, type ReactNode } from 'react'
 import JSZip from 'jszip'
 import { get, set } from 'idb-keyval'
-import { Eye, EyeOff, ImagePlus, LoaderCircle, MessageCircle, Mic, MicOff, Music2, Send } from 'lucide-react'
+import { Eye, EyeOff, ImagePlus, LoaderCircle, MessageCircle, Mic, MicOff, Music2, Send, Square, Volume2 } from 'lucide-react'
 import { AnimationPreview } from '@/components/AnimationPreview'
 import {
   buildMoriSelfiePrompt,
@@ -21,6 +21,7 @@ type Activity = 'idle' | 'recording' | 'thinking' | 'done' | 'error'
 type Sprite = { sheet: Blob | null; durationMs: number; transform: CellTransform }
 type SpritePack = { displayName: string; states: Record<StateName, Sprite> }
 type ConnectionSettings = { baseUrl: string; apiKey: string }
+type TtsSettings = { baseUrl: string; apiKey: string; voice: string }
 
 type ProjectFile = {
   metadata?: { displayName?: string }
@@ -48,15 +49,96 @@ const EMPTY_TRANSFORM: CellTransform = { scale: 1, offsetX: 0, offsetY: 0 }
 const DEFAULT_GEMINI_WEB_URL = 'https://ching-tech.ddns.net/gemini-web/'
 const CONNECTION_SETTINGS_STORAGE_KEY = 'mori-live-demo-gemini-web'
 const CHAT_HISTORY_STORAGE_KEY = 'mori-live-demo-chat-history-v1'
+const LARCH_TTS_DEFAULT_BASE_URL = 'https://ching-tech.ddns.net/larch-tts/'
+const TTS_SETTINGS_STORAGE_KEY = 'mori-live-demo-larch-tts'
 const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
   baseUrl: DEFAULT_GEMINI_WEB_URL,
   apiKey: '',
+}
+const TTS_VOICE_OPTIONS = [
+  { id: 'Chinese (Mandarin)_Warm_Girl', label: '溫暖女孩', hint: '親切柔和・日常對話' },
+  { id: 'Chinese (Mandarin)_Soft_Girl', label: '輕柔女孩', hint: '輕柔細膩・安靜溫柔' },
+  { id: 'Chinese (Mandarin)_Warm_Bestie', label: '暖心閨蜜', hint: '貼心自然・好友聊天' },
+  { id: 'Chinese (Mandarin)_Sweet_Lady', label: '甜美女聲', hint: '柔甜討喜・抒情語氣' },
+] as const
+const DEFAULT_TTS_SETTINGS: TtsSettings = {
+  baseUrl: LARCH_TTS_DEFAULT_BASE_URL,
+  apiKey: '',
+  voice: TTS_VOICE_OPTIONS[0].id,
 }
 const WELCOME: ChatMessage = {
   role: 'model',
   text: '嗨，我是 Mori。想聊聊、看看最近的新聞，或問我今天的天氣？',
 }
 let bundledDemoPromise: Promise<SpritePack> | null = null
+
+function loadTtsSettings(): TtsSettings {
+  if (typeof window === 'undefined') return DEFAULT_TTS_SETTINGS
+  try {
+    const saved = window.localStorage.getItem(TTS_SETTINGS_STORAGE_KEY)
+    if (!saved) return DEFAULT_TTS_SETTINGS
+    const parsed = JSON.parse(saved) as Partial<TtsSettings>
+    return {
+      baseUrl: typeof parsed.baseUrl === 'string' ? parsed.baseUrl : LARCH_TTS_DEFAULT_BASE_URL,
+      apiKey: typeof parsed.apiKey === 'string' ? parsed.apiKey : '',
+      voice: TTS_VOICE_OPTIONS.some((option) => option.id === parsed.voice)
+        ? parsed.voice as string
+        : DEFAULT_TTS_SETTINGS.voice,
+    }
+  } catch {
+    return DEFAULT_TTS_SETTINGS
+  }
+}
+
+function cleanSpeechText(text: string) {
+  return text
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/[>*_`~]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function splitSpeechText(text: string, maxLength = 480): string[] {
+  const remaining = Array.from(text)
+  const chunks: string[] = []
+  while (remaining.length > maxLength) {
+    let splitAt = maxLength
+    for (const boundary of [/[。！？!?；;]/, /[，,、]/]) {
+      let found = -1
+      for (let index = maxLength; index >= Math.floor(maxLength * 0.65); index -= 1) {
+        if (boundary.test(remaining[index - 1])) { found = index; break }
+      }
+      if (found > 0) { splitAt = found; break }
+    }
+    chunks.push(remaining.splice(0, splitAt).join(''))
+  }
+  if (remaining.length > 0) chunks.push(remaining.join(''))
+  return chunks
+}
+
+function combineAudioBuffers(context: AudioContext, buffers: AudioBuffer[]) {
+  if (buffers.length === 0) throw new Error('Larch-TTS 沒有回傳可播放的音訊。')
+  const channels = Math.max(...buffers.map((buffer) => buffer.numberOfChannels))
+  const totalLength = buffers.reduce((sum, buffer) => sum + buffer.length, 0)
+  const combined = context.createBuffer(channels, totalLength, buffers[0].sampleRate)
+  let offset = 0
+  for (const buffer of buffers) {
+    for (let channel = 0; channel < channels; channel += 1) {
+      const sourceChannel = Math.min(channel, buffer.numberOfChannels - 1)
+      combined.getChannelData(channel).set(buffer.getChannelData(sourceChannel), offset)
+    }
+    offset += buffer.length
+  }
+  return combined
+}
+
+function speechCacheKey(voice: string, text: string) {
+  return `${voice}\u0000${text}`
+}
 
 function isChatMessage(value: unknown): value is ChatMessage {
   if (!value || typeof value !== 'object') return false
@@ -351,8 +433,12 @@ export function LiveDemoView() {
   const [voiceSupported] = useState(supportsSpeechRecognition)
   const [voiceError, setVoiceError] = useState('')
   const [connection, setConnection] = useState<ConnectionSettings>(loadConnectionSettings)
+  const [ttsSettings, setTtsSettings] = useState<TtsSettings>(loadTtsSettings)
   const [connectionSettingsOpen, setConnectionSettingsOpen] = useState(() => !connection.apiKey.trim())
   const [showApiKey, setShowApiKey] = useState(false)
+  const [showTtsApiKey, setShowTtsApiKey] = useState(false)
+  const [loadingTtsKey, setLoadingTtsKey] = useState('')
+  const [playingTtsKey, setPlayingTtsKey] = useState('')
 
   const stageRef = useRef<HTMLDivElement | null>(null)
   const playerRef = useRef<HTMLDivElement | null>(null)
@@ -362,6 +448,11 @@ export function LiveDemoView() {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const ignoreRecognitionEndRef = useRef(false)
   const activityTimerRef = useRef<number | undefined>(undefined)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const playbackSourceRef = useRef<AudioBufferSourceNode | null>(null)
+  const playbackKeyRef = useRef('')
+  const loadingTtsKeyRef = useRef('')
+  const preparedAudioRef = useRef(new Map<string, AudioBuffer>())
 
   positionRef.current = position
 
@@ -465,9 +556,22 @@ export function LiveDemoView() {
     }
   }, [connection])
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(TTS_SETTINGS_STORAGE_KEY, JSON.stringify(ttsSettings))
+    } catch {
+      // Keep settings editable when browser storage is unavailable.
+    }
+  }, [ttsSettings])
+
   useEffect(() => () => {
     if (activityTimerRef.current !== undefined) window.clearTimeout(activityTimerRef.current)
     recognitionRef.current?.stop()
+    if (playbackSourceRef.current) {
+      playbackSourceRef.current.onended = null
+      try { playbackSourceRef.current.stop() } catch { /* It may already have ended. */ }
+    }
+    void audioContextRef.current?.close()
   }, [])
 
   const activeState: StateName = isDragging
@@ -488,6 +592,107 @@ export function LiveDemoView() {
     activityTimerRef.current = window.setTimeout(() => {
       setActivity((current) => current === next ? 'idle' : current)
     }, delayMs)
+  }
+
+  const stopTtsPlayback = () => {
+    const source = playbackSourceRef.current
+    playbackSourceRef.current = null
+    playbackKeyRef.current = ''
+    if (source) {
+      source.onended = null
+      try { source.stop() } catch { /* It may already have ended. */ }
+    }
+    setPlayingTtsKey('')
+    setActivity((current) => current === 'done' ? 'idle' : current)
+  }
+
+  const playTts = async (rawText: string) => {
+    const text = cleanSpeechText(rawText)
+    if (!text) {
+      setVoiceError('這則訊息沒有可播放的文字。')
+      setTransientActivity('error', 2200)
+      return
+    }
+    const cacheKey = speechCacheKey(ttsSettings.voice, text)
+    if (playbackKeyRef.current === cacheKey && playbackSourceRef.current) {
+      stopTtsPlayback()
+      return
+    }
+    if (loadingTtsKeyRef.current) return
+    if (!ttsSettings.apiKey.trim() || !ttsSettings.baseUrl.trim()) {
+      setConnectionSettingsOpen(true)
+      setVoiceError('請先在編輯設定填入 Larch-TTS Base URL 和 API Key。')
+      setTransientActivity('error', 2200)
+      return
+    }
+
+    if (activityTimerRef.current !== undefined) window.clearTimeout(activityTimerRef.current)
+    setVoiceError('')
+    if (playbackSourceRef.current) stopTtsPlayback()
+    loadingTtsKeyRef.current = cacheKey
+    setLoadingTtsKey(cacheKey)
+
+    try {
+      const AudioContextConstructor = window.AudioContext
+      if (!AudioContextConstructor) throw new Error('此瀏覽器不支援語音播放。')
+      const context = audioContextRef.current ?? new AudioContextConstructor()
+      audioContextRef.current = context
+      await context.resume()
+
+      let audioBuffer = preparedAudioRef.current.get(cacheKey)
+      if (!audioBuffer) {
+        const chunks = splitSpeechText(text)
+        const decoded: AudioBuffer[] = []
+        for (const chunk of chunks) {
+          const response = await fetch('/api/live-demo/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              baseUrl: ttsSettings.baseUrl,
+              apiKey: ttsSettings.apiKey,
+              voice: ttsSettings.voice,
+              text: chunk,
+            }),
+          })
+          if (!response.ok) {
+            const result = await response.json().catch(() => null) as { error?: unknown } | null
+            throw new Error(typeof result?.error === 'string' ? result.error : 'Larch-TTS 配音失敗，請稍後再試。')
+          }
+          decoded.push(await context.decodeAudioData(await response.arrayBuffer()))
+        }
+        audioBuffer = combineAudioBuffers(context, decoded)
+        if (preparedAudioRef.current.size >= 8) {
+          const oldestKey = preparedAudioRef.current.keys().next().value
+          if (oldestKey) preparedAudioRef.current.delete(oldestKey)
+        }
+        preparedAudioRef.current.set(cacheKey, audioBuffer)
+      }
+
+      const source = context.createBufferSource()
+      source.buffer = audioBuffer
+      source.connect(context.destination)
+      source.onended = () => {
+        if (playbackSourceRef.current !== source) return
+        playbackSourceRef.current = null
+        playbackKeyRef.current = ''
+        setPlayingTtsKey('')
+        setActivity((current) => current === 'done' ? 'idle' : current)
+      }
+      playbackSourceRef.current = source
+      playbackKeyRef.current = cacheKey
+      setPlayingTtsKey(cacheKey)
+      await context.resume()
+      source.start()
+      setActivity('done')
+    } catch (error) {
+      stopTtsPlayback()
+      const message = error instanceof Error ? error.message : 'Larch-TTS 配音失敗，請稍後再試。'
+      setVoiceError(message)
+      setTransientActivity('error', 2200)
+    } finally {
+      loadingTtsKeyRef.current = ''
+      setLoadingTtsKey('')
+    }
   }
 
   const stopVoiceInput = (suppressIdle = false) => {
@@ -844,15 +1049,124 @@ export function LiveDemoView() {
                     清除設定
                   </button>
                 </div>
+
+                <div className="pointer-events-auto space-y-3 border-t border-stone-200 pt-3">
+                  <div>
+                    <h3 className="text-[11px] font-semibold text-stone-800">Mori 語音回覆｜Larch-TTS</h3>
+                    <p className="mt-1 text-[10px] leading-relaxed text-stone-500">選一種女聲後按「試聽」比較；回覆泡泡的播放鍵會使用目前選擇。設定留在這個瀏覽器，TTS 請求會經 Studio 轉送；未填 URL 或 API Key 時，Mori 會播放 error 動作。</p>
+                  </div>
+
+                  <label className="block space-y-1.5">
+                    <span className="text-[11px] font-medium text-stone-700">Larch-TTS Base URL</span>
+                    <input
+                      type="url"
+                      value={ttsSettings.baseUrl}
+                      onChange={(event) => setTtsSettings((current) => ({ ...current, baseUrl: event.currentTarget.value }))}
+                      placeholder={LARCH_TTS_DEFAULT_BASE_URL}
+                      autoComplete="url"
+                      spellCheck={false}
+                      className="h-9 w-full rounded-lg border border-stone-200 bg-white px-3 text-xs text-stone-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    />
+                  </label>
+
+                  <label className="block space-y-1.5">
+                    <span className="text-[11px] font-medium text-stone-700">Larch-TTS API Key</span>
+                    <span className="flex h-9 overflow-hidden rounded-lg border border-stone-200 bg-white transition focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100">
+                      <input
+                        type={showTtsApiKey ? 'text' : 'password'}
+                        value={ttsSettings.apiKey}
+                        onChange={(event) => setTtsSettings((current) => ({ ...current, apiKey: event.currentTarget.value }))}
+                        placeholder="貼上 Larch-TTS API Key"
+                        autoComplete="off"
+                        spellCheck={false}
+                        className="min-w-0 flex-1 bg-transparent px-3 text-xs text-stone-800 outline-none placeholder:text-stone-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowTtsApiKey((visible) => !visible)}
+                        aria-label={showTtsApiKey ? '隱藏 Larch-TTS API Key' : '顯示 Larch-TTS API Key'}
+                        className="flex w-10 shrink-0 items-center justify-center text-stone-500 transition-colors hover:bg-stone-50 hover:text-stone-800"
+                      >
+                        {showTtsApiKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </span>
+                  </label>
+
+                  <div className="flex items-end gap-2">
+                    <label className="min-w-0 flex-1 space-y-1.5">
+                      <span className="text-[11px] font-medium text-stone-700">Mori 女聲</span>
+                      <select
+                        value={ttsSettings.voice}
+                        onChange={(event) => {
+                          stopTtsPlayback()
+                          setTtsSettings((current) => ({ ...current, voice: event.currentTarget.value }))
+                        }}
+                        disabled={Boolean(loadingTtsKey)}
+                        className="h-9 w-full rounded-lg border border-stone-200 bg-white px-2 text-xs text-stone-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                      >
+                        {TTS_VOICE_OPTIONS.map((option) => (
+                          <option key={option.id} value={option.id}>{option.label}｜{option.hint}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => void playTts('嗨，我是 Mori。今天也一起在森林裡散散步吧！')}
+                      disabled={Boolean(loadingTtsKey) || activity === 'thinking' || activity === 'recording'}
+                      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-medium text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {loadingTtsKey === speechCacheKey(ttsSettings.voice, cleanSpeechText('嗨，我是 Mori。今天也一起在森林裡散散步吧！'))
+                        ? <LoaderCircle size={13} className="animate-spin" />
+                        : playingTtsKey === speechCacheKey(ttsSettings.voice, cleanSpeechText('嗨，我是 Mori。今天也一起在森林裡散散步吧！'))
+                          ? <Square size={12} />
+                          : <Volume2 size={14} />}
+                      試聽
+                    </button>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        stopTtsPlayback()
+                        setTtsSettings(DEFAULT_TTS_SETTINGS)
+                        setShowTtsApiKey(false)
+                        setVoiceError('')
+                      }}
+                      className="rounded-md px-2 py-1 text-[10px] font-medium text-stone-500 transition-colors hover:bg-white hover:text-stone-800"
+                    >
+                      清除 Larch-TTS 設定
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </section>
 
           <div className="pointer-events-none min-h-0 flex-1 space-y-4 overflow-y-auto bg-transparent px-4 py-4 sm:px-6 sm:py-6" aria-live="polite" aria-label="對話內容">
-            {messages.map((message, index) => (
+            {messages.map((message, index) => {
+              const cleanedText = message.role === 'model' ? cleanSpeechText(message.text) : ''
+              const messageTtsKey = speechCacheKey(ttsSettings.voice, cleanedText)
+              return (
               <div key={`${index}-${message.role}`} className={`flex min-w-0 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`pointer-events-auto min-w-0 w-fit max-w-[96%] rounded-2xl ${message.role === 'user' ? 'whitespace-pre-wrap rounded-tr-md bg-emerald-700 text-white' : 'rounded-tl-md border border-stone-200 bg-white text-stone-800 shadow-sm'} break-words [overflow-wrap:anywhere] px-4 py-3 text-sm leading-6`}>
                   {message.role === 'model' ? renderAssistantMarkdown(message.text) : message.text}
+                  {message.role === 'model' && (
+                    <button
+                      type="button"
+                      onClick={() => void playTts(message.text)}
+                      disabled={Boolean(loadingTtsKey) || activity === 'thinking' || activity === 'recording'}
+                      aria-label={playingTtsKey === messageTtsKey ? '停止 Mori 語音播放' : '播放 Mori 語音回覆'}
+                      className="pointer-events-auto mt-3 inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:bg-emerald-50 hover:text-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {loadingTtsKey === messageTtsKey
+                        ? <LoaderCircle size={13} className="animate-spin" />
+                        : playingTtsKey === messageTtsKey
+                          ? <Square size={11} />
+                          : <Volume2 size={14} />}
+                      {loadingTtsKey === messageTtsKey ? '正在準備語音…' : playingTtsKey === messageTtsKey ? '停止播放' : '播放語音'}
+                    </button>
+                  )}
                   {message.media?.map((media, mediaIndex) => (
                     <div key={`${media.filename}-${mediaIndex}`} className="mt-3 space-y-2">
                       {media.type === 'image' ? (
@@ -867,7 +1181,8 @@ export function LiveDemoView() {
                   ))}
                 </div>
               </div>
-            ))}
+              )
+            })}
             {activity === 'thinking' && (
               <div className="flex justify-start">
                 <div className="pointer-events-auto flex items-center gap-2 rounded-2xl rounded-bl-md border border-stone-200 bg-white px-3.5 py-2.5 text-xs text-stone-500 shadow-sm">
@@ -933,7 +1248,9 @@ export function LiveDemoView() {
               </button>
             </div>
             <div className="mt-2 flex items-center justify-between gap-3 px-1 text-[10px] text-stone-400">
-              <span>{voiceError || (!voiceSupported ? '此瀏覽器不支援語音輸入，請使用 Chrome 或 Edge。' : modeHint)}</span>
+              <span className={voiceError ? 'text-rose-600' : ''} role={voiceError ? 'alert' : undefined}>
+                {voiceError || (!voiceSupported ? '此瀏覽器不支援語音輸入，請使用 Chrome 或 Edge。' : modeHint)}
+              </span>
               <span className="shrink-0">{draft.length}/1500</span>
             </div>
           </form>

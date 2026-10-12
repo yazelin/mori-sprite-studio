@@ -2,15 +2,15 @@
 
 # Mori Sprite Studio
 
-🌐 [English](./README.md) · **繁體中文**
+[English](./README.md) · **繁體中文**
 
-**從一張角色 ref 圖,一鍵生成 1024×1024 的 4×4 sprite 動畫包。**
+**從一張角色 ref 圖，按一下即可生成 1024×1024 的 4×4 sprite 動畫包。**
 
 AI 驅動。純瀏覽器。透明背景。多種匯出格式。
 
 <img src="docs/assets/mori-idle.png" width="160" alt="Mori 站著動畫"> &nbsp; <img src="docs/assets/mori-sleeping.png" width="160" alt="Mori 睡覺動畫">
 
-[**▶ 試玩線上 app**](https://mori-sprite-studio.vercel.app) · [文件 / 截圖](https://yazelin.github.io/mori-sprite-studio/index.zh-TW.html) · [☕ 請我喝咖啡](https://buymeacoffee.com/yazelin)
+[**▶ 試玩線上 app**](https://mori-sprite-studio.vercel.app) · [文件 / 截圖](https://yazelin.github.io/mori-sprite-studio/index.zh-TW.html) · [請我喝咖啡](https://buymeacoffee.com/yazelin)
 
 </div>
 
@@ -18,13 +18,13 @@ AI 驅動。純瀏覽器。透明背景。多種匯出格式。
 
 ## 這個工具做什麼
 
-給它**一張你的角色 ref 圖**,它幫你生出完整給 [mori-desktop](https://github.com/yazelin/mori-desktop) 用的 sprite 動畫包 — **6 個必要 + 2 個可選 state**,每個都是 1024×1024 的 4×4 sprite sheet,mori-desktop 浮動視窗會播放。
+給它**一張你的角色 ref 圖**，它就會幫你產生 [mori-desktop](https://github.com/yazelin/mori-desktop) 使用的完整 sprite 動畫包 — **6 個必要 + 2 個可選 state**，每個都是 1024×1024 的 4×4 sprite sheet，可在 mori-desktop 浮動視窗播放。
 
 | 必要(6) | 可選(2) |
 |---|---|
 | idle / sleeping / recording / thinking / done / error | walking / dragging |
 
-這個專案是為 [**Mori**](https://github.com/yazelin/mori-desktop) 而生 — yazelin 的**森林精靈** Jarvis-style AI 夥伴,住在桌面上。_「Iron Man 有 Jarvis,我有 Mori。」_ 這個 studio 做的就是 Mori 的**可見身體** — 她的 sprite 形態,mori-desktop 浮動視窗會把她動畫化。
+這個專案是為 [**Mori**](https://github.com/yazelin/mori-desktop) 而生 — yazelin 的**森林精靈** Jarvis-style AI 夥伴，住在桌面上。_「Iron Man 有 Jarvis，我有 Mori。」_ 這個 studio 做的就是 Mori 的**可見身體** — 她的 sprite 形態，mori-desktop 浮動視窗會把她動畫化。
 
 當然這工具也適合**任何你想給「可見身體」的角色**:你自己的 AI 夥伴 / 個人精靈 / 直播 overlay / 角色 mascot 都可以。Mori demo 只是一個範例。
 
@@ -66,10 +66,10 @@ AI 驅動。純瀏覽器。透明背景。多種匯出格式。
 
 1. **上傳角色 ref** — 任何 PNG / JPG,任何背景都行。
 2. **生 6 個靜態** — 一次 AI call 出 3×2 grid,自動切成 6 個 state pose。
-3. **每 state 生動畫(必要 6 個)** — 用 pre-tile placeholder + 多 anchor identity ref,把角色位置鎖住,只加微擾(眨眼、呼吸、小手勢)。
+3. **每 state 生動畫（必要 6 個）** — 用 pre-tile placeholder + 多 anchor identity ref，把角色位置鎖住，只加微擾（眨眼、呼吸、小手勢）。
 4. **可選的 walking + dragging** — 走獨立 W/Dr pipeline(不 pre-tile,因為步行循環需要每格都不同 pose)。「反向順序」+「換位模式」buttons 讓你手動排序到走路看起來對為止。
 5. **細調** — 每格獨立重生、loop 設定、跨 state normalize 尺寸、scale / offset sliders、原始 sheet 上傳 / 下載 Photoshop round-trip。
-6. **角色背板**(可選)— 上傳 Light + Dark 兩張背板。用**桌面預覽**分頁看所有 state 疊在背板上的樣子,可切 shape / theme。
+6. **角色背板（可選）** — 上傳 Light + Dark 兩張背板。用**桌面預覽**分頁查看所有 state 疊在背板上的樣子，可切換 shape / theme。
 7. **匯出** `.moripack.zip` 給 mori-desktop,或每 state 單獨匯出 APNG / GIF / WebM 給其他平台。
 
 ![State 編輯器](docs/assets/screen-02-state.png)
@@ -79,12 +79,12 @@ AI 驅動。純瀏覽器。透明背景。多種匯出格式。
 ## 功能
 
 **生成**
-- 3 個 AI provider,全部自帶 key(BYOK):**Google Gemini Direct**(AI Studio key,預設)、**Codex-Image**(用你 ChatGPT Plus/Pro 額度,透過 [yazelin/codex-image-service](https://github.com/yazelin/codex-image-service))、**Vertex Gemini**
+- 3 個 AI provider，全部自帶 key（BYOK）：**Google Gemini Direct**（AI Studio key，預設）、**Codex-Image**（用你 ChatGPT Plus/Pro 額度，透過 [yazelin/codex-image-service](https://github.com/yazelin/codex-image-service)）、**Vertex Gemini**
 - 防抖動:pre-tile placeholder sheet 當 AI ref,鎖住角色 16 格內位置不會飄
 - 防角色 drift:多 anchor identity ref(其他 state 的 staticBase 都當 outfit anchor 一起送)
 - 身體結構無關 prompt:人形 / 植物 / 機器人 / 史萊姆 / 寶石都能用 — semantic 描述抽象 motion
 - One-shot 兩種 pattern:BURST-AND-SETTLE(歡呼)vs SUSTAINED-ENERGY(慌張)
-- BYOG 路徑:複製 prompt + ref,自己跑 AI,回來上傳結果
+- BYOG 路徑：複製 prompt + ref，自己使用 AI 生圖，再回來上傳結果
 
 **Walking + Dragging(可選的循環運動 state)**
 - 專屬 **W / Dr 獨立 pipeline** — 不 pre-tile(那會把角色鎖在一個 pose)。AI 從 character ref + neutral 全身站姿自由設計 16 cells
@@ -93,31 +93,32 @@ AI 驅動。純瀏覽器。透明背景。多種匯出格式。
 - Walking sprite 設計面**右** — mori-desktop engine 用 `scaleX(-1)` 鏡像向左
 
 **手動 cell 排序(生成後微調)**
-- **↺ 反向順序** — 一鍵反向 16 cells(救「動畫看起來在後退」)
-- **✥ 換位模式** — 開啟後點 cell A → 點 cell B → 兩格互換。保持 ON 可連續多次 swap。手動排到走路看起來對為止。
+- **反向順序** — 按一下即可反轉 16 cells（修正「動畫看起來在後退」）
+- **換位模式** — 開啟後點 cell A → 點 cell B → 兩格互換。保持 ON 可連續多次 swap。手動排到走路看起來對為止。
 
 **桌面預覽分頁(模擬桌面)**
-- 6+2 個 floating widget mockup 同時排出來,跟 mori-desktop 真實 render 1:1 對應:
+- 6+2 個 floating widget mockup 同時排列，與 mori-desktop 實際畫面 1:1 對應：
   - 200×200 stage + 背板(`object-cover` 蓋滿)
   - 130×130 sprite 置中(`drop-shadow` 跟 floating.css 一致)
   - 1px outline(對應 XShape clip)
   - 真實 3 層 backdrop 合成(vignette + PNG + base gradient — 從 mori-desktop computed style 1:1 抄過來)
 - 獨立切換:**mori-desktop App theme**(亮/暗 背板)× **OS theme**(亮/暗 桌布)× **shape**(圓/圓角/方)× **backplate mode**(顯示/關閉)
-- 內含技術說明:為什麼有背板(Linux X11 + WebKit2GTK alpha-compositing bug workaround)、3-tier backplate fallback chain 怎麼運作
+- 內含技術說明：為什麼需要背板（Linux X11 + WebKit2GTK alpha-compositing bug workaround），以及 3-tier backplate fallback chain 的運作方式
 
 **編輯**
-- 每格獨立重生,用 `prev frame + next frame + staticBase` 當 context 做平滑插值
+- 每格獨立重生，用 `prev frame + next frame + staticBase` 當 context 做平滑插值
 - 可編輯每 state prompt template + 每格 note
 - 每 state Pose Note
 - 每 state loop mode(loop / one-shot)+ duration slider
 
 **去背**
-- 可選 chroma key(綠或洋紅)+ 三級 tolerance
-- 邊緣 erosion(0-10 px)清掉殘留 chroma halo
+- 去背色可選綠、洋紅、藍、青、黃或自訂高彩度顏色，並提供三級 tolerance
+- 依色幕覆蓋率估算透明度，保留髮絲等半透明邊緣；只在邊緣修正色溢
+- 邊緣 erosion(0-10 px)清除每格邊界的殘留色
 - 「重新去背」從原始 raw AI 輸出重跑(非破壞性 — erosion 可上下調)
 
 **跨 state 對齊**
-- 一鍵 `Normalize` 掃描每 state 的角色 bbox,算出 per-state transform(scale + offset),讓 mori-desktop 切 state 時尺寸一致
+- 按一下 `Normalize`，掃描每 state 的角色 bbox，算出 per-state transform（scale + offset），讓 mori-desktop 切換 state 時尺寸一致
 - 每 state 微調 sliders:scale / offsetX / offsetY
 - Loop preview 上有參考線疊圖對齊用
 
@@ -125,10 +126,10 @@ AI 驅動。純瀏覽器。透明背景。多種匯出格式。
 - `.moripack.zip` — mori-desktop 用的角色包(manifest + 6 必要 sheet + 0/1/2 可選 walking/dragging + 2 背板)
 - 每 state:APNG(透明,LINE/Discord)、GIF(相容性最廣,1-bit alpha)、WebM(VP9 + alpha,OBS overlay)
 - 原始 sheet 下載(1024×1024 PNG)外部編輯用
-- `.moriproject.zip` 存讀檔 — 完整作者狀態(sheets + raw + 設定)之後可載回繼續編輯,或分享給人
+- `.moriproject.zip` 存讀檔 — 完整作者狀態（sheets + raw + 設定），之後可載回繼續編輯，或分享給人
 
 **Demo loader**
-- 專案頁有「✦ 載入 Mori 預設範本」按鈕,一鍵載入完整 27 MB Mori demo,確認對話框會提醒會覆蓋當前資料
+- 專案頁有「載入 Mori 預設範本」按鈕，按一下即可載入完整 27 MB Mori demo；確認對話框會提醒此操作會覆蓋目前資料
 
 **角色背板**
 - 上傳 Light + Dark 兩張背板 PNG,一起打包進 `.moripack`,對應 [mori-desktop PR #107](https://github.com/yazelin/mori-desktop/pull/107) 的 3-tier backplate chain
@@ -141,10 +142,10 @@ AI 驅動。純瀏覽器。透明背景。多種匯出格式。
 
 ### 用線上 app
 
-1. 開 <https://mori-sprite-studio.vercel.app>
-2. 專案頁點 `✦ 載入 Mori 預設範本`(一鍵載入完整 Mori 角色包 — 27 MB)
+1. 開啟 <https://mori-sprite-studio.vercel.app>
+2. 在專案頁點 `載入 Mori 預設範本`（按一下即可載入完整 Mori 角色包 — 27 MB）
 3. 到處逛逛看怎麼跑
-4. 要做自己的:清資料(或開 incognito),上傳你的角色 ref,點 `生 6 狀態靜態` → 每 state `生動畫`
+4. 要做自己的角色：清除資料（或開啟無痕視窗），上傳角色 ref，點 `生 6 狀態靜態` → 每個 state 再點 `生動畫`
 
 所有 provider 都要自帶 key(BYOK)— 免費試用通道(Author Fallback)已停止提供。在 sidebar 的 **AI Provider** 區選一個 provider 填自己的 key(Google Gemini Direct 只要一把免費的 [AI Studio](https://aistudio.google.com/) API key)。
 
@@ -177,7 +178,7 @@ vercel --prod
 | State | Zustand + IndexedDB(idb-keyval)Blob 原生持久化 |
 | AI providers | 抽象 `ImageProvider` 介面 + 4 個實作 |
 | 動畫 pipeline | C template(pre-tile,idle 類)+ W/Dr template(獨立,gait/swing 類)|
-| Chroma key | 2-pass per-channel dominance + despill + 邊緣 erosion |
+| Chroma key | 覆蓋率 alpha matte + 內部細節保護 + 邊緣 despill + 選用 erosion |
 | Cell 操作 | Canvas 為基底的 reorder / swap / reverse(`imageOps.ts`)|
 | 動畫預覽 | Canvas + requestAnimationFrame(16-frame row-major)|
 | 匯出 encoder | upng-js(APNG)、gifenc(GIF)、MediaRecorder + VP9(WebM)、JSZip |
@@ -206,18 +207,18 @@ vercel --prod
 
 | State | 必要 | Loop mode | Duration | Pose hint |
 |---|---|---|---|---|
-| idle | ✓ | loop | 3000 ms | 站著正面,溫和微笑,平靜歡迎 |
-| sleeping | ✓ | loop | 5000 ms | 盤腿,閉眼,雙手放腿上,飄一個 Z |
-| recording | ✓ | loop | 1500 ms | 手 cup 在耳邊(**聽**你說話,不是拿 mic),眼睛睜大專注 |
-| thinking | ✓ | loop | 2000 ms | 食指點額,眼睛上瞄,思考小星星 |
-| done | ✓ | one-shot(sub-pattern A burst-and-settle) | 1800 ms | 雙手舉高歡呼,^v^ 大笑(超萌)|
-| error | ✓ | one-shot(sub-pattern B sustained-energy) | 2000 ms | 雙手抱頭「oh no!」,小淚珠 / 緊張線(也超萌)|
-| walking | opt | loop | 2500 ms | Neutral 全身站姿 ref(面右)。實際 gait cycle 在 16 frame 用 W template render。|
-| dragging | opt | loop | 1600 ms | Neutral 全身 ref(靜態雙腳並立,動畫時懸吊擺盪用 Dr template)。|
+| idle | 是 | loop | 3000 ms | 站著正面，溫和微笑，平靜歡迎 |
+| sleeping | 是 | loop | 5000 ms | 盤腿，閉眼，雙手放腿上，飄一個 Z |
+| recording | 是 | loop | 1500 ms | 手 cup 在耳邊（**聽**你說話，不是拿 mic），眼睛睜大專注 |
+| thinking | 是 | loop | 2000 ms | 食指點額，眼睛上瞄，思考小星星 |
+| done | 是 | one-shot（sub-pattern A burst-and-settle） | 1800 ms | 雙手舉高歡呼，^v^ 大笑（超萌）|
+| error | 是 | one-shot（sub-pattern B sustained-energy） | 2000 ms | 雙手抱頭「oh no!」，小淚珠 / 緊張線（也超萌）|
+| walking | opt | loop | 2500 ms | Neutral 全身站姿 ref（面右）。實際 gait cycle 在 16 frame 用 W template render。|
+| dragging | opt | loop | 1600 ms | Neutral 全身 ref（靜態雙腳並立，動畫時懸吊擺盪用 Dr template）。|
 
 必要 = mori-desktop 預期這 6 個。可選 = 沒提供時 mori-desktop fallback 用 idle.png + CSS transform。
 
-State semantics 可在 project 內編輯 — 預設值看 `src/defaults/semantics.ts`。
+State semantics 可在 project 內編輯 — 預設值請看 `src/defaults/semantics.ts`。
 
 ---
 
@@ -225,17 +226,17 @@ State semantics 可在 project 內編輯 — 預設值看 `src/defaults/semantic
 
 Studio code:MIT。
 
-生出來的角色包(你做的 sprite):**你的作品,你選 license**。Mori reference 角色 bundle 當 demo 是 CC-BY-NC-SA-4.0(姓名標示,非商業,相同方式分享)。
+產生的角色包（你做的 sprite）：**你的作品，license 由你選擇**。Mori reference 角色 bundle 當 demo 是 CC-BY-NC-SA-4.0（姓名標示、非商業、相同方式分享）。
 
 ---
 
 ## 支持
 
-這個專案用愛跟咖啡跑著。如果你覺得實用:
+這個專案靠熱情和咖啡持續維護。如果你覺得實用：
 
 <a href="https://buymeacoffee.com/yazelin"><img src="https://img.shields.io/badge/Buy_me_a_coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy me a coffee" height="36"></a>
 
-自掏腰包做的。咖啡錢直接拿去:
+自掏腰包做的。咖啡錢直接拿去：
 - Vercel / domain 開銷
 - Time + caffeine 繼續寫
 
@@ -245,9 +246,9 @@ Studio code:MIT。
 
 ## 跟 codex-image-service 串接(用自己的 ChatGPT 訂閱額度)
 
-如果你有 ChatGPT Plus / Pro 訂閱,可以把這個 studio 跟 **[codex-image-service](https://github.com/yazelin/codex-image-service)** 串起來 — 它是 FastAPI wrapper,把 Codex CLI 的 `$imagegen` 包成 HTTP endpoint,讓你的訂閱額度直接餵給 studio 生圖。
+如果你有 ChatGPT Plus / Pro 訂閱，可以把這個 studio 跟 **[codex-image-service](https://github.com/yazelin/codex-image-service)** 串起來 — 它是 FastAPI wrapper，把 Codex CLI 的 `$imagegen` 包成 HTTP endpoint，讓你的訂閱額度直接用於 studio 生圖。
 
-三種組合方式:
+三種組合方式：
 
 | Setup | 你要準備什麼 | 適合誰 |
 |---|---|---|
@@ -260,7 +261,7 @@ Studio code:MIT。
 1. 部署 / 跑 codex-image-service([repo 說明](https://github.com/yazelin/codex-image-service))
 2. 在它的 admin UI 發一把 Bearer API key(格式 `cimg_…`)
 3. studio sidebar → **AI Provider** section → 選 **Codex-Image**
-4. 填:
+4. 填寫：
    - **Base URL**: 你 codex-image-service 的網址(例:`https://your-domain.example/codex-image`)
    - **API Key**: 剛剛發的 `cimg_…`
    - **Quality**: `auto`(預設)或 `low` / `medium` / `high`
@@ -284,6 +285,6 @@ Studio code:MIT。
 
 <div align="center">
 
-由 [yazelin](https://github.com/yazelin) 帶著 🌿 做出來
+由 [yazelin](https://github.com/yazelin) 帶著熱情完成
 
 </div>

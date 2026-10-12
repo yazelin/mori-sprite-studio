@@ -3,7 +3,7 @@ import type { AppStore } from './index'
 import { STATE_NAMES, type SpriteState, type StateName } from '@/types/project'
 import {
   DEFAULT_LOOP_MODES, DEFAULT_LOOP_DURATIONS_MS,
-  DEFAULT_STATE_SEMANTICS, DEFAULT_TEMPLATES,
+  DEFAULT_STATE_SEMANTICS, DEFAULT_TEMPLATES, DEFAULT_CHROMA,
 } from '@/defaults'
 import type { TemplateKey } from '@/types/prompts'
 
@@ -63,6 +63,19 @@ function defaultSpriteState(name: StateName): SpriteState {
 }
 
 function migrate(data: Partial<PersistedShape>): Partial<PersistedShape> {
+  if (data.chroma) {
+    const chroma = data.chroma as any
+    const validKeys = ['green', 'magenta', 'blue', 'cyan', 'yellow', 'custom']
+    data.chroma = {
+      ...DEFAULT_CHROMA,
+      ...chroma,
+      key: validKeys.includes(chroma.key) ? chroma.key : DEFAULT_CHROMA.key,
+      customHex: typeof chroma.customHex === 'string' && /^[0-9a-fA-F]{6}$/.test(chroma.customHex.replace(/^#/, ''))
+        ? chroma.customHex.replace(/^#/, '').toUpperCase()
+        : DEFAULT_CHROMA.customHex,
+    }
+  }
+
   // Codex-Image provider: 'standard' quality was a legacy value that 422s
   // against codex-image-service's current FastAPI schema (which requires
   // low/medium/high/auto). Migrate to 'auto' on first load.

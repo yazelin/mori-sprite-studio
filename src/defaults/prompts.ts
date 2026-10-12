@@ -190,7 +190,7 @@ Output rules:
 - Output the SAME 1024×1024 4×4 grid with the same cell positions — just paint the per-cell variations on top.
 - No visible borders or grid lines between cells. No frame numbers painted on the output.
 - No shadows, no scenery, no extra props.
-- Solid magenta or green chroma background (per the auto-appended directive below) — clean fill, no patterns.`,
+- Solid selected chroma-key background (per the auto-appended directive below) — clean fill, no patterns.`,
 
   W: `Create a 1024×1024 PNG that is a 4×4 grid (16 cells of 256×256 each) showing the reference character WALKING. This is a fully designed walking animation cycle — you design ALL 16 frames freely from scratch (NOT animate-on-top of an existing tile).
 
@@ -365,7 +365,7 @@ OUTPUT RULES:
 - NO visible borders, grid lines, gutters, frame numbers, or separators between cells.
 - NO drop shadows, NO ground plane, NO scenery, NO platform under feet.
 - NO held items (no walking stick, no bag, no weapon).
-- All cells share the SAME magenta/green chroma background (per the auto-appended
+- All cells share the SAME selected chroma-key background (per the auto-appended
   directive below) — solid fill, no patterns.`,
 
   Dr: `Create a 1024×1024 PNG that is a 4×4 grid (16 cells of 256×256 each) showing the reference character BEING LIFTED OFF THE GROUND AND SWINGING. The character is held by an invisible force (mouse cursor) from above, dangling in mid-air, with a slight sway across the 16 frames. You design ALL 16 frames freely from scratch.
@@ -439,7 +439,7 @@ OUTPUT RULES:
 - NO visible borders, grid lines, frame numbers, or separators.
 - NO drop shadows under character (no ground = no shadow).
 - NO scenery, NO ropes/strings visible (the lift is invisible / off-canvas).
-- All cells share the SAME magenta/green chroma background — solid fill.`,
+- All cells share the SAME selected chroma-key background — solid fill.`,
 
   D: `A single 256×256 frame showing the reference character in state "{{state_name}}", positioned as an intermediate pose between the previous and next frames provided.
 
@@ -455,17 +455,16 @@ OUTPUT RULES:
 - No drop shadows, no ground plane, no scenery.`,
 }
 
-export const CHROMA_SUFFIX_TEMPLATE = `Background: pure solid {{chroma_color}} (#{{chroma_hex}}) covering 100% of the canvas edge-to-edge.
+export const CHROMA_SUFFIX_TEMPLATE = `Background: pure solid {{chroma_color}} key (#{{chroma_hex}}) covering 100% of the canvas edge-to-edge.
 
 CRITICAL — EXACT COLOR REQUIREMENT:
 - The background MUST be EXACTLY #{{chroma_hex}} (RGB values exactly as specified).
 - DO NOT use a near-match, pastel variant, lighter shade, or "looks similar" color.
-- For magenta (#FF00FF) this means R=255, G=0, B=255 — NOT pink (#FFC0CB), NOT light pink (#FFB6C1), NOT hot pink (#FF69B4), NOT any pinkish variant. It must be the FULL-SATURATION digital magenta — vivid, electric, almost neon, the kind of color a green-screen studio would use.
-- For green (#00FF00) this means R=0, G=255, B=0 — NOT olive, NOT lime, NOT pastel green. Full-saturation electric green.
+- Keep the selected color uniformly saturated across the entire background. Do not add shadows, gradients, lighting, or texture that changes its color.
 
-WHY THIS MATTERS — pixels matching #{{chroma_hex}} will be programmatically removed by a strict chroma-key filter on the client. If your background is the WRONG shade (pink instead of magenta, lime instead of green), the chroma key will FAIL to remove it and the user will see colored bands around the character.
+WHY THIS MATTERS — the client estimates transparency from how strongly each pixel matches #{{chroma_hex}}. A different shade or uneven background can leave colored edges around the character.
 
 CONTENT RULES:
 - No shadow, no gradient, no noise, no texture, no other colors in the background.
-- The character must NOT contain this exact color anywhere — not on clothes, hair, eyes, accessories, highlights, reflected light, or shadows. If the reference uses any color too close to #{{chroma_hex}}, substitute with a clearly different color.
-- Pixels matching #{{chroma_hex}} on the character become holes after chroma-key removal.`
+- The character must NOT contain this exact color or a similar color anywhere — not on clothes, hair, eyes, accessories, highlights, reflected light, or shadows. If the reference uses a color too close to #{{chroma_hex}}, substitute with a clearly different color.
+- Pixels similar to #{{chroma_hex}} on the character may become transparent after chroma-key removal.`

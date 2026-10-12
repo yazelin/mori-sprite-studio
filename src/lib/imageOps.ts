@@ -45,7 +45,7 @@ export async function buildPlaceholderSheet(staticBase: Blob): Promise<Blob> {
  * Like buildPlaceholderSheet but pre-fills the canvas with a solid chroma
  * color (matching the user's chroma key choice) BEFORE tiling the character
  * cells on top. Use this when sending the sheet as an AI reference, so the
- * AI sees the same magenta/green background it's expected to output —
+ * AI sees the same selected chroma-key background it's expected to output —
  * removes the "transparent vs filled" ambiguity that creates pink halos.
  */
 export async function buildPlaceholderSheetWithChromaBg(
@@ -68,7 +68,7 @@ export async function buildPlaceholderSheetWithChromaBg(
 /**
  * Erode the outer N pixels of every cell in a 4×4 sprite sheet to fully
  * transparent. Use after chroma key to wipe any residual edge spill that
- * the chroma threshold couldn't catch (e.g. a 1-2 px halo of dim magenta
+ * the chroma threshold couldn't catch (e.g. a 1-2 px halo of dim key color
  * around the character outline that's too dark to score above threshold
  * but still visible against a light background).
  *

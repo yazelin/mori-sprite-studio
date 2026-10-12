@@ -1,8 +1,10 @@
-export type ChromaKeyName = 'green' | 'magenta'
+export type ChromaKeyName = 'green' | 'magenta' | 'blue' | 'cyan' | 'yellow' | 'custom'
 export type ChromaTolerance = 'conservative' | 'balanced' | 'aggressive'
 
 export interface ChromaState {
   key: ChromaKeyName
+  /** HEX without #; used only when key === 'custom'. */
+  customHex: string
   tolerance: ChromaTolerance
   /**
    * Post-chroma edge erosion in pixels. After chroma key removes the
@@ -14,22 +16,22 @@ export interface ChromaState {
   edgeErosionPx: number
 }
 
-export const CHROMA_COLORS = {
-  green:   { hex: '00FF00', rgb: [0, 255, 0] as [number, number, number], label: '綠幕' },
-  magenta: { hex: 'FF00FF', rgb: [255, 0, 255] as [number, number, number], label: '洋紅幕' },
-} as const
+export const CHROMA_COLORS: Record<Exclude<ChromaKeyName, 'custom'>, {
+  hex: string
+  rgb: [number, number, number]
+  label: string
+}> = {
+  green:   { hex: '00FF00', rgb: [0, 255, 0], label: '綠幕' },
+  magenta: { hex: 'FF00FF', rgb: [255, 0, 255], label: '洋紅幕' },
+  blue:    { hex: '0000FF', rgb: [0, 0, 255], label: '藍幕' },
+  cyan:    { hex: '00FFFF', rgb: [0, 255, 255], label: '青幕' },
+  yellow:  { hex: 'FFFF00', rgb: [255, 255, 0], label: '黃幕' },
+}
 
-// Per-channel dominance "score" thresholds + isPureKey gate parameters.
-// Ported from line-sticker-studio. Score is in [-1, 1] range:
-//   green:    score = (g - max(r, b)) / 255
-//   magenta:  score = (min(r, b) - g) / 255
-// hard:    score > hard           → alpha = 0 (fully removed)
-// soft:    score > soft           → linear ramp to alpha (anti-alias edge)
-// minKey:  key channel must be ≥ this absolute value (gates near-grey)
-// maxOther:non-key channels must be ≤ this (gates light pastels)
-// dominance: key channel ≥ other channels × this ratio (gates skin tones)
+// Per-channel dominance thresholds. The alpha matte is estimated from color
+// coverage; these values gate only the confident background cleanup pass.
 export const CHROMA_THRESHOLDS = {
-  conservative: { hard: 0.32, soft: 0.12, minKey: 60, maxOther: 100, dominance: 1.9 },
-  balanced:     { hard: 0.25, soft: 0.05, minKey: 50, maxOther: 110, dominance: 1.7 },
-  aggressive:   { hard: 0.20, soft: 0.04, minKey: 40, maxOther: 125, dominance: 1.45 },
+  conservative: { minKey: 60, maxOther: 100, dominance: 1.9, keepThin: 0.04 },
+  balanced:     { minKey: 50, maxOther: 110, dominance: 1.7, keepThin: 0.08 },
+  aggressive:   { minKey: 40, maxOther: 125, dominance: 1.45, keepThin: 0.12 },
 } as const

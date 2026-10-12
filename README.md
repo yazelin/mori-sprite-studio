@@ -2,7 +2,7 @@
 
 # Mori Sprite Studio
 
-🌐 **English** · [繁體中文](./README.zh-TW.md)
+**English** · [繁體中文](./README.zh-TW.md)
 
 **Web tool to build 1024×1024 4×4 sprite animation packs from a single character reference image.**
 
@@ -10,7 +10,7 @@ AI-powered. Browser-only. Transparent backgrounds. Multiple export formats.
 
 <img src="docs/assets/mori-idle.png" width="160" alt="Mori idle animation"> &nbsp; <img src="docs/assets/mori-sleeping.png" width="160" alt="Mori sleeping animation">
 
-[**▶ Try the live app**](https://mori-sprite-studio.vercel.app) · [Docs / screenshots](https://yazelin.github.io/mori-sprite-studio/) · [☕ Buy me a coffee](https://buymeacoffee.com/yazelin)
+[**▶ Try the live app**](https://mori-sprite-studio.vercel.app) · [Docs / screenshots](https://yazelin.github.io/mori-sprite-studio/) · [Buy me a coffee](https://buymeacoffee.com/yazelin)
 
 </div>
 
@@ -93,8 +93,8 @@ You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG —
 - Walking sprite designed facing RIGHT — mori-desktop engine mirrors via `scaleX(-1)` for leftward motion
 
 **Manual cell sorting (post-generation tuning)**
-- **↺ 反向順序** — one-click reverse all 16 cells (rescues sheets that play in reverse direction)
-- **✥ 換位模式** — toggle on, click cell A → click cell B → contents swap. Stay on for multiple swaps. Hand-tune the gait order until the walk looks right.
+- **反向順序** — one-click reverse all 16 cells (rescues sheets that play in reverse direction)
+- **換位模式** — toggle on, click cell A → click cell B → contents swap. Stay on for multiple swaps. Hand-tune the gait order until the walk looks right.
 
 **桌面預覽 view (desktop simulation)**
 - 6+2 floating-widget mockups laid out simultaneously, exactly matching mori-desktop's render:
@@ -112,8 +112,9 @@ You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG —
 - Loop mode (loop / one-shot) + duration slider per state
 
 **Cleanup**
-- Configurable chroma key (green or magenta) with conservative/balanced/aggressive tolerance
-- Edge erosion (0-10 px) wipes residual chroma halo at character outline
+- Configurable chroma key (green, magenta, blue, cyan, yellow, or a custom vivid color) with conservative/balanced/aggressive tolerance
+- Coverage-based alpha matte preserves semi-transparent edges such as hair; edge-only despill reduces color halos
+- Edge erosion (0-10 px) removes residual chroma at each cell boundary
 - Re-chroma button replays from raw AI output (non-destructive — bump erosion up/down at will)
 
 **Cross-state alignment**
@@ -174,7 +175,7 @@ Set the same env vars in Vercel Dashboard → Settings → Environment Variables
 | UI | Vite + React 19 + TypeScript + Tailwind CSS + shadcn/ui |
 | State | Zustand + IndexedDB (idb-keyval) for Blob-native persistence |
 | AI providers | abstract `ImageProvider` interface, 3 BYOK impls (Google Gemini / Codex-Image / Vertex Gemini) |
-| Chroma key | 2-pass per-channel dominance + despill + edge erosion (ported from line-sticker-studio) |
+| Chroma key | Coverage-based alpha matte + enclosed-detail recovery + edge-only despill + optional erosion |
 | Sprite-sheet anim preview | Canvas + requestAnimationFrame (16-frame row-major) |
 | Export encoders | upng-js (APNG), gifenc (GIF), MediaRecorder + VP9 (WebM), JSZip (.moripack / .moriproject) |
 | Server-side | none — pure static frontend, all AI calls go browser → your provider (BYOK) |
@@ -202,12 +203,12 @@ Output spec: 1024×1024 PNG-32, 4×4 grid, 256×256 per cell, row-major frame or
 
 | State | Required | Loop mode | Duration | Pose hint |
 |---|---|---|---|---|
-| idle | ✓ | loop | 3000 ms | Standing front-facing, gentle smile, calm welcoming |
-| sleeping | ✓ | loop | 5000 ms | Cross-legged, eyes closed, hands in lap, floating Z |
-| recording | ✓ | loop | 1500 ms | Hand cupped to ear (LISTENING to user, not holding a mic), wide alert eyes |
-| thinking | ✓ | loop | 2000 ms | Finger to temple, eyes glancing up, thought sparkles |
-| done | ✓ | one-shot (sub-pattern A burst-and-settle) | 1800 ms | Both hands raised in victory cheer, joyful ^v^ smile |
-| error | ✓ | one-shot (sub-pattern B sustained-energy) | 2000 ms | Hands to head in cute distressed "oh no!" pose, tear-drop / tension lines |
+| idle | yes | loop | 3000 ms | Standing front-facing, gentle smile, calm welcoming |
+| sleeping | yes | loop | 5000 ms | Cross-legged, eyes closed, hands in lap, floating Z |
+| recording | yes | loop | 1500 ms | Hand cupped to ear (LISTENING to user, not holding a mic), wide alert eyes |
+| thinking | yes | loop | 2000 ms | Finger to temple, eyes glancing up, thought sparkles |
+| done | yes | one-shot (sub-pattern A burst-and-settle) | 1800 ms | Both hands raised in victory cheer, joyful ^v^ smile |
+| error | yes | one-shot (sub-pattern B sustained-energy) | 2000 ms | Hands to head in cute distressed "oh no!" pose, tear-drop / tension lines |
 | walking | opt | loop | 2500 ms | Neutral full-body standing reference (facing right). Actual gait cycle rendered in 16 frames via W template. |
 | dragging | opt | loop | 1600 ms | Neutral full-body reference (feet planted in static, suspended swing in 16-frame animation via Dr template). |
 
@@ -271,7 +272,7 @@ If you self-host both, codex-image-service must allow your studio's origin via C
 ## Related projects
 
 - [mori-desktop](https://github.com/yazelin/mori-desktop) — 森林精靈 Mori 的桌面身體. yazelin's Jarvis-style AI partner. Rust + Tauri 2 + Whisper(耳)+ LLM(腦). This studio produces her visible sprite form.
-- [world-tree](https://github.com/yazelin/world-tree) — Mori's origin / 世界樹. Where Mori 來自.
+- [world-tree](https://github.com/yazelin/world-tree) — Mori's origin / 世界樹. Where Mori comes from.
 - [codex-image-service](https://github.com/yazelin/codex-image-service) — self-host ChatGPT Plus/Pro quota as image-gen API. Pairs naturally with this studio (see section above).
 - [line-sticker-studio](https://github.com/yazelin/line-sticker-studio) — sister tool, LINE sticker authoring (some prompt engineering patterns shared)
 - [emoji-slot-machine](https://github.com/yazelin/emoji-slot-machine) — sister tool, 3×3 emoji slot machine generator (some sprite-sheet animation patterns shared)
@@ -280,6 +281,6 @@ If you self-host both, codex-image-service must allow your studio's origin via C
 
 <div align="center">
 
-Made with 🌿 by [yazelin](https://github.com/yazelin)
+Made by [yazelin](https://github.com/yazelin)
 
 </div>

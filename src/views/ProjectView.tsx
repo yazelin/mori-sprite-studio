@@ -85,13 +85,13 @@ export function ProjectView() {
             <p className="font-medium text-stone-800 mb-2">下一步</p>
             <ol className="list-decimal list-inside space-y-1 text-stone-600">
               <li>確認角色 ref + 下方 Provider 跟 Chroma 設定</li>
-              <li>按 <span className="font-medium text-emerald-700">✦ 生 6 狀態靜態</span></li>
-              <li>等 30-180 秒,6 個 state 自動填滿 placeholder sheet</li>
+              <li>按 <span className="font-medium text-emerald-700">生 6 狀態靜態</span></li>
+              <li>等待 30-180 秒，6 個 state 會自動填滿 placeholder sheet</li>
               <li>進每個 state 再按 <span className="font-medium text-emerald-700">生 &lt;state&gt; 動畫</span> 把靜態轉成 4×4 動畫</li>
             </ol>
             {error && (
               <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-                <span className="font-medium">⚠ 生成失敗:</span> {error}
+                <span className="font-medium">生成失敗：</span> {error}
               </div>
             )}
           </div>
@@ -108,7 +108,7 @@ export function ProjectView() {
 
       <Section
         title="State Semantics"
-        subtitle="每個 state 的英文語意,給 AI 當每格姿勢的 hint。改完即時生效。"
+        subtitle="每個 state 的英文語意，提供給 AI 作為每格姿勢的 hint。修改後即時生效。"
         icon={<Pencil {...ICON_PROPS} />}
       >
         <StateSemanticsTable />
@@ -124,7 +124,7 @@ export function ProjectView() {
 
       <Section
         title="Background Removal"
-        subtitle="AI 用純色背景生圖,瀏覽器這邊 chroma key 去背。角色含 chroma 同色會被誤刪,擇一避開。"
+        subtitle="AI 依所選色幕生圖；瀏覽器估算透明度並修正邊緣色溢。角色含相近色時，請改選其他色幕，避免角色一起透明。"
         icon={<Eraser {...ICON_PROPS} />}
       >
         <ChromaConfig />
@@ -132,7 +132,7 @@ export function ProjectView() {
 
       <Section
         title="Normalize 跨 state 尺寸"
-        subtitle="每 state 獨立生成,角色大小/位置會微飄。一鍵掃描算出每 state 的 transform,讓 mori-desktop 切 state 時不跳。"
+        subtitle="每個 state 獨立生成，角色大小和位置可能略有變化。按一下即可掃描並計算每個 state 的 transform，讓 mori-desktop 切換 state 時保持一致。"
         icon={<Maximize2 {...ICON_PROPS} />}
       >
         <NormalizeConfig />
@@ -140,7 +140,7 @@ export function ProjectView() {
 
       <Section
         title="專案存檔"
-        subtitle="把當前完整 IDB 狀態(6 sheet + raw + 設定 + character ref + backdrops)包成 .moriproject.zip;之後可載回繼續編輯,或分享給人當基底。"
+        subtitle="把目前完整 IDB 狀態（6 sheet + raw + 設定 + character ref + backdrops）打包成 .moriproject.zip；之後可載回繼續編輯，或分享給其他人作為基底。"
         icon={<FileText {...ICON_PROPS} />}
       >
         <ProjectFileButtons />
@@ -180,10 +180,10 @@ function DemoLoaderBanner() {
     <div className="rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50/40 p-5">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="space-y-1 flex-1 min-w-0">
-          <h2 className="text-base font-semibold text-emerald-900">第一次用?載 Mori 預設 Demo</h2>
+          <h2 className="text-base font-semibold text-emerald-900">第一次使用？載入 Mori 預設 Demo</h2>
           <p className="text-sm text-emerald-800/80 max-w-prose">
             完整 Mori 角色 pack(6 個 state 動畫 + character ref + 2 個背板),
-            一鍵載入立刻看到所有功能。也可當作改造起點 → 改 metadata / pose
+            按一下即可載入並查看所有功能。也可當作改造起點 → 修改 metadata / pose
             note 重生成你自己的角色。
           </p>
         </div>
@@ -193,10 +193,10 @@ function DemoLoaderBanner() {
           disabled={loading}
           className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 shrink-0 transition-colors"
         >
-          {loading ? '載入中…' : '✦ 載入 Mori Demo'}
+          {loading ? '載入中…' : '載入 Mori Demo'}
         </button>
       </div>
-      {err && <p className="text-xs text-red-700 mt-2">⚠ 載入失敗: {err}</p>}
+      {err && <p className="text-xs text-red-700 mt-2">載入失敗：{err}</p>}
     </div>
   )
 }
@@ -225,7 +225,7 @@ function ProjectFileButtons() {
 
   async function load(file: File) {
     if (hasWork && !window.confirm(
-      '⚠ 載入專案檔會 **完全取代** 你目前的所有編輯內容(包括 6 個 state 的 sheet、static、設定、backdrop、character ref)。\n\n' +
+      '載入專案檔會完全取代你目前的編輯內容（包括 6 個 state 的 sheet、static、設定、backdrop、character ref）。\n\n' +
       '繼續嗎?\n\n' +
       '(建議先點「⇩ 下載 .moriproject.zip」備份你目前的狀態)'
     )) {
@@ -243,7 +243,7 @@ function ProjectFileButtons() {
 
   async function loadMoriDemo() {
     if (hasWork && !window.confirm(
-      '⚠ 載入 Mori 預設範本會 **完全取代** 你目前的所有編輯內容!\n\n' +
+      '載入 Mori 預設範本會完全取代你目前的編輯內容！\n\n' +
       '會被覆蓋的:\n' +
       '  • 6 個 state 的 sprite sheet 跟 static base\n' +
       '  • 所有 transform / pose note / cell note 設定\n' +
@@ -293,14 +293,14 @@ function ProjectFileButtons() {
           onClick={loadMoriDemo}
           disabled={busy}
           className="h-9 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-md disabled:opacity-50"
-          title="一鍵載入完整 Mori 範本(22 MB,含 6 動畫 + ref + 背板)。會覆蓋你當前所有資料,前面會跳確認對話框。"
+          title="按一下即可載入完整 Mori 範本（22 MB，含 6 個動畫 + ref + 背板）。此操作會覆蓋目前資料，並先顯示確認對話框。"
         >
-          ✦ 載入 Mori 預設範本
+          載入 Mori 預設範本
         </button>
       </div>
       {report && <p className="text-xs text-muted-foreground">{report}</p>}
       <p className="text-xs text-muted-foreground">
-        提醒:載入(任一種)會完全取代當前所有資料,所以**載入前**會先跳確認對話框問你。先「下載」備份再做最安全。
+        提醒：載入任一種檔案都會完全取代目前資料，因此載入前會先顯示確認對話框。建議先按「下載」備份。
       </p>
     </div>
   )

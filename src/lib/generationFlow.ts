@@ -5,7 +5,7 @@ import type { OutputSize } from '@/types/provider'
 import { useAppStore } from '@/store'
 import { buildProvider } from '@/providers'
 import { chromaKeyOut } from './chromaKey'
-import { CHROMA_COLORS } from '@/types/chroma'
+import { chromaInfo } from './colorUtils'
 import {
   splitGrid,
   cropToSize,
@@ -93,7 +93,7 @@ export async function buildReferences(
     // current staticBase so the AI sees the same character rendered in
     // multiple poses — this constrains it from re-imagining the outfit
     // when re-rolling a single state's static.
-    const chromaHex = CHROMA_COLORS[store.chroma.key].hex
+    const chromaHex = chromaInfo(store.chroma).hex
     const refs: Blob[] = [project.characterRef]
     for (const name of STATE_NAMES) {
       if (name === stateName) continue
@@ -122,7 +122,7 @@ export async function buildReferences(
     // the identity preservation that other states get from C template.
     if (!project.characterRef) throw new Error('character ref required')
     if (!stateName) throw new Error('stateName required')
-    const chromaHex = CHROMA_COLORS[store.chroma.key].hex
+    const chromaHex = chromaInfo(store.chroma).hex
     const refs: Blob[] = [project.characterRef]
     const ownSb = project.states[stateName].staticBase
     if (ownSb) refs.push(await fillBgWithChroma(ownSb, chromaHex))
@@ -147,7 +147,7 @@ export async function buildReferences(
     //      drift the outfit / hair / proportions when interpreting dramatic
     //      state semantics.
     //   3) Original characterRef. Final identity ground-truth.
-    const chromaHex = CHROMA_COLORS[store.chroma.key].hex
+    const chromaHex = chromaInfo(store.chroma).hex
     const placeholderSheet = await buildPlaceholderSheetWithChromaBg(sb, chromaHex)
     const refs: Blob[] = [placeholderSheet]
     for (const name of STATE_NAMES) {
@@ -163,9 +163,9 @@ export async function buildReferences(
     const state = project.states[stateName]
     if (!state.staticBase || !state.sheet) throw new Error(`${stateName} missing base or sheet`)
     // Same anti-chroma-leak treatment as C: pre-fill chroma BG behind every
-    // reference cell before sending. AI sees solid magenta/green where the
+    // reference cell before sending. AI sees the selected solid key color where the
     // BG is supposed to be, no ambiguity about transparent vs filled.
-    const chromaHex = CHROMA_COLORS[store.chroma.key].hex
+    const chromaHex = chromaInfo(store.chroma).hex
     const refs: Blob[] = [await fillBgWithChroma(state.staticBase, chromaHex)]
     if (cellIndex > 0) {
       const prevCell = await cropCell(state.sheet, cellIndex - 1)
@@ -185,7 +185,7 @@ export async function applyChroma(blob: Blob, skip = false): Promise<Blob> {
   if (skip) return blob
   const store = useAppStore.getState()
   const { chroma } = store
-  return chromaKeyOut(blob, CHROMA_COLORS[chroma.key].rgb, chroma.tolerance)
+  return chromaKeyOut(blob, chromaInfo(chroma).rgb, chroma.tolerance)
 }
 
 /** After receiving a clean (transparent) Blob, apply per-op post-processing and update store. */
@@ -323,7 +323,7 @@ export async function runGeneration(
   const store = useAppStore.getState()
   const template = store.prompts.templates[templateKey]
   const { vars } = buildPromptContext(templateKey, stateName, cellIndex)
-  const rendered = appendChromaSuffix(render(template, vars), store.chroma.key)
+  const rendered = appendChromaSuffix(render(template, vars), store.chroma)
 
   return runGenerationWithPrompt(templateKey, rendered, stateName, cellIndex)
 }

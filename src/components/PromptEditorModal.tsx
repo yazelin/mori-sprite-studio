@@ -54,7 +54,7 @@ export function PromptEditorModal({ open, onClose, context, onGenerate }: Props)
 
   const currentTemplate = draft ?? templates[context.templateKey]
   const renderedBody = render(currentTemplate, context.vars)
-  const fullRendered = appendChromaSuffix(renderedBody, chroma.key)
+  const fullRendered = appendChromaSuffix(renderedBody, chroma)
 
   function save() {
     if (context && draft !== null) setTemplate(context.templateKey, draft)
@@ -130,7 +130,7 @@ export function PromptEditorModal({ open, onClose, context, onGenerate }: Props)
             <section className="space-y-2">
               <Label className="text-sm font-semibold">Auto-appended (chroma suffix, 不可改)</Label>
               <pre className="text-xs font-mono bg-slate-100 p-2 rounded-md whitespace-pre-wrap text-slate-700">
-                {buildChromaSuffix(chroma.key)}
+                {buildChromaSuffix(chroma)}
               </pre>
             </section>
 

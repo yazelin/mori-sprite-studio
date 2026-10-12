@@ -3,6 +3,8 @@ import { UploadDropzone } from './UploadDropzone'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { useAppStore } from '@/store'
+import { chromaInfo } from '@/lib/colorUtils'
 
 interface Props {
   promptCopied: boolean
@@ -15,6 +17,8 @@ interface Props {
 export function ByogReceiveView({
   promptCopied, expectedSizeLabel, expectedLayoutLabel, onCancel, onUpload,
 }: Props) {
+  const chroma = useAppStore((s) => s.chroma)
+  const selectedColor = chromaInfo(chroma)
   const [skipChroma, setSkipChroma] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -29,12 +33,12 @@ export function ByogReceiveView({
   return (
     <div className="space-y-4 pb-1">
       <div className="text-sm space-y-1">
-        <div>{promptCopied ? '✓' : '…'} Prompt 已複製到剪貼簿</div>
-        <div>✓ Reference 圖已下載</div>
+        <div>{promptCopied ? 'Prompt 已複製到剪貼簿' : 'Prompt 尚未複製到剪貼簿'}</div>
+        <div>Reference 圖已下載</div>
       </div>
 
       <div className="text-sm space-y-1 bg-slate-50 p-3 rounded-md">
-        <div className="font-medium">📋 步驟提示</div>
+        <div className="font-medium">步驟提示</div>
         <ol className="list-decimal list-inside text-xs text-slate-600 space-y-0.5">
           <li>到任何 image gen 工具(ChatGPT / Gemini / Midjourney 等)</li>
           <li>上傳 reference 圖、貼 prompt</li>
@@ -47,7 +51,7 @@ export function ByogReceiveView({
         <div className="font-medium">預期輸出</div>
         <div className="text-xs text-amber-900">{expectedSizeLabel}</div>
         <div className="text-xs text-amber-900">{expectedLayoutLabel}</div>
-        <div className="text-xs text-amber-900">背景:純綠 #00FF00 或洋紅 #FF00FF(對應你的 chroma 設定)</div>
+        <div className="text-xs text-amber-900">背景：純色 #{selectedColor.hex}（{selectedColor.label}）</div>
       </div>
 
       <UploadDropzone
@@ -62,12 +66,12 @@ export function ByogReceiveView({
           checked={skipChroma}
           onCheckedChange={(v) => setSkipChroma(Boolean(v))}
         />
-        <Label htmlFor="skip-chroma" className="text-sm leading-relaxed">背景已是透明,跳過 chroma key</Label>
+        <Label htmlFor="skip-chroma" className="text-sm leading-relaxed">背景已是透明，跳過 chroma key</Label>
       </div>
 
-      {error && <p className="text-sm text-red-600">⚠ {error}</p>}
+      {error && <p className="text-sm text-red-600">錯誤：{error}</p>}
 
-      <Button variant="ghost" onClick={onCancel}>取消,回 Prompt 編輯</Button>
+      <Button variant="ghost" onClick={onCancel}>取消，回 Prompt 編輯</Button>
     </div>
   )
 }

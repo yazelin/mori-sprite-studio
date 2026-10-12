@@ -178,8 +178,8 @@ export function LiveDemoView() {
       }
       const current = positionRef.current
       const next = {
-        x: 10 + Math.random() * 80,
-        y: 16 + Math.random() * 68,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
       }
       const bounds = stageRef.current?.getBoundingClientRect()
       const distanceX = ((next.x - current.x) / 100) * (bounds?.width ?? 900)
@@ -350,8 +350,8 @@ export function LiveDemoView() {
     if (!dragRef.current || !stageRef.current) return
     const rect = stageRef.current.getBoundingClientRect()
     const next = {
-      x: Math.max(12, Math.min(88, ((event.clientX - rect.left) / rect.width) * 100)),
-      y: Math.max(20, Math.min(82, ((event.clientY - rect.top) / rect.height) * 100)),
+      x: Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100)),
+      y: Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100)),
     }
     positionRef.current = next
     setPosition(next)

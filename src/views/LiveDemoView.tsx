@@ -61,6 +61,13 @@ const TTS_VOICE_OPTIONS = [
   { id: 'Chinese (Mandarin)_Warm_Bestie', label: '暖心閨蜜', hint: '貼心自然・好友聊天' },
   { id: 'Chinese (Mandarin)_Sweet_Lady', label: '甜美女聲', hint: '柔甜討喜・抒情語氣' },
 ] as const
+const TTS_PREVIEW_TEXT = '嗨，我是 Mori。今天也一起在森林裡散散步吧！'
+const TTS_SAMPLE_URLS: Record<string, string> = {
+  'Chinese (Mandarin)_Warm_Girl': '/tts-samples/warm-girl.mp3',
+  'Chinese (Mandarin)_Soft_Girl': '/tts-samples/soft-girl.mp3',
+  'Chinese (Mandarin)_Warm_Bestie': '/tts-samples/warm-bestie.mp3',
+  'Chinese (Mandarin)_Sweet_Lady': '/tts-samples/sweet-lady.mp3',
+}
 const DEFAULT_TTS_SETTINGS: TtsSettings = {
   baseUrl: LARCH_TTS_DEFAULT_BASE_URL,
   apiKey: '',
@@ -606,6 +613,71 @@ export function LiveDemoView() {
     setActivity((current) => current === 'done' ? 'idle' : current)
   }
 
+  const startTtsAudio = async (context: AudioContext, cacheKey: string, audioBuffer: AudioBuffer) => {
+    const source = context.createBufferSource()
+    source.buffer = audioBuffer
+    source.connect(context.destination)
+    source.onended = () => {
+      if (playbackSourceRef.current !== source) return
+      playbackSourceRef.current = null
+      playbackKeyRef.current = ''
+      setPlayingTtsKey('')
+      setActivity((current) => current === 'done' ? 'idle' : current)
+    }
+    playbackSourceRef.current = source
+    playbackKeyRef.current = cacheKey
+    setPlayingTtsKey(cacheKey)
+    await context.resume()
+    source.start()
+    setActivity('done')
+  }
+
+  const playVoicePreview = async () => {
+    if (ttsSettings.apiKey.trim()) {
+      await playTts(TTS_PREVIEW_TEXT)
+      return
+    }
+
+    const cacheKey = `preview:${ttsSettings.voice}`
+    if (playbackKeyRef.current === cacheKey && playbackSourceRef.current) {
+      stopTtsPlayback()
+      return
+    }
+    if (loadingTtsKeyRef.current) return
+
+    if (activityTimerRef.current !== undefined) window.clearTimeout(activityTimerRef.current)
+    setVoiceError('')
+    if (playbackSourceRef.current) stopTtsPlayback()
+    loadingTtsKeyRef.current = cacheKey
+    setLoadingTtsKey(cacheKey)
+
+    try {
+      const AudioContextConstructor = window.AudioContext
+      if (!AudioContextConstructor) throw new Error('此瀏覽器不支援語音播放。')
+      const context = audioContextRef.current ?? new AudioContextConstructor()
+      audioContextRef.current = context
+      await context.resume()
+
+      const sampleKey = `sample:${ttsSettings.voice}`
+      let audioBuffer = preparedAudioRef.current.get(sampleKey)
+      if (!audioBuffer) {
+        const response = await fetch(TTS_SAMPLE_URLS[ttsSettings.voice])
+        if (!response.ok) throw new Error('預錄試聽檔載入失敗，請重新整理頁面再試。')
+        audioBuffer = await context.decodeAudioData(await response.arrayBuffer())
+        preparedAudioRef.current.set(sampleKey, audioBuffer)
+      }
+      await startTtsAudio(context, cacheKey, audioBuffer)
+    } catch (error) {
+      stopTtsPlayback()
+      const message = error instanceof Error ? error.message : '預錄試聽檔載入失敗，請重新整理頁面再試。'
+      setVoiceError(message)
+      setTransientActivity('error', 2200)
+    } finally {
+      loadingTtsKeyRef.current = ''
+      setLoadingTtsKey('')
+    }
+  }
+
   const playTts = async (rawText: string) => {
     const text = cleanSpeechText(rawText)
     if (!text) {
@@ -668,22 +740,7 @@ export function LiveDemoView() {
         preparedAudioRef.current.set(cacheKey, audioBuffer)
       }
 
-      const source = context.createBufferSource()
-      source.buffer = audioBuffer
-      source.connect(context.destination)
-      source.onended = () => {
-        if (playbackSourceRef.current !== source) return
-        playbackSourceRef.current = null
-        playbackKeyRef.current = ''
-        setPlayingTtsKey('')
-        setActivity((current) => current === 'done' ? 'idle' : current)
-      }
-      playbackSourceRef.current = source
-      playbackKeyRef.current = cacheKey
-      setPlayingTtsKey(cacheKey)
-      await context.resume()
-      source.start()
-      setActivity('done')
+      await startTtsAudio(context, cacheKey, audioBuffer)
     } catch (error) {
       stopTtsPlayback()
       const message = error instanceof Error ? error.message : 'Larch-TTS 配音失敗，請稍後再試。'
@@ -1053,7 +1110,7 @@ export function LiveDemoView() {
                 <div className="pointer-events-auto space-y-3 border-t border-stone-200 pt-3">
                   <div>
                     <h3 className="text-[11px] font-semibold text-stone-800">Mori 語音回覆｜Larch-TTS</h3>
-                    <p className="mt-1 text-[10px] leading-relaxed text-stone-500">選一種女聲後按「試聽」比較；回覆泡泡的播放鍵會使用目前選擇。設定留在這個瀏覽器，TTS 請求會經 Studio 轉送；未填 URL 或 API Key 時，Mori 會播放 error 動作。</p>
+                    <p className="mt-1 text-[10px] leading-relaxed text-stone-500">選一種女聲後按「試聽」比較；未填 API Key 時播放預錄試聽檔，填入後會即時試聽。回覆泡泡的播放鍵使用目前選擇並即時配音；設定留在這個瀏覽器，TTS 請求會經 Studio 轉送。回覆配音未設定 URL 或 API Key 時，Mori 會播放 error 動作。</p>
                   </div>
 
                   <label className="block space-y-1.5">
@@ -1111,13 +1168,13 @@ export function LiveDemoView() {
                     </label>
                     <button
                       type="button"
-                      onClick={() => void playTts('嗨，我是 Mori。今天也一起在森林裡散散步吧！')}
+                      onClick={() => void playVoicePreview()}
                       disabled={Boolean(loadingTtsKey) || activity === 'thinking' || activity === 'recording'}
                       className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-medium text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {loadingTtsKey === speechCacheKey(ttsSettings.voice, cleanSpeechText('嗨，我是 Mori。今天也一起在森林裡散散步吧！'))
+                      {loadingTtsKey === (ttsSettings.apiKey.trim() ? speechCacheKey(ttsSettings.voice, cleanSpeechText(TTS_PREVIEW_TEXT)) : `preview:${ttsSettings.voice}`)
                         ? <LoaderCircle size={13} className="animate-spin" />
-                        : playingTtsKey === speechCacheKey(ttsSettings.voice, cleanSpeechText('嗨，我是 Mori。今天也一起在森林裡散散步吧！'))
+                        : playingTtsKey === (ttsSettings.apiKey.trim() ? speechCacheKey(ttsSettings.voice, cleanSpeechText(TTS_PREVIEW_TEXT)) : `preview:${ttsSettings.voice}`)
                           ? <Square size={12} />
                           : <Volume2 size={14} />}
                       試聽

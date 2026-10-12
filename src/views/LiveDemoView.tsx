@@ -400,7 +400,7 @@ export function LiveDemoView() {
           {sprite?.sheet ? (
             <div
               ref={playerRef}
-              className={`absolute z-20 touch-none select-none ${isDragging ? 'cursor-grabbing transition-none' : isWalking ? 'cursor-grab transition-[left,top] ease-in-out' : 'cursor-grab transition-[left,top] ease-out'}`}
+              className={`absolute z-40 touch-none select-none ${isDragging ? 'cursor-grabbing transition-none' : isWalking ? 'cursor-grab transition-[left,top] ease-in-out' : 'cursor-grab transition-[left,top] ease-out'}`}
               style={{ left: `${position.x}%`, top: `${position.y}%`, transform: 'translate(-50%, -50%)', transitionDuration: isWalking ? `${walkDurationMs}ms` : '700ms' }}
               onPointerDown={onPlayerPointerDown}
               onPointerMove={onPlayerPointerMove}

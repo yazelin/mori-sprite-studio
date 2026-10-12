@@ -563,7 +563,7 @@ export function LiveDemoView() {
                 maxLength={1500}
                 aria-label="輸入訊息"
                 placeholder="跟 Mori 說說話…"
-                className="pointer-events-auto max-h-32 min-h-12 min-w-0 flex-1 resize-none border-0 bg-transparent px-2 py-1.5 text-sm text-stone-800 outline-none placeholder:text-stone-400 focus:ring-0"
+                className="pointer-events-auto max-h-32 min-h-12 min-w-0 flex-1 resize-none border-0 bg-transparent px-2 py-1.5 text-sm text-stone-800 outline-none placeholder:text-stone-400 focus:ring-0 focus-visible:!outline-none"
               />
               <button
                 type="button"

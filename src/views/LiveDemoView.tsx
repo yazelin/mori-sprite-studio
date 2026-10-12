@@ -96,6 +96,37 @@ function supportsSpeechRecognition() {
   return Boolean(speech.SpeechRecognition ?? speech.webkitSpeechRecognition)
 }
 
+function formatWeatherCard(lines: string[], userMessage: string, firstHourLine: number) {
+  const overview = firstHourLine >= 0 ? lines.slice(0, firstHourLine) : lines
+  const hasTemperature = overview.some((line, index) => /°\s*C/i.test(line) || (/^\d+(?:\.\d+)?$/.test(line) && /^°\s*C$/i.test(overview[index + 1] ?? '')))
+  const highLowLine = overview.find((line) => /(?:高點|高点|最高)/.test(line) && /(?:低點|低点|最低)/.test(line)) // speak-tw-ok: 辨識原始天氣資料欄位。
+  if (!hasTemperature && !highLowLine) return null
+
+  const temperatureIndex = overview.findIndex((line, index) => /^\d+(?:\.\d+)?$/.test(line) && /^°\s*C$/i.test(overview[index + 1] ?? ''))
+  const inlineTemperature = overview.find((line) => /\d+(?:\.\d+)?\s*°\s*C/i.test(line))
+  const currentTemperature = temperatureIndex >= 0
+    ? `${overview[temperatureIndex]}°C`
+    : inlineTemperature?.match(/\d+(?:\.\d+)?\s*°\s*C/i)?.[0].replace(/\s+/g, '')
+  const summary = highLowLine?.match(/(?:高點|高点|最高)\s*[:：]?\s*(\d+(?:\.\d+)?).*?(?:低點|低点|最低)\s*[:：]?\s*(\d+(?:\.\d+)?).*?(?:降水|降雨)\s*[:：]?\s*(\d+(?:\.\d+)?\s*%?)/) // speak-tw-ok: 辨識原始天氣資料欄位。
+  const conditions: Record<string, string> = {
+    晴: '晴', 晴天: '晴', 晴朗: '晴朗', 多雲: '多雲', 多云: '多雲', 局部多雲: '局部多雲', 局部多云: '局部多雲', // speak-tw-ok: 將天氣卡片簡體天氣詞對應成繁體。
+    陰: '陰', 阴: '陰', 陰天: '陰天', 阴天: '陰天', 陣雨: '陣雨', 阵雨: '陣雨', 雷陣雨: '雷陣雨', 雷阵雨: '雷陣雨', // speak-tw-ok: 將天氣卡片簡體天氣詞對應成繁體。
+    小雨: '小雨', 中雨: '中雨', 大雨: '大雨', 暴雨: '暴雨', 小雪: '小雪', 中雪: '中雪', 大雪: '大雪',
+    晴轉多雲: '晴轉多雲', 晴转多云: '晴轉多雲', 晴時多雲: '晴時多雲', 晴间多云: '晴時多雲', // speak-tw-ok: 將天氣卡片簡體天氣詞對應成繁體。
+  } // speak-tw-ok: 刻意辨識 Gemini-Web 天氣卡片可能回傳的簡體欄位與天氣詞。
+  const condition = overview.map((line) => line.trim()).find((line) => conditions[line])
+  const weekday = overview.join(' ').match(/星期\s*([一二三四五六日天])/)
+  const place = /台北|臺北|taipei/i.test(userMessage) ? '台北' : ''
+  const period = /明天|明日/.test(userMessage) ? '明天' : /今天|今日/.test(userMessage) ? '今天' : weekday ? `星期${weekday[1]}` : ''
+  const parts = [
+    `${place ? `${place}天氣` : '天氣'}${period ? `（${period}）` : ''}`,
+    currentTemperature ? `目前 ${currentTemperature}` : '',
+    condition ? conditions[condition] : '',
+    summary ? `高溫 ${summary[1]}°C、低溫 ${summary[2]}°C、降雨機率 ${summary[3].replace(/\s/g, '')}` : '',
+  ].filter(Boolean)
+  return parts.length > 1 ? `${parts[0]}：${parts.slice(1).join('，')}。` : null
+}
+
 function formatAssistantReply(text: string, userMessage: string) {
   let normalized = text
     .replace(/\r\n?/g, '\n')
@@ -115,6 +146,8 @@ function formatAssistantReply(text: string, userMessage: string) {
   const firstHourLine = lines.findIndex((line) => /^\s*(?:[1-9]|1[0-2])\s*(?:上午|下午|AM|PM)(?:\s|$)/i.test(line))
 
   if (isWeatherQuestion && !asksForHourlyForecast && firstHourLine >= 0) {
+    const weatherSummary = formatWeatherCard(lines, userMessage, firstHourLine)
+    if (weatherSummary) return weatherSummary
     // Search-backed weather cards can contain a full day of raw hourly rows.
     // Keep the overview and omit those rows unless the user asked for them.
     lines = lines.slice(0, firstHourLine)

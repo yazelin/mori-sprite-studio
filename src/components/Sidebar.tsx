@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Home, Download, Leaf, ImagePlus, Eye, MessageCircle } from 'lucide-react'
+import { Home, Download, Leaf, ImagePlus, Eye, MessageCircle, MonitorDown, ExternalLink, Coffee } from 'lucide-react'
 import { useAppStore } from '@/store'
 import {
   REQUIRED_STATE_NAMES, OPTIONAL_STATE_NAMES,
@@ -90,13 +90,24 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <Item active={view.kind === 'backdrop'} onClick={() => { setView({ kind: 'backdrop' }); onNavigate?.() }} icon={<ImagePlus size={16} strokeWidth={1.75} />} label="角色背板" />
         <Item active={view.kind === 'preview'} onClick={() => { setView({ kind: 'preview' }); onNavigate?.() }} icon={<Eye size={16} strokeWidth={1.75} />} label="桌面預覽" />
         <SectionLabel>Output</SectionLabel>
-        <Item active={view.kind === 'export'} onClick={() => { setView({ kind: 'export' }); onNavigate?.() }} icon={<Download size={16} strokeWidth={1.75} />} label="匯出 .moripack" />
         <Item active={view.kind === 'live-demo'} onClick={() => { setView({ kind: 'live-demo' }); onNavigate?.() }} icon={<MessageCircle size={16} strokeWidth={1.75} />} label="Live Demo" />
+        <Item active={view.kind === 'export'} onClick={() => { setView({ kind: 'export' }); onNavigate?.() }} icon={<Download size={16} strokeWidth={1.75} />} label="匯出 .moripack" />
+        <a
+          href="https://yazelin.github.io/mori-pet-player/"
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => onNavigate?.()}
+          className="w-full group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left text-stone-700 transition-all hover:bg-accent/60 hover:text-accent-foreground"
+        >
+          <span className="shrink-0 w-5 flex items-center justify-center opacity-70"><MonitorDown size={16} strokeWidth={1.75} /></span>
+          <span className="flex-1 truncate">下載桌面 Player</span>
+          <ExternalLink size={13} className="shrink-0 opacity-50" aria-hidden="true" />
+        </a>
       </div>
 
       <div className="mt-auto px-3 py-3 border-t border-border space-y-2 text-xs">
         <a href="https://buymeacoffee.com/yazelin" target="_blank" rel="noreferrer" className="flex items-center gap-2 px-2 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 transition-colors" title="支持作者繼續開發">
-          <span className="text-base leading-none">☕</span>
+          <Coffee size={15} strokeWidth={1.75} aria-hidden="true" />
           <span className="font-medium">Buy me a coffee</span>
         </a>
         <a href="https://github.com/yazelin/mori-sprite-studio" target="_blank" rel="noreferrer" className="block px-2 py-1 text-muted-foreground hover:text-foreground transition-colors">⭐ GitHub repo</a>

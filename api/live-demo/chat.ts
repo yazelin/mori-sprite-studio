@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createHash } from 'node:crypto'
+import { isIP } from 'node:net'
 
 type Message = { role: 'user' | 'model'; text: string }
 
@@ -7,7 +8,9 @@ const PERSONA = `你是 Mori，一位住在數位森林裡的精靈，也是這�
 請以自然、簡潔的繁體中文回應；直接、可靠、好奇，有自己的判斷，不為了討好使用者而一味附和，偶爾可以輕鬆吐槽，但要看場合。
 這是公開展示版，沒有個人記憶。不要聲稱記得使用者、讀取私人資料，或代替任何人的私人 Mori 發言。
 這個展示版主要用來聊天、查新聞和問天氣。其他需要實際操作外部服務的要求，請清楚說明目前無法代辦。
-遇到新聞、天氣或其他最新資訊時，先查詢即時資料，再用自己的話簡短整理；說明資料日期，查不到就坦白說。不要捏造即時資訊。`
+遇到新聞、天氣或其他最新資訊時，先查詢即時資料，再用自己的話簡短整理；說明資料日期，查不到就坦白說。不要捏造即時資訊。
+回覆格式要適合聊天視窗閱讀：使用繁體中文、短段落或精簡條列，不要把句子拆成單字或單一數字逐行輸出。
+查天氣時，把搜尋結果整理成自然摘要，只列地點、日期、天氣、溫度與降雨等重點；除非使用者明確要求，否則不要貼原始天氣卡片欄位，也不要列整天逐時預報。`
 
 const recentRequests = new Map<string, number[]>()
 const WINDOW_MS = 60_000
@@ -70,21 +73,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: '只接受 POST 請求。' })
   }
 
-  const baseUrl = process.env.GEMINI_WEB_BASE_URL?.trim()
-  const apiKey = process.env.GEMINI_WEB_API_KEY?.trim()
+  const body = req.body as { messages?: unknown; baseUrl?: unknown; apiKey?: unknown } | undefined
+  const baseUrl = (typeof body?.baseUrl === 'string' ? body.baseUrl : process.env.GEMINI_WEB_BASE_URL ?? '').trim()
+  const apiKey = (typeof body?.apiKey === 'string' ? body.apiKey : process.env.GEMINI_WEB_API_KEY ?? '').trim()
   if (!baseUrl || !apiKey) {
-    return res.status(503).json({ error: 'Live Demo 尚未設定 Gemini-Web 連線。' })
+    return res.status(400).json({ error: '請先填入 Gemini-Web Base URL 和 API Key。' })
+  }
+  if (baseUrl.length > 2048 || apiKey.length > 512 || /[\r\n]/.test(apiKey)) {
+    return res.status(400).json({ error: '連線設定格式不正確，請檢查 Base URL 和 API Key。' })
   }
 
-  try {
-    if (await isRateLimited(clientKey(req))) {
-      return res.status(429).json({ error: '剛才問得有點密，等一分鐘再試吧。' })
-    }
-  } catch {
-    return res.status(503).json({ error: 'Live Demo 暫時無法接受新對話，請稍後再試。' })
-  }
-
-  const body = req.body as { messages?: unknown } | undefined
   if (!Array.isArray(body?.messages)) {
     return res.status(400).json({ error: '對話格式不正確。' })
   }
@@ -107,13 +105,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let endpoint: URL
   try {
     const origin = new URL(baseUrl)
-    if (origin.protocol !== 'https:' && origin.hostname !== 'localhost' && origin.hostname !== '127.0.0.1') {
-      return res.status(500).json({ error: 'Gemini-Web 連線網址必須使用 HTTPS。' })
+    const hostname = origin.hostname.replace(/^\[|\]$/g, '').replace(/\.$/, '').toLowerCase()
+    const isLocalHost = hostname === 'localhost' || hostname.endsWith('.localhost') || hostname === '127.0.0.1' || hostname === '::1'
+    const isPrivateName = isLocalHost || hostname.endsWith('.local') || hostname.endsWith('.internal')
+    const isIpAddress = isIP(hostname) !== 0
+    const isVercelDeployment = process.env.VERCEL_ENV === 'production' || process.env.VERCEL_ENV === 'preview'
+    if (origin.protocol !== 'https:' && !(origin.protocol === 'http:' && isLocalHost && !isVercelDeployment)) {
+      return res.status(400).json({ error: 'Gemini-Web 連線網址必須使用 HTTPS。' })
     }
+    if (
+      origin.username || origin.password || origin.search || origin.hash ||
+      (isVercelDeployment && (isPrivateName || isIpAddress || (origin.port && origin.port !== '443')))
+    ) {
+      return res.status(400).json({ error: 'Gemini-Web Base URL 格式不正確。' })
+    }
+    origin.pathname = `${origin.pathname.replace(/\/+$/, '')}/`
     const model = process.env.GEMINI_WEB_MODEL?.trim() || 'gemini-2.5-flash'
-    endpoint = new URL(`/v1beta/models/${encodeURIComponent(model)}:generateContent`, origin)
+    endpoint = new URL(`v1beta/models/${encodeURIComponent(model)}:generateContent`, origin)
   } catch {
     return res.status(500).json({ error: 'Gemini-Web 連線網址設定無效。' })
+  }
+
+  const requestKey = clientKey(req)
+  try {
+    if (await isRateLimited(requestKey)) {
+      return res.status(429).json({ error: '剛才問得有點密，等一分鐘再試吧。' })
+    }
+  } catch {
+    console.warn('Live Demo shared rate limit is unavailable; using instance-local rate limit.')
+    if (isLocallyRateLimited(requestKey)) {
+      return res.status(429).json({ error: '剛才問得有點密，等一分鐘再試吧。' })
+    }
   }
 
   const latestUserMessage = messages[messages.length - 1].text

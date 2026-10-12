@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent } from 'react'
 import JSZip from 'jszip'
-import { LoaderCircle, MessageCircle, Mic, MicOff, Send } from 'lucide-react'
+import { Eye, EyeOff, LoaderCircle, MessageCircle, Mic, MicOff, Send } from 'lucide-react'
 import { AnimationPreview } from '@/components/AnimationPreview'
 import { useAppStore } from '@/store'
 import { STATE_NAMES, type CellTransform, type StateName } from '@/types/project'
@@ -9,6 +9,7 @@ type ChatMessage = { role: 'user' | 'model'; text: string }
 type Activity = 'idle' | 'recording' | 'thinking' | 'done' | 'error'
 type Sprite = { sheet: Blob | null; durationMs: number; transform: CellTransform }
 type SpritePack = { displayName: string; states: Record<StateName, Sprite> }
+type ConnectionSettings = { baseUrl: string; apiKey: string }
 
 type ProjectFile = {
   metadata?: { displayName?: string }
@@ -33,11 +34,32 @@ type SpeechWindow = Window & {
 }
 
 const EMPTY_TRANSFORM: CellTransform = { scale: 1, offsetX: 0, offsetY: 0 }
+const DEFAULT_GEMINI_WEB_URL = 'https://ching-tech.ddns.net/gemini-web/'
+const CONNECTION_SETTINGS_STORAGE_KEY = 'mori-live-demo-gemini-web'
+const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
+  baseUrl: DEFAULT_GEMINI_WEB_URL,
+  apiKey: '',
+}
 const WELCOME: ChatMessage = {
   role: 'model',
   text: '嗨，我是 Mori。想聊聊、看看最近的新聞，或問我今天的天氣？',
 }
 let bundledDemoPromise: Promise<SpritePack> | null = null
+
+function loadConnectionSettings(): ConnectionSettings {
+  if (typeof window === 'undefined') return DEFAULT_CONNECTION_SETTINGS
+  try {
+    const saved = window.localStorage.getItem(CONNECTION_SETTINGS_STORAGE_KEY)
+    if (!saved) return DEFAULT_CONNECTION_SETTINGS
+    const parsed = JSON.parse(saved) as Partial<ConnectionSettings>
+    return {
+      baseUrl: typeof parsed.baseUrl === 'string' ? parsed.baseUrl : DEFAULT_GEMINI_WEB_URL,
+      apiKey: typeof parsed.apiKey === 'string' ? parsed.apiKey : '',
+    }
+  } catch {
+    return DEFAULT_CONNECTION_SETTINGS
+  }
+}
 
 async function loadBundledDemo(): Promise<SpritePack> {
   if (!bundledDemoPromise) {
@@ -74,6 +96,20 @@ function supportsSpeechRecognition() {
   return Boolean(speech.SpeechRecognition ?? speech.webkitSpeechRecognition)
 }
 
+function formatAssistantReply(text: string) {
+  const lines = text
+    .replace(/\r\n?/g, '\n')
+    .replace(/\u00a0/g, ' ')
+    .split('\n')
+    .map((line) => line.replace(/[\t ]+/g, ' ').trim())
+  const contentLines = lines.filter(Boolean)
+
+  // Search-backed weather cards often arrive as dozens of short lines with
+  // blank rows between every value. Keep them readable without oversized gaps.
+  if (contentLines.length >= 12) return contentLines.join('\n')
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+}
+
 export function LiveDemoView() {
   const projectName = useAppStore((s) => s.project.metadata.displayName)
   const projectStates = useAppStore((s) => s.project.states)
@@ -86,9 +122,13 @@ export function LiveDemoView() {
   const [isWalking, setIsWalking] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [facesLeft, setFacesLeft] = useState(false)
-  const [position, setPosition] = useState({ x: 63, y: 66 })
+  const [position, setPosition] = useState({ x: 20, y: 66 })
+  const [walkDurationMs, setWalkDurationMs] = useState(3500)
   const [voiceSupported] = useState(supportsSpeechRecognition)
   const [voiceError, setVoiceError] = useState('')
+  const [connection, setConnection] = useState<ConnectionSettings>(loadConnectionSettings)
+  const [connectionSettingsOpen, setConnectionSettingsOpen] = useState(() => !connection.apiKey.trim())
+  const [showApiKey, setShowApiKey] = useState(false)
 
   const stageRef = useRef<HTMLDivElement | null>(null)
   const playerRef = useRef<HTMLDivElement | null>(null)
@@ -138,17 +178,22 @@ export function LiveDemoView() {
       }
       const current = positionRef.current
       const next = {
-        x: 15 + Math.random() * 70,
-        y: 24 + Math.random() * 52,
+        x: 10 + Math.random() * 80,
+        y: 16 + Math.random() * 68,
       }
+      const bounds = stageRef.current?.getBoundingClientRect()
+      const distanceX = ((next.x - current.x) / 100) * (bounds?.width ?? 900)
+      const distanceY = ((next.y - current.y) / 100) * (bounds?.height ?? 700)
+      const duration = Math.max(3000, Math.min(9000, Math.round(Math.hypot(distanceX, distanceY) / 90 * 1000)))
       setFacesLeft(next.x < current.x)
+      setWalkDurationMs(duration)
       positionRef.current = next
       setIsWalking(true)
       setPosition(next)
       timer = window.setTimeout(() => {
         setIsWalking(false)
         timer = window.setTimeout(walk, 1700 + Math.random() * 2500)
-      }, 2500)
+      }, duration)
     }
 
     timer = window.setTimeout(walk, 1800)
@@ -162,6 +207,14 @@ export function LiveDemoView() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages, activity])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CONNECTION_SETTINGS_STORAGE_KEY, JSON.stringify(connection))
+    } catch {
+      // Keep the form usable when browser storage is unavailable.
+    }
+  }, [connection])
 
   useEffect(() => () => {
     if (activityTimerRef.current !== undefined) window.clearTimeout(activityTimerRef.current)
@@ -256,16 +309,26 @@ export function LiveDemoView() {
     if (activityTimerRef.current !== undefined) window.clearTimeout(activityTimerRef.current)
     setActivity('thinking')
 
+    if (!connection.apiKey.trim()) {
+      setMessages((current) => [...current, { role: 'model', text: '先在上方連線設定填入 Gemini-Web API Key，再送出訊息。' }])
+      setTransientActivity('error', 2200)
+      return
+    }
+
     try {
       const response = await fetch('/api/live-demo/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({
+          messages: nextMessages,
+          baseUrl: connection.baseUrl,
+          apiKey: connection.apiKey,
+        }),
       })
       const result = await response.json() as { text?: string; error?: string }
       if (!response.ok) throw new Error(result.error || 'Mori 暫時沒有回應，請稍後再試。')
       if (!result.text?.trim()) throw new Error('Mori 這次沒有回覆內容，請再試一次。')
-      setMessages((current) => [...current, { role: 'model', text: result.text!.trim() }])
+      setMessages((current) => [...current, { role: 'model', text: formatAssistantReply(result.text!) }])
       setTransientActivity('done', 1800)
     } catch (error) {
       const message = error instanceof Error ? error.message : '連線發生問題，請稍後再試。'
@@ -313,31 +376,28 @@ export function LiveDemoView() {
               : '休息中'
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1.5">
+    <div className="relative h-full min-h-0 w-full overflow-hidden bg-[radial-gradient(ellipse_at_20%_8%,rgba(255,255,255,0.92),transparent_42%),linear-gradient(155deg,#edf5e9_0%,#c6ddc1_54%,#a9c9ac_100%)]">
+      <header className="pointer-events-none absolute left-4 top-4 z-10 max-w-[calc(100%-2rem)] sm:left-6 sm:top-6 md:max-w-[30%]">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-stone-900">Live Demo</h1>
-          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-800">{pack?.displayName ?? 'Mori'}</span>
+          <h1 className="text-xl font-semibold tracking-tight text-emerald-950 sm:text-2xl">Live Demo</h1>
+          <span className="rounded-full border border-white/75 bg-white/55 px-2.5 py-1 text-[11px] font-medium text-emerald-900 backdrop-blur">{pack?.displayName ?? 'Mori'}</span>
         </div>
-        <p className="max-w-prose text-sm text-muted-foreground">
+        <p className="mt-1.5 hidden max-w-prose text-sm text-emerald-950/70 sm:block">
           跟 Mori 聊天、查新聞或問天氣。她會在場景裡散步，也會回應你的語音輸入。
         </p>
+        <p className="mt-1 text-xs font-medium text-emerald-950/75">{statusLabel}</p>
       </header>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
+      <div className="absolute inset-0">
         <section
           ref={stageRef}
           aria-label="Mori 動畫預覽場景"
-          className="relative min-h-[480px] overflow-hidden rounded-3xl border border-emerald-900/10 bg-[radial-gradient(ellipse_at_20%_8%,rgba(255,255,255,0.9),transparent_45%),linear-gradient(155deg,#edf5e9_0%,#c6ddc1_54%,#a9c9ac_100%)] shadow-sm sm:min-h-[600px]"
+          className="absolute inset-0 overflow-hidden"
         >
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-[linear-gradient(180deg,rgba(83,130,87,0)_0%,rgba(83,130,87,0.15)_100%)]" />
-          <div className="pointer-events-none absolute left-[8%] top-[13%] h-20 w-20 rounded-full bg-white/35 blur-2xl" />
-          <div className="pointer-events-none absolute right-[12%] top-[23%] h-28 w-28 rounded-full bg-emerald-100/40 blur-2xl" />
-          <div className="absolute left-5 top-5 z-10">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-900/55">A little forest corner</p>
-            <p className="mt-1 text-sm font-medium text-emerald-950/75">{statusLabel}</p>
-          </div>
-          <div className="absolute bottom-5 left-5 z-10 flex items-center gap-2 rounded-full border border-white/60 bg-white/55 px-3 py-1.5 text-[10px] text-emerald-950/65 backdrop-blur">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-[linear-gradient(180deg,rgba(83,130,87,0)_0%,rgba(83,130,87,0.17)_100%)]" />
+          <div className="pointer-events-none absolute left-[8%] top-[13%] h-28 w-28 rounded-full bg-white/40 blur-3xl" />
+          <div className="pointer-events-none absolute right-[12%] top-[23%] h-40 w-40 rounded-full bg-emerald-100/45 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-5 left-5 z-10 flex items-center gap-2 rounded-full border border-white/60 bg-white/55 px-3 py-1.5 text-[10px] text-emerald-950/65 backdrop-blur">
             <span className={`h-1.5 w-1.5 rounded-full ${activity === 'thinking' ? 'animate-pulse bg-amber-500' : 'bg-emerald-600'}`} />
             {currentProjectHasIdle ? '預覽目前專案角色' : '預覽 Mori 範例角色'}
           </div>
@@ -346,7 +406,7 @@ export function LiveDemoView() {
             <div
               ref={playerRef}
               className={`absolute z-20 touch-none select-none ${isDragging ? 'cursor-grabbing transition-none' : isWalking ? 'cursor-grab transition-[left,top] ease-in-out' : 'cursor-grab transition-[left,top] ease-out'}`}
-              style={{ left: `${position.x}%`, top: `${position.y}%`, transform: 'translate(-50%, -50%)', transitionDuration: isWalking ? '2500ms' : '700ms' }}
+              style={{ left: `${position.x}%`, top: `${position.y}%`, transform: 'translate(-50%, -50%)', transitionDuration: isWalking ? `${walkDurationMs}ms` : '700ms' }}
               onPointerDown={onPlayerPointerDown}
               onPointerMove={onPlayerPointerMove}
               onPointerUp={finishPlayerDrag}
@@ -374,8 +434,8 @@ export function LiveDemoView() {
           )}
         </section>
 
-        <section className="flex min-h-[600px] flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
-          <header className="flex items-center gap-3 border-b border-stone-100 px-5 py-4">
+        <section className="pointer-events-none absolute inset-x-3 bottom-3 top-24 z-30 flex min-h-0 flex-col overflow-hidden rounded-3xl border border-white/75 bg-white/80 shadow-2xl shadow-emerald-950/15 backdrop-blur-lg sm:inset-x-5 sm:bottom-5 sm:top-28 md:inset-x-5 md:bottom-5 md:top-24">
+          <header className="pointer-events-none flex shrink-0 items-center gap-3 border-b border-stone-100/90 px-4 py-3 sm:px-5 sm:py-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800">
               <MessageCircle size={19} strokeWidth={1.75} />
             </div>
@@ -386,17 +446,98 @@ export function LiveDemoView() {
             <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[10px] text-stone-500">Gemini-Web</span>
           </header>
 
-          <div className="flex-1 space-y-3 overflow-y-auto bg-stone-50/60 px-4 py-5" aria-live="polite" aria-label="對話內容">
+          <section className="pointer-events-none shrink-0 border-b border-stone-100 bg-emerald-50/85">
+            <div className="pointer-events-none flex items-center gap-3 px-4 py-3">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xs font-semibold text-stone-800">Gemini-Web 連線設定</h3>
+                <p className={`mt-0.5 text-[11px] ${connection.apiKey.trim() ? 'text-emerald-700' : 'text-amber-700'}`}>
+                  {connection.apiKey.trim() ? 'API Key 已儲存在這個瀏覽器' : '填入測試用 API Key 後即可聊天'}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-expanded={connectionSettingsOpen}
+                onClick={() => setConnectionSettingsOpen((open) => !open)}
+                className="pointer-events-auto shrink-0 rounded-lg border border-emerald-900/10 bg-white px-3 py-1.5 text-xs font-medium text-emerald-900 transition-colors hover:bg-emerald-50"
+              >
+                {connectionSettingsOpen ? '收起' : '編輯設定'}
+              </button>
+            </div>
+
+            {connectionSettingsOpen && (
+              <div className="pointer-events-none max-h-[38vh] space-y-3 overflow-y-auto px-4 pb-4">
+                <label className="pointer-events-auto block space-y-1.5">
+                  <span className="text-[11px] font-medium text-stone-700">Gemini-Web Base URL</span>
+                  <input
+                    type="url"
+                    value={connection.baseUrl}
+                    onChange={(event) => {
+                      const baseUrl = event.currentTarget.value
+                      setConnection((current) => ({ ...current, baseUrl }))
+                    }}
+                    placeholder={DEFAULT_GEMINI_WEB_URL}
+                    autoComplete="url"
+                    spellCheck={false}
+                    className="h-9 w-full rounded-lg border border-stone-200 bg-white px-3 text-xs text-stone-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  />
+                </label>
+
+                <label className="pointer-events-auto block space-y-1.5">
+                  <span className="text-[11px] font-medium text-stone-700">API Key</span>
+                  <span className="flex h-9 overflow-hidden rounded-lg border border-stone-200 bg-white transition focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100">
+                    <input
+                      type={showApiKey ? 'text' : 'password'}
+                      value={connection.apiKey}
+                      onChange={(event) => {
+                        const apiKey = event.currentTarget.value
+                        setConnection((current) => ({ ...current, apiKey }))
+                      }}
+                      placeholder="貼上 gemini-web 管理頁建立的測試 key"
+                      autoComplete="off"
+                      spellCheck={false}
+                      className="min-w-0 flex-1 bg-transparent px-3 text-xs text-stone-800 outline-none placeholder:text-stone-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey((visible) => !visible)}
+                      aria-label={showApiKey ? '隱藏 API Key' : '顯示 API Key'}
+                      className="pointer-events-auto flex w-10 shrink-0 items-center justify-center text-stone-500 transition-colors hover:bg-stone-50 hover:text-stone-800"
+                    >
+                      {showApiKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </span>
+                </label>
+
+                <div className="flex items-start justify-between gap-3">
+                  <p className="max-w-sm text-[10px] leading-relaxed text-stone-500">
+                    設定只存在這個瀏覽器。送出訊息時，連線網址和 API Key 會傳給 Live Demo 後端，再由後端呼叫 Gemini-Web。
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConnection(DEFAULT_CONNECTION_SETTINGS)
+                      setShowApiKey(false)
+                    }}
+                    className="pointer-events-auto shrink-0 rounded-md px-2 py-1 text-[10px] font-medium text-stone-500 transition-colors hover:bg-white hover:text-stone-800"
+                  >
+                    清除設定
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <div className="pointer-events-none min-h-0 flex-1 space-y-4 overflow-y-auto bg-stone-50/55 px-4 py-4 sm:px-6 sm:py-6" aria-live="polite" aria-label="對話內容">
             {messages.map((message, index) => (
-              <div key={`${index}-${message.role}`} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[88%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${message.role === 'user' ? 'rounded-br-md bg-emerald-700 text-white' : 'rounded-bl-md border border-stone-200 bg-white text-stone-800 shadow-sm'}`}>
+              <div key={`${index}-${message.role}`} className={`flex min-w-0 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`pointer-events-auto min-w-0 w-fit max-w-[96%] whitespace-pre-wrap break-words [overflow-wrap:anywhere] rounded-2xl px-4 py-3 text-sm leading-6 ${message.role === 'user' ? 'rounded-br-md bg-emerald-700 text-white' : 'rounded-bl-md border border-stone-200 bg-white text-stone-800 shadow-sm'}`}>
                   {message.text}
                 </div>
               </div>
             ))}
             {activity === 'thinking' && (
               <div className="flex justify-start">
-                <div className="flex items-center gap-2 rounded-2xl rounded-bl-md border border-stone-200 bg-white px-3.5 py-2.5 text-xs text-stone-500 shadow-sm">
+                <div className="pointer-events-auto flex items-center gap-2 rounded-2xl rounded-bl-md border border-stone-200 bg-white px-3.5 py-2.5 text-xs text-stone-500 shadow-sm">
                   <LoaderCircle size={14} className="animate-spin" /> Mori 正在想…
                 </div>
               </div>
@@ -404,8 +545,8 @@ export function LiveDemoView() {
             <div ref={messagesEndRef} />
           </div>
 
-          <form className="border-t border-stone-100 p-3" onSubmit={(event) => void sendMessage(event)}>
-            <div className="flex items-end gap-2 rounded-2xl border border-stone-200 bg-white p-2 shadow-sm focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100">
+          <form className="pointer-events-none shrink-0 border-t border-stone-100 bg-white/90 p-3 sm:p-4" onSubmit={(event) => void sendMessage(event)}>
+            <div className="pointer-events-none flex items-end gap-2 rounded-2xl border border-stone-200 bg-white p-2 shadow-sm focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100">
               <textarea
                 value={draft}
                 onChange={(event) => setDraft(event.currentTarget.value.slice(0, 1500))}
@@ -419,7 +560,7 @@ export function LiveDemoView() {
                 maxLength={1500}
                 aria-label="輸入訊息"
                 placeholder="跟 Mori 說說話…"
-                className="max-h-32 min-h-12 flex-1 resize-y border-0 bg-transparent px-2 py-1.5 text-sm text-stone-800 outline-none placeholder:text-stone-400 focus:ring-0"
+                className="pointer-events-auto max-h-32 min-h-12 min-w-0 flex-1 resize-none border-0 bg-transparent px-2 py-1.5 text-sm text-stone-800 outline-none placeholder:text-stone-400 focus:ring-0"
               />
               <button
                 type="button"
@@ -427,7 +568,7 @@ export function LiveDemoView() {
                 disabled={!voiceSupported || activity === 'thinking'}
                 title={activity === 'recording' ? '停止語音輸入' : '語音輸入'}
                 aria-label={activity === 'recording' ? '停止語音輸入' : '語音輸入'}
-                className={`mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${activity === 'recording' ? 'animate-pulse bg-rose-100 text-rose-700' : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800'}`}
+                className={`pointer-events-auto mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${activity === 'recording' ? 'animate-pulse bg-rose-100 text-rose-700' : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800'}`}
               >
                 {activity === 'recording' ? <MicOff size={17} /> : <Mic size={17} />}
               </button>
@@ -435,7 +576,7 @@ export function LiveDemoView() {
                 type="submit"
                 disabled={!draft.trim() || activity === 'thinking'}
                 aria-label="送出訊息"
-                className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
+                className="pointer-events-auto mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
               >
                 <Send size={16} />
               </button>

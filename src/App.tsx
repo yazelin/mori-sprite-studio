@@ -21,6 +21,7 @@ import {
 export default function App() {
   const view = useAppStore((s) => s.ui.view)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const isLiveDemo = view.kind === 'live-demo'
 
   return (
     <div className="h-full flex bg-background">
@@ -28,8 +29,8 @@ export default function App() {
         <Sidebar />
       </div>
 
-      <main className="flex-1 overflow-auto">
-        <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur md:hidden pt-[env(safe-area-inset-top)]">
+      <main className={`min-w-0 flex-1 ${isLiveDemo ? 'flex h-full flex-col overflow-hidden' : 'overflow-auto'}`}>
+        <header className={`z-30 border-b border-border bg-background/95 backdrop-blur md:hidden pt-[env(safe-area-inset-top)] ${isLiveDemo ? 'shrink-0' : 'sticky top-0'}`}>
           <div className="flex items-center justify-between px-4 py-3">
             <div>
               <p className="text-sm font-semibold leading-tight">Mori Sprite Studio</p>
@@ -52,7 +53,7 @@ export default function App() {
           </div>
         </header>
 
-        <div className="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-10">
+        <div className={isLiveDemo ? 'min-h-0 flex-1' : 'mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-10'}>
           {view.kind === 'project' && <ProjectView />}
           {view.kind === 'state' && <StateView name={view.name} />}
           {view.kind === 'backdrop' && <BackdropView />}

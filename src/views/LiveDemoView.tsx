@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent, type ReactNode } from 'react'
 import JSZip from 'jszip'
+import { get, set } from 'idb-keyval'
 import { Eye, EyeOff, ImagePlus, LoaderCircle, MessageCircle, Mic, MicOff, Music2, Send } from 'lucide-react'
 import { AnimationPreview } from '@/components/AnimationPreview'
 import {
@@ -46,6 +47,7 @@ type SpeechWindow = Window & {
 const EMPTY_TRANSFORM: CellTransform = { scale: 1, offsetX: 0, offsetY: 0 }
 const DEFAULT_GEMINI_WEB_URL = 'https://ching-tech.ddns.net/gemini-web/'
 const CONNECTION_SETTINGS_STORAGE_KEY = 'mori-live-demo-gemini-web'
+const CHAT_HISTORY_STORAGE_KEY = 'mori-live-demo-chat-history-v1'
 const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
   baseUrl: DEFAULT_GEMINI_WEB_URL,
   apiKey: '',
@@ -55,6 +57,20 @@ const WELCOME: ChatMessage = {
   text: '嗨，我是 Mori。想聊聊、看看最近的新聞，或問我今天的天氣？',
 }
 let bundledDemoPromise: Promise<SpritePack> | null = null
+
+function isChatMessage(value: unknown): value is ChatMessage {
+  if (!value || typeof value !== 'object') return false
+  const message = value as Record<string, unknown>
+  if ((message.role !== 'user' && message.role !== 'model') || typeof message.text !== 'string') return false
+  if (message.media === undefined) return true
+  return Array.isArray(message.media) && message.media.every((item: unknown) => {
+    if (!item || typeof item !== 'object') return false
+    const media = item as Record<string, unknown>
+    return (media.type === 'image' || media.type === 'audio')
+      && typeof media.src === 'string'
+      && typeof media.filename === 'string'
+  })
+}
 
 function geminiWebEndpoint(baseUrl: string, path: string) {
   const value = baseUrl.trim()
@@ -323,6 +339,7 @@ export function LiveDemoView() {
   const [demoPack, setDemoPack] = useState<SpritePack | null>(null)
   const [demoError, setDemoError] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME])
+  const [messagesReady, setMessagesReady] = useState(false)
   const [draft, setDraft] = useState('')
   const [composerMode, setComposerMode] = useState<ComposerMode>('chat')
   const [activity, setActivity] = useState<Activity>('idle')
@@ -416,6 +433,31 @@ export function LiveDemoView() {
   }, [messages, activity])
 
   useEffect(() => {
+    let cancelled = false
+    const restoreMessages = async () => {
+      try {
+        const saved = await get<unknown>(CHAT_HISTORY_STORAGE_KEY)
+        if (cancelled || !Array.isArray(saved)) return
+        const restored = saved.filter(isChatMessage)
+        if (restored.length > 0) setMessages(restored)
+      } catch {
+        // Keep the chat available if IndexedDB is disabled or unavailable.
+      } finally {
+        if (!cancelled) setMessagesReady(true)
+      }
+    }
+    void restoreMessages()
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    if (!messagesReady) return
+    void set(CHAT_HISTORY_STORAGE_KEY, messages).catch(() => {
+      // Keep the chat usable if the browser cannot persist local history.
+    })
+  }, [messages, messagesReady])
+
+  useEffect(() => {
     try {
       window.localStorage.setItem(CONNECTION_SETTINGS_STORAGE_KEY, JSON.stringify(connection))
     } catch {
@@ -507,7 +549,7 @@ export function LiveDemoView() {
   const sendMessage = async (event: FormEvent) => {
     event.preventDefault()
     const text = draft.trim()
-    if (!text || activity === 'thinking') return
+    if (!messagesReady || !text || activity === 'thinking') return
     const inferredMode = composerMode === 'chat' ? detectMoriCreationMode(text) : null
     const mode = inferredMode ?? composerMode
     if (inferredMode) setComposerMode(inferredMode)
@@ -789,7 +831,7 @@ export function LiveDemoView() {
 
                 <div className="flex items-start justify-between gap-3">
                   <p className="max-w-sm text-[10px] leading-relaxed text-stone-500">
-                    設定只存在這個瀏覽器。聊天經 Live Demo 後端轉送；生圖與音樂會由瀏覽器直接帶 API Key 呼叫 Gemini-Web。
+                    設定與聊天記錄（含生成圖片、音訊）儲存在這個瀏覽器。聊天經 Live Demo 後端轉送；生圖與音樂會由瀏覽器直接帶 API Key 呼叫 Gemini-Web。
                   </p>
                   <button
                     type="button"
@@ -883,7 +925,7 @@ export function LiveDemoView() {
               </button>
               <button
                 type="submit"
-                disabled={!draft.trim() || activity === 'thinking'}
+                disabled={!messagesReady || !draft.trim() || activity === 'thinking'}
                 aria-label={composerMode === 'chat' ? '送出訊息' : composerMode === 'image' ? '生成圖片' : '生成音樂'}
                 className="pointer-events-auto mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
               >

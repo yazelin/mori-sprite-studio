@@ -257,15 +257,31 @@
 
 <section>
   <h2>What it does</h2>
-  <p>You give it <strong>one reference image</strong> of your character. It produces a complete sprite animation pack for <a href="https://github.com/yazelin/mori-desktop">mori-desktop</a> — <strong>6 required + 2 optional states</strong>, each a 1024×1024 4×4 sprite sheet that the floating window plays back.</p>
+  <p>You give it <strong>one reference image</strong> of your character. It produces a complete sprite animation pack — <strong>6 required + 2 optional states</strong>, each a 1024×1024 4×4 sprite sheet. Export a <code>.moripack.zip</code> for the standalone Mori Pet Player or for <a href="https://github.com/yazelin/mori-desktop">mori-desktop</a>.</p>
   <ul>
     <li><strong>Required (6):</strong> idle / sleeping / recording / thinking / done / error</li>
     <li><strong>Optional (2):</strong> walking / dragging (cyclic locomotion — uses a separate W/Dr pipeline)</li>
   </ul>
-  <p>It's built for <a href="https://github.com/yazelin/mori-desktop"><strong>Mori</strong></a> — yazelin's 森林精靈 (forest spirit) Jarvis-style AI partner who lives on the desktop. <em>"Iron Man 有 Jarvis,我有 Mori。"</em> This studio makes Mori's <strong>visible body</strong> — her sprite form — that the mori-desktop floating window animates.</p>
+  <p>It's built for <a href="https://github.com/yazelin/mori-desktop"><strong>Mori</strong></a> — yazelin's woodland AI companion. <em>"Iron Man 有 Jarvis,我有 Mori。"</em> This studio creates Mori's <strong>visible sprite form</strong>. Use Mori Pet Player when you want a simple desktop pet, or mori-desktop when you want the full AI companion.</p>
   <p>The studio also works for <strong>any character you want to give a visible form to</strong>: your own AI partner / personal spirit / streamer overlay companion / character mascot. The Mori demo is one example of what's possible.</p>
   <p>You can also export each state as APNG, GIF, WebM, or just the raw sheet PNG — useful for LINE animated stickers, Discord, OBS overlays, video editing, etc.</p>
   <img class="screen" src="https://cdn.jsdelivr.net/gh/yazelin/mori-sprite-studio@main/docs/assets/screen-01-project.webp" alt="Project setup screen with demo loader banner">
+</section>
+
+<section>
+  <h2>Two ways to use Mori</h2>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h3>Mori Pet Player — standalone desktop pet</h3>
+      <p>Import a <code>.moripack.zip</code> and let Mori wander, rest, and sleep on your desktop; you can also pick her up and move her. Portable builds are available for Linux, macOS, and Windows. The Player only displays and animates the character — it does not include chat, an AI assistant, or image/music generation.</p>
+      <p style="margin-top: .85rem"><a href="https://yazelin.github.io/mori-pet-player/">Download the portable Player</a> · <a href="https://github.com/yazelin/mori-pet-player">Source repo</a></p>
+    </div>
+    <div class="feature-card">
+      <h3>Live Demo — chat, images, and music</h3>
+      <p>Open <strong>Output → Live Demo</strong> in the Studio. Connect a Gemini-Web service you run by entering its Base URL and API key. Mori can chat, answer news and weather questions, and generate images and music in the browser. For image and music generation, your service must allow CORS requests from <code>mori-sprite-studio.vercel.app</code>. This is separate from Mori Pet Player.</p>
+      <p style="margin-top: .85rem"><a href="https://github.com/yazelin/gemini-web">Gemini-Web repo</a> · <a href="https://mori-sprite-studio.vercel.app">Open the Studio</a></p>
+    </div>
+  </div>
 </section>
 
 <section>
@@ -290,7 +306,7 @@
        │
        │ (bake transforms + zip)
        ▼
-<span class="accent">[mori.moripack.zip]</span>    →    mori-desktop
+<span class="accent">[mori.moripack.zip]</span>    →    Mori Pet Player / mori-desktop
        │
        │ (per state, optional)
        ▼
@@ -302,7 +318,7 @@
     <li><strong>Optional walking + dragging</strong> — separate W/Dr pipeline (no pre-tile, since gait cycles need free per-frame design). Reverse + swap buttons let you hand-sort cells until the walk looks right.</li>
     <li><strong>Fine-tune</strong> — per-cell regen, loop config, cross-state normalize, scale/offset sliders.</li>
     <li><strong>Backdrop</strong> (optional) — Light + Dark backdrop PNGs. Use <strong>桌面預覽</strong> view to see all states layered on backdrop with shape + theme toggles.</li>
-    <li><strong>Export</strong> <code>.moripack.zip</code> for mori-desktop, or individual APNG / GIF / WebM for other platforms.</li>
+    <li><strong>Export</strong> <code>.moripack.zip</code> for Mori Pet Player or mori-desktop, or individual APNG / GIF / WebM for other platforms.</li>
   </ol>
   <img class="screen" src="https://cdn.jsdelivr.net/gh/yazelin/mori-sprite-studio@main/docs/assets/screen-02-state.webp" alt="State editor with sprite sheet, loop preview, and transform sliders">
 </section>
@@ -334,7 +350,7 @@
   <table>
     <thead><tr><th>Format</th><th>Use case</th><th>Plays in</th></tr></thead>
     <tbody>
-      <tr><td><code>.moripack.zip</code></td><td>Consumer format for mori-desktop</td><td>mori-desktop floating widget</td></tr>
+      <tr><td><code>.moripack.zip</code></td><td>Import directly into Mori Pet Player, or add it to mori-desktop's character folder</td><td>Mori Pet Player desktop pet or mori-desktop floating widget</td></tr>
       <tr><td><code>.moriproject.zip</code></td><td>Author format — resume editing later</td><td>This studio (load button)</td></tr>
       <tr><td><strong>APNG</strong> (.png)</td><td>Transparent + looping. LINE animated stickers / Discord / Slack / Twitter inline</td><td>Browsers + LINE + Discord</td></tr>
       <tr><td><strong>GIF</strong> (.gif)</td><td>Universal compatibility, 1-bit alpha (edges slightly crusty)</td><td>Mac Preview, Windows Photos, anywhere</td></tr>
@@ -377,7 +393,7 @@ npm run dev              # Vite dev server
       <tr><td>Cell manipulation</td><td>Canvas-based reorder / swap / reverse via <code>imageOps.ts</code></td></tr>
       <tr><td>Animation preview</td><td>Canvas + requestAnimationFrame (16-frame row-major)</td></tr>
       <tr><td>Export encoders</td><td>upng-js (APNG), gifenc (GIF), MediaRecorder + VP9 (WebM), JSZip</td></tr>
-      <tr><td>Server-side</td><td>none — pure static frontend, all AI calls go browser → your provider (BYOK)</td></tr>
+      <tr><td>AI requests</td><td>Sprite generation calls your selected provider from the browser. Live Demo uses your configured Gemini-Web service; chat goes through a small Studio proxy, while image and music requests go directly from the browser.</td></tr>
     </tbody>
   </table>
   <p>Output spec: 1024×1024 PNG-32, 4×4 grid, 256×256 per cell, row-major frame order, transparent background. Conforms to mori-desktop's <code>character-pack.md</code> v1.0.</p>
@@ -420,7 +436,8 @@ npm run dev              # Vite dev server
 <section>
   <h2>Related projects</h2>
   <ul>
-    <li><a href="https://github.com/yazelin/mori-desktop">mori-desktop</a> — 森林精靈 Mori 的桌面身體. yazelin's Jarvis-style AI partner. Rust + Tauri 2 + Whisper(耳)+ LLM(腦). This studio produces her visible sprite form.</li>
+    <li><a href="https://yazelin.github.io/mori-pet-player/">Mori Pet Player</a> — a standalone desktop pet that imports this Studio's <code>.moripack.zip</code>. It plays character animations and has no AI assistant features. <a href="https://github.com/yazelin/mori-pet-player">Source repo</a>.</li>
+    <li><a href="https://github.com/yazelin/mori-desktop">mori-desktop</a> — Mori's full desktop AI companion, built with Rust + Tauri 2, Whisper, and an LLM. This studio produces her visible sprite form.</li>
     <li><a href="https://github.com/yazelin/world-tree">world-tree</a> — Mori's origin / 世界樹. Where Mori 來自.</li>
     <li><a href="https://github.com/yazelin/codex-image-service">codex-image-service</a> — self-host ChatGPT Plus/Pro quota as image-gen API. Pairs naturally with this studio (see section above).</li>
     <li><a href="https://github.com/yazelin/line-sticker-studio">line-sticker-studio</a> — sister tool, LINE sticker authoring (some prompt engineering patterns shared)</li>

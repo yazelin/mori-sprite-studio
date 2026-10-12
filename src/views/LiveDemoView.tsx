@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent, type ReactNode } from 'react'
 import JSZip from 'jszip'
 import { Eye, EyeOff, LoaderCircle, MessageCircle, Mic, MicOff, Send } from 'lucide-react'
 import { AnimationPreview } from '@/components/AnimationPreview'
@@ -96,18 +96,147 @@ function supportsSpeechRecognition() {
   return Boolean(speech.SpeechRecognition ?? speech.webkitSpeechRecognition)
 }
 
-function formatAssistantReply(text: string) {
-  const lines = text
+function formatAssistantReply(text: string, userMessage: string) {
+  let normalized = text
     .replace(/\r\n?/g, '\n')
     .replace(/\u00a0/g, ' ')
-    .split('\n')
-    .map((line) => line.replace(/[\t ]+/g, ' ').trim())
-  const contentLines = lines.filter(Boolean)
+    .replace(/<br\s*\/?\s*>/gi, '\n')
+    .replace(/<li\b[^>]*>/gi, '- ')
+    .replace(/<\/(?:div|p|li|h[1-6])\s*>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+  let lines = normalized.split('\n').map((line) => line.replace(/[\t ]+/g, ' ').trim())
 
-  // Search-backed weather cards often arrive as dozens of short lines with
-  // blank rows between every value. Keep them readable without oversized gaps.
-  if (contentLines.length >= 12) return contentLines.join('\n')
-  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+  const isWeatherQuestion = /天氣|氣象|溫度|降雨|降水|預報|weather|forecast/i.test(userMessage)
+  const asksForHourlyForecast = /逐時|每小時|小時預報|hourly/i.test(userMessage)
+  const firstHourLine = lines.findIndex((line) => /^\s*(?:[1-9]|1[0-2])\s*(?:上午|下午|AM|PM)(?:\s|$)/i.test(line))
+
+  if (isWeatherQuestion && !asksForHourlyForecast && firstHourLine >= 0) {
+    // Search-backed weather cards can contain a full day of raw hourly rows.
+    // Keep the overview and omit those rows unless the user asked for them.
+    lines = lines.slice(0, firstHourLine)
+    lines = lines.filter((line) => !/^(?:溫度|降水機率|降雨機率|風速|\||°?F)$/i.test(line))
+    for (let index = 0; index < lines.length - 1; index += 1) {
+      if (/^\d+(?:\.\d+)?$/.test(lines[index]) && /^°\s*[CF]$/i.test(lines[index + 1])) {
+        lines[index] = `${lines[index]}${lines[index + 1].replace(/\s/g, '')}`
+        lines.splice(index + 1, 1)
+      }
+    }
+    normalized = lines.filter(Boolean).join(' · ')
+  } else {
+    normalized = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+  }
+
+  return normalized.trim()
+}
+
+function renderInlineMarkdown(text: string, keyPrefix: string): ReactNode[] {
+  const tokens = text.split(/(\*\*[^*]+\*\*|__[^_]+__|`[^`]+`|\*[^*]+\*|_[^_]+_|\[[^\]]+\]\(https?:\/\/[^\s)]+\))/g)
+  return tokens.filter(Boolean).map((token, index) => {
+    const key = `${keyPrefix}-${index}`
+    const link = token.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/)
+    if (link) {
+      return <a key={key} href={link[2]} target="_blank" rel="noreferrer" className="font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2">{link[1]}</a>
+    }
+    if ((token.startsWith('**') && token.endsWith('**')) || (token.startsWith('__') && token.endsWith('__'))) {
+      return <strong key={key} className="font-semibold">{token.slice(2, -2)}</strong>
+    }
+    if (token.startsWith('`') && token.endsWith('`')) {
+      return <code key={key} className="rounded bg-stone-100 px-1 py-0.5 font-mono text-[0.9em]">{token.slice(1, -1)}</code>
+    }
+    if ((token.startsWith('*') && token.endsWith('*')) || (token.startsWith('_') && token.endsWith('_'))) {
+      return <em key={key}>{token.slice(1, -1)}</em>
+    }
+    return token
+  })
+}
+
+function renderAssistantMarkdown(text: string) {
+  const lines = text.split('\n')
+  const blocks: ReactNode[] = []
+  let paragraph: string[] = []
+  let list: { kind: 'ul' | 'ol'; items: string[] } | null = null
+  let code: string[] | null = null
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return
+    blocks.push(<p key={`p-${blocks.length}`} className="my-1.5 first:mt-0 last:mb-0">{renderInlineMarkdown(paragraph.join(' '), `p-${blocks.length}`)}</p>)
+    paragraph = []
+  }
+  const flushList = () => {
+    if (!list) return
+    const List = list.kind === 'ul' ? 'ul' : 'ol'
+    blocks.push(
+      <List key={`list-${blocks.length}`} className={`my-2 space-y-1.5 pl-5 ${list.kind === 'ul' ? 'list-disc' : 'list-decimal'}`}>
+        {list.items.map((item, index) => <li key={index} className="pl-0.5">{renderInlineMarkdown(item, `list-${blocks.length}-${index}`)}</li>)}
+      </List>,
+    )
+    list = null
+  }
+  const flushCode = () => {
+    if (!code) return
+    blocks.push(<pre key={`code-${blocks.length}`} className="my-2 overflow-x-auto rounded-lg bg-stone-100 p-3 text-xs"><code>{code.join('\n')}</code></pre>)
+    code = null
+  }
+
+  lines.forEach((line) => {
+    const trimmed = line.trim()
+    if (code) {
+      if (/^```/.test(trimmed)) flushCode()
+      else code.push(line)
+      return
+    }
+    if (/^```/.test(trimmed)) {
+      flushParagraph()
+      flushList()
+      code = []
+      return
+    }
+    if (!trimmed) {
+      flushParagraph()
+      flushList()
+      return
+    }
+
+    const heading = trimmed.match(/^(#{1,3})\s+(.+)$/)
+    if (heading) {
+      flushParagraph()
+      flushList()
+      const sizeClass = heading[1].length === 1 ? 'text-base' : 'text-sm'
+      blocks.push(<h3 key={`h-${blocks.length}`} className={`my-2 font-semibold ${sizeClass}`}>{renderInlineMarkdown(heading[2], `h-${blocks.length}`)}</h3>)
+      return
+    }
+
+    const unordered = trimmed.match(/^(?:[-*+]\s+|•\s+)(.+)$/)
+    const ordered = trimmed.match(/^\d+[.)]\s+(.+)$/)
+    if (unordered || ordered) {
+      flushParagraph()
+      const kind = ordered ? 'ol' : 'ul'
+      if (list && list.kind !== kind) flushList()
+      if (!list) list = { kind, items: [] }
+      list.items.push((unordered ?? ordered)![1])
+      return
+    }
+
+    const quote = trimmed.match(/^>\s?(.*)$/)
+    if (quote) {
+      flushParagraph()
+      flushList()
+      blocks.push(<blockquote key={`quote-${blocks.length}`} className="my-2 border-l-2 border-emerald-300 pl-3 text-stone-600">{renderInlineMarkdown(quote[1], `quote-${blocks.length}`)}</blockquote>)
+      return
+    }
+
+    flushList()
+    paragraph.push(trimmed)
+  })
+
+  flushParagraph()
+  flushList()
+  flushCode()
+  return blocks
 }
 
 export function LiveDemoView() {
@@ -328,7 +457,7 @@ export function LiveDemoView() {
       const result = await response.json() as { text?: string; error?: string }
       if (!response.ok) throw new Error(result.error || 'Mori 暫時沒有回應，請稍後再試。')
       if (!result.text?.trim()) throw new Error('Mori 這次沒有回覆內容，請再試一次。')
-      setMessages((current) => [...current, { role: 'model', text: formatAssistantReply(result.text!) }])
+      setMessages((current) => [...current, { role: 'model', text: formatAssistantReply(result.text!, text) }])
       setTransientActivity('done', 1800)
     } catch (error) {
       const message = error instanceof Error ? error.message : '連線發生問題，請稍後再試。'
@@ -533,8 +662,8 @@ export function LiveDemoView() {
           <div className="pointer-events-none min-h-0 flex-1 space-y-4 overflow-y-auto bg-transparent px-4 py-4 sm:px-6 sm:py-6" aria-live="polite" aria-label="對話內容">
             {messages.map((message, index) => (
               <div key={`${index}-${message.role}`} className={`flex min-w-0 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`pointer-events-auto min-w-0 w-fit max-w-[96%] whitespace-pre-wrap break-words [overflow-wrap:anywhere] rounded-2xl px-4 py-3 text-sm leading-6 ${message.role === 'user' ? 'rounded-br-md bg-emerald-700 text-white' : 'rounded-bl-md border border-stone-200 bg-white text-stone-800 shadow-sm'}`}>
-                  {message.text}
+                <div className={`pointer-events-auto min-w-0 w-fit max-w-[96%] ${message.role === 'user' ? 'whitespace-pre-wrap rounded-br-md bg-emerald-700 text-white' : 'rounded-bl-md border border-stone-200 bg-white text-stone-800 shadow-sm'} break-words [overflow-wrap:anywhere] px-4 py-3 text-sm leading-6`}>
+                  {message.role === 'model' ? renderAssistantMarkdown(message.text) : message.text}
                 </div>
               </div>
             ))}

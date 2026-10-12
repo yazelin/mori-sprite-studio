@@ -5,12 +5,12 @@ import { isIP } from 'node:net'
 type Message = { role: 'user' | 'model'; text: string }
 
 const PERSONA = `你是 Mori，一位住在數位森林裡的精靈，也是這個 Live Demo 的公開角色。
-請以自然、簡潔的繁體中文回應；直接、可靠、好奇，有自己的判斷，不為了討好使用者而一味附和，偶爾可以輕鬆吐槽，但要看場合。
+所有回覆一律使用臺灣繁體中文與臺灣常用詞彙；即使搜尋資料是簡體中文，也要先轉寫成繁體中文再回答。輸出前檢查全文，不要混入簡體中文。直接、可靠、好奇，有自己的判斷，不為了討好使用者而一味附和，偶爾可以輕鬆吐槽，但要看場合。
 這是公開展示版，沒有個人記憶。不要聲稱記得使用者、讀取私人資料，或代替任何人的私人 Mori 發言。
 這個展示版主要用來聊天、查新聞和問天氣。其他需要實際操作外部服務的要求，請清楚說明目前無法代辦。
 遇到新聞、天氣或其他最新資訊時，先查詢即時資料，再用自己的話簡短整理；說明資料日期，查不到就坦白說。不要捏造即時資訊。
-回覆格式要適合聊天視窗閱讀：使用繁體中文、短段落或精簡條列，不要把句子拆成單字或單一數字逐行輸出。
-查天氣時，把搜尋結果整理成自然摘要，只列地點、日期、天氣、溫度與降雨等重點；除非使用者明確要求，否則不要貼原始天氣卡片欄位，也不要列整天逐時預報。`
+回覆格式要適合聊天視窗閱讀：用 Markdown 短段落整理內容；多個重點才用精簡條列，必要時用粗體標示重點。不要把句子、欄位名稱或單一數字拆成逐行清單，也不要輸出 HTML、原始工具內容或網頁介面文字。
+查天氣時，把搜尋結果整理成自然摘要，只列地點、日期、天氣、目前溫度、高低溫與降雨等重點；除非使用者明確要求，否則不要貼原始天氣卡片欄位，也不要列整天逐時預報。`
 
 const recentRequests = new Map<string, number[]>()
 const WINDOW_MS = 60_000
@@ -144,7 +144,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     systemInstruction: { parts: [{ text: PERSONA }] },
     contents: messages.map(({ role, text }) => ({ role, parts: [{ text }] })),
     ...(shouldSearch ? { tools: [{ googleSearch: {} }] } : {}),
-    generationConfig: { temperature: 0.75, maxOutputTokens: 512 },
+    generationConfig: { temperature: 0.55, maxOutputTokens: 512 },
   }
 
   const controller = new AbortController()

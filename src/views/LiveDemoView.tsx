@@ -809,7 +809,7 @@ export function LiveDemoView() {
           <div className="pointer-events-none min-h-0 flex-1 space-y-4 overflow-y-auto bg-transparent px-4 py-4 sm:px-6 sm:py-6" aria-live="polite" aria-label="對話內容">
             {messages.map((message, index) => (
               <div key={`${index}-${message.role}`} className={`flex min-w-0 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`pointer-events-auto min-w-0 w-fit max-w-[96%] ${message.role === 'user' ? 'whitespace-pre-wrap rounded-br-md bg-emerald-700 text-white' : 'rounded-bl-md border border-stone-200 bg-white text-stone-800 shadow-sm'} break-words [overflow-wrap:anywhere] px-4 py-3 text-sm leading-6`}>
+                <div className={`pointer-events-auto min-w-0 w-fit max-w-[96%] rounded-2xl ${message.role === 'user' ? 'whitespace-pre-wrap rounded-br-md bg-emerald-700 text-white' : 'rounded-bl-md border border-stone-200 bg-white text-stone-800 shadow-sm'} break-words [overflow-wrap:anywhere] px-4 py-3 text-sm leading-6`}>
                   {message.role === 'model' ? renderAssistantMarkdown(message.text) : message.text}
                   {message.media?.map((media, mediaIndex) => (
                     <div key={`${media.filename}-${mediaIndex}`} className="mt-3 space-y-2">

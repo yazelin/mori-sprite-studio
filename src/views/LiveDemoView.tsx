@@ -434,8 +434,12 @@ export function LiveDemoView() {
           )}
         </section>
 
-        <section className="pointer-events-none absolute inset-x-3 bottom-3 top-24 z-30 flex min-h-0 flex-col overflow-hidden rounded-3xl border border-white/75 bg-white/80 shadow-2xl shadow-emerald-950/15 backdrop-blur-lg sm:inset-x-5 sm:bottom-5 sm:top-28 md:inset-x-5 md:bottom-5 md:top-24">
-          <header className="pointer-events-none flex shrink-0 items-center gap-3 border-b border-stone-100/90 px-4 py-3 sm:px-5 sm:py-4">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-3 bottom-3 top-24 z-10 rounded-3xl border border-white/75 bg-white/65 shadow-2xl shadow-emerald-950/15 backdrop-blur-lg sm:inset-x-5 sm:bottom-5 sm:top-28 md:inset-x-5 md:bottom-5 md:top-24"
+        />
+        <section className="pointer-events-none absolute inset-x-3 bottom-3 top-24 z-30 flex min-h-0 flex-col overflow-hidden rounded-3xl sm:inset-x-5 sm:bottom-5 sm:top-28 md:inset-x-5 md:bottom-5 md:top-24">
+          <header className="pointer-events-none flex shrink-0 items-center gap-3 border-b border-stone-100/90 bg-white/85 px-4 py-3 sm:px-5 sm:py-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800">
               <MessageCircle size={19} strokeWidth={1.75} />
             </div>

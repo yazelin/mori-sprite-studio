@@ -2,6 +2,14 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent
 import JSZip from 'jszip'
 import { Eye, EyeOff, ImagePlus, LoaderCircle, MessageCircle, Mic, MicOff, Music2, Send } from 'lucide-react'
 import { AnimationPreview } from '@/components/AnimationPreview'
+import {
+  buildMoriSelfiePrompt,
+  buildMoriSongPrompt,
+  detectMoriCreationMode,
+  isMoriSelfieRequest,
+  isMoriSingingRequest,
+  loadMoriReferenceImage,
+} from '@/lib/moriCreationProfile'
 import { useAppStore } from '@/store'
 import { STATE_NAMES, type CellTransform, type StateName } from '@/types/project'
 
@@ -500,7 +508,9 @@ export function LiveDemoView() {
     event.preventDefault()
     const text = draft.trim()
     if (!text || activity === 'thinking') return
-    const mode = composerMode
+    const inferredMode = composerMode === 'chat' ? detectMoriCreationMode(text) : null
+    const mode = inferredMode ?? composerMode
+    if (inferredMode) setComposerMode(inferredMode)
     stopVoiceInput(true)
     setVoiceError('')
     const nextMessages = [...messages, { role: 'user' as const, text }]
@@ -533,14 +543,29 @@ export function LiveDemoView() {
         setMessages((current) => [...current, { role: 'model', text: formatAssistantReply(result.text!, text) }])
       } else {
         const isImage = mode === 'image'
-        const endpoint = geminiWebEndpoint(connection.baseUrl, isImage ? 'api/generate' : 'api/music')
+        const useMoriReference = isImage && isMoriSelfieRequest(text)
+        const useMoriSongProfile = mode === 'music' && isMoriSingingRequest(text)
+        const endpointPath = isImage ? (useMoriReference ? 'api/edit' : 'api/generate') : 'api/music'
+        const endpoint = geminiWebEndpoint(connection.baseUrl, endpointPath)
+        const payload: Record<string, unknown> = {
+          prompt: useMoriReference
+            ? buildMoriSelfiePrompt(text)
+            : useMoriSongProfile ? buildMoriSongPrompt(text) : text,
+          timeout: isImage ? 180 : 600,
+        }
+        if (useMoriReference) payload.reference_images = [await loadMoriReferenceImage()]
+        if (useMoriSongProfile) {
+          payload.length = 'standard'
+          payload.vocals = 'vocals'
+          payload.genre = 'folk'
+        }
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'x-goog-api-key': connection.apiKey,
           },
-          body: JSON.stringify({ prompt: text, timeout: isImage ? 180 : 600 }),
+          body: JSON.stringify(payload),
         })
         const result = await readGeminiWebResult(response)
         if (isImage) {
@@ -621,10 +646,10 @@ export function LiveDemoView() {
     ? '描述想生成的圖片…'
     : composerMode === 'music' ? '描述想生成的音樂…' : '跟 Mori 說說話…'
   const modeHint = composerMode === 'chat'
-    ? '對話會經 Live Demo 後端傳送至 Gemini-Web。'
+    ? '對話經 Live Demo 後端傳送；直接說「畫你的自拍照」或「你唱一首歌」會切換到對應功能。'
     : composerMode === 'image'
-      ? '圖片會由瀏覽器直接傳送至 Gemini-Web，並使用服務預設設定。'
-      : '音樂會由瀏覽器直接傳送至 Gemini-Web，並使用服務預設設定。'
+      ? '輸入「畫你的自拍照」會附上 Mori 立繪作為角色參考。'
+      : '輸入「Mori 唱一首歌」會套用女聲、繁體中文歌詞與森林民謠設定。'
 
   return (
     <div className="relative h-full min-h-0 w-full overflow-hidden bg-[radial-gradient(ellipse_at_20%_8%,rgba(255,255,255,0.92),transparent_42%),linear-gradient(155deg,#edf5e9_0%,#c6ddc1_54%,#a9c9ac_100%)]">

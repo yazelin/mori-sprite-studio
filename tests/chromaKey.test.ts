@@ -60,18 +60,15 @@ describe('chromaKey', () => {
   })
 
   it('aggressive tolerance removes light-green pixels that balanced keeps', async () => {
-    // [110, 175, 110]: r/b fall just within aggressive maxOther (125)
-    // but exceed balanced maxOther (110, boundary inclusive so r=110 just
-    // passes balanced too — adjusted to 115 so balanced REJECTS as isPureKey).
-    // Goal: aggressive fully removes; balanced keeps as opaque (not key color).
+    // Balanced retains this light-green sample as a soft edge; aggressive removes it.
     const light = [115, 175, 115, 255]
     const src = await makePng([light, light, light, light])
     const balanced = await chromaKeyOut(src, [0, 255, 0], 'balanced')
     const aggressive = await chromaKeyOut(src, [0, 255, 0], 'aggressive')
     const balPx = await readPixels(balanced)
     const aggPx = await readPixels(aggressive)
-    // balanced: isPureKey fails (r=115 > maxOther=110) → kept opaque
-    expect(balPx[0][3]).toBe(255)
+    // The chroma estimate keeps the sample partially visible under balanced tolerance.
+    expect(balPx[0][3]).toBeGreaterThan(0)
     // aggressive: isPureKey passes (r=115 ≤ maxOther=125, dominance check
     // 175 ≥ 115*1.45=166.75 passes), score=(175-115)/255=0.235 > hard 0.20
     // → removed

@@ -277,6 +277,6 @@ export async function chromaKeyOut(
   const { plateColor, scores } = estimateMatte(imageData.data, width, height, keyRgb, tolerance)
   despillEdges(imageData.data, width, height, keyRgb, plateColor, scores)
   ctx.putImageData(imageData, 0, 0)
-  bitmap.close()
+  bitmap.close?.()
   return await canvas.convertToBlob({ type: 'image/png' })
 }

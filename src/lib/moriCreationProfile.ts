@@ -1,12 +1,13 @@
 export const MORI_REFERENCE_IMAGE_URL = '/mori/mori-reference.webp'
 
 export const MORI_SELFIE_PROMPT = [
-  'Create a new selfie-style portrait of Mori, a young adult human woman.',
-  'Use the attached image as the identity and character-design reference. Keep her unmistakably human, with natural human facial features and human proportions.',
-  'Preserve her long, softly wavy sage-green hair, gentle green eyes, small white blossom and leaf hair ornaments, cream and forest-green dress with subtle gold botanical details, and botanical pendant.',
-  'Show Mori looking into a camera held at arm’s length, with a relaxed, warm smile and a natural slight selfie angle. Use a close or medium portrait framing and soft woodland light.',
-  'Create a fresh composition in a polished 2D anime illustration style that matches the reference. Keep Mori’s identity and outfit recognizable while following the user’s requested pose or setting.',
-  'Make one coherent image of Mori only. Do not add lettering, captions, panels, watermarks, or extra people.',
+  'Create an illustrated selfie of Mori, the exact same woman in the attached reference. Treat the reference as the direct source for her identity, character design, and art style, not as loose inspiration. Make an image-to-image variation of Mori; only her pose, expression, and framing may change.',
+  'Preserve her original face shape and proportions: a delicate small face, relaxed narrow green eyes, petite nose and mouth, and subtly pointed ears. Keep the same eye size, spacing, and gentle expression as the reference. She looks toward the viewer with a natural, soft smile.',
+  'Keep her long, abundant, muted sage-green hair with wispy straight bangs, layered flowing waves, and fine visible strands. Preserve the crown arrangement of many small ivory five-petal blossoms, tiny buds and leaves woven into delicate antique-gold vine filigree.',
+  'Keep her original layered forest-green dress with dense gold botanical embroidery, loose translucent ivory bell sleeves with fine gold edging, draped gold chains, and the round botanical pendant. Do not replace it with a simple or fitted outfit.',
+  'Frame her from the waist or chest up at arm’s length, facing the viewer; one sleeve or forearm may enter near the edge to suggest a selfie. Keep her signature hair ornaments and enough of the embroidered bodice and sleeves visible. Use warm, low-key woodland light and the reference’s muted moss-green, ivory, and antique-gold palette.',
+  'Match the reference’s polished, highly detailed painterly anime illustration: fine controlled linework, softly blended but clearly defined shading, individually rendered hair strands, delicate flower details, translucent fabric, and intricate embroidery. Keep Mori crisp and finely finished; do not make the image photorealistic, rough, flat, blurry, or simplified.',
+  'Make one coherent image of Mori only. Do not redesign or omit her defining features and ornaments. Do not add lettering, captions, panels, watermarks, or extra people.',
 ].join(' ')
 
 export const MORI_SONG_PROMPT = [

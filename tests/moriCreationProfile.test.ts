@@ -10,11 +10,12 @@ import {
 } from '@/lib/moriCreationProfile'
 
 describe('Mori creation profile', () => {
-  it('recognizes selfie requests and preserves Mori’s human design in the prompt', () => {
+  it('recognizes selfie requests and locks Mori’s reference identity and style', () => {
     expect(isMoriSelfieRequest('畫你的自拍照')).toBe(true)
     expect(detectMoriCreationMode('畫你的自拍照')).toBe('image')
-    expect(MORI_SELFIE_PROMPT).toContain('young adult human woman')
-    expect(MORI_SELFIE_PROMPT).toContain('natural human facial features and human proportions')
+    expect(MORI_SELFIE_PROMPT).toContain('the exact same woman in the attached reference')
+    expect(MORI_SELFIE_PROMPT).toContain('direct source for her identity, character design, and art style')
+    expect(MORI_SELFIE_PROMPT).toContain('Keep Mori crisp and finely finished')
     expect(buildMoriSelfiePrompt('在森林裡微笑')).toContain('在森林裡微笑')
   })
 

@@ -16,6 +16,7 @@ import {
   cropCell,
   erodeCellEdges,
   erodeSingleCellEdges,
+  reorderCells,
 } from './imageOps'
 import { render, renderCellNotesBlock, renderStateDescriptions } from './promptRenderer'
 import { appendChromaSuffix } from './promptBuilder'
@@ -451,6 +452,93 @@ Fill the background with the selected solid chroma-key color. No scenery, ground
     rawSheet,
     status: 'animated',
   })
+  announceGenerationFinished()
+}
+
+/** Move one generated custom-action frame to a different playback position. */
+export async function reorderCustomActionFrames(
+  actionId: string,
+  permutation: readonly number[],
+): Promise<void> {
+  const store = useAppStore.getState()
+  const action = (store.project.customActions ?? []).find((item) => item.id === actionId)
+  if (!action?.sheet) throw new Error('找不到已生成的自訂動作影格')
+
+  const sheet = await reorderCells(action.sheet, permutation)
+  const patch: Partial<typeof action> = { sheet }
+  if (action.rawSheet) patch.rawSheet = await reorderCells(action.rawSheet, permutation)
+  useAppStore.getState().updateCustomAction(actionId, patch)
+}
+
+/** Regenerate one frame with a correction while preserving the other 15 frames. */
+export async function regenerateCustomActionFrame(
+  actionId: string,
+  frameIndex: number,
+  correction: string,
+): Promise<void> {
+  if (!Number.isInteger(frameIndex) || frameIndex < 0 || frameIndex > 15) {
+    throw new Error('影格位置必須介於 1 到 16')
+  }
+  if (!correction.trim()) throw new Error('請先填寫這一格的修正說明')
+
+  const store = useAppStore.getState()
+  const project = store.project
+  const action = (project.customActions ?? []).find((item) => item.id === actionId)
+  if (!action?.sheet || !action.staticBase) throw new Error('請先完成自訂動作動畫')
+  if (!project.characterRef) throw new Error('請先在專案設定上傳角色參考圖')
+
+  const chromaHex = chromaInfo(store.chroma).hex
+  const references: Blob[] = [await fillBgWithChroma(action.staticBase, chromaHex)]
+  const referenceLabels = ['Reference image 1 is the generated neutral base pose.']
+  let referenceNumber = 2
+  const previousIndex = frameIndex > 0 ? frameIndex - 1 : action.loopMode === 'loop' ? 15 : -1
+  const nextIndex = frameIndex < 15 ? frameIndex + 1 : action.loopMode === 'loop' ? 0 : -1
+  if (previousIndex >= 0) {
+    references.push(await fillBgWithChroma(await cropCell(action.sheet, previousIndex), chromaHex))
+    referenceLabels.push(`Reference image ${referenceNumber} is the previous animation frame.`)
+    referenceNumber += 1
+  }
+  if (nextIndex >= 0) {
+    references.push(await fillBgWithChroma(await cropCell(action.sheet, nextIndex), chromaHex))
+    referenceLabels.push(`Reference image ${referenceNumber} is the next animation frame.`)
+    referenceNumber += 1
+  }
+  references.push(project.characterRef)
+  referenceLabels.push(`Reference image ${referenceNumber} is the canonical character identity reference.`)
+  const neighborGuidance = referenceLabels.join('\n')
+  const prompt = appendChromaSuffix(`Create one square sprite frame for a 4×4 character animation sheet. Do not create a grid or multiple frames.
+
+Action: {{action_name}}
+Overall action: {{action_description}}
+Starting-pose guidance: {{pose_note}}
+This is frame {{frame_number}} of 16, in playback order.
+{{neighbor_guidance}}
+
+Correction for this frame (follow this first while preserving the action):
+{{correction}}
+
+Use the supplied base pose and neighboring frames to make this frame fit the motion naturally. Preserve the exact character identity, face, hair, clothing, colors, proportions, accessories, and art style. Keep the complete character centered at the same scale with comfortable margins. Show only this one pose. No scenery, ground plane, shadows, labels, frame numbers, borders, or gutters. Fill the entire background with the selected solid chroma color.`, store.chroma)
+  const rendered = render(prompt, {
+    action_name: action.name.trim(),
+    action_description: action.description.trim(),
+    pose_note: action.poseNote.trim() || 'Use the generated base pose as the action starting point.',
+    frame_number: String(frameIndex + 1),
+    neighbor_guidance: neighborGuidance,
+    correction: correction.trim(),
+  })
+  const provider = buildProvider(store.provider)
+  const raw = await provider.generateImage({ prompt: rendered, references, outputSize: '1024x1024' })
+  const cleaned = await applyChroma(raw)
+  const cleanedCell = await cropToSize(cleaned, 256, 256)
+  const erodePx = store.chroma.edgeErosionPx
+  const frame = erodePx > 0 ? await erodeSingleCellEdges(cleanedCell, erodePx) : cleanedCell
+  const sheet = await pasteIntoSheet(action.sheet, frame, frameIndex)
+
+  const patch: Partial<typeof action> = { sheet }
+  if (action.rawSheet) {
+    patch.rawSheet = await pasteIntoSheet(action.rawSheet, await cropToSize(raw, 256, 256), frameIndex)
+  }
+  useAppStore.getState().updateCustomAction(actionId, patch)
   announceGenerationFinished()
 }
 

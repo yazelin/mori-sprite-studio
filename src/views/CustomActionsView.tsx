@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { runCustomActionAnimation, runCustomActionBase } from '@/lib/generationFlow'
+import { CustomActionFrameEditor } from '@/components/CustomActionFrameEditor'
+import {
+  regenerateCustomActionFrame,
+  reorderCustomActionFrames,
+  runCustomActionAnimation,
+  runCustomActionBase,
+} from '@/lib/generationFlow'
 import { useAppStore } from '@/store'
 import { MAX_CUSTOM_ACTIONS, type CustomAction } from '@/types/project'
 
@@ -45,7 +51,7 @@ export function CustomActionsView() {
   const updateAction = useAppStore((s) => s.updateCustomAction)
   const removeAction = useAppStore((s) => s.removeCustomAction)
   const actions = project.customActions ?? []
-  const [busy, setBusy] = useState<{ id: string; phase: 'base' | 'animation' } | null>(null)
+  const [busy, setBusy] = useState<{ id: string; phase: 'base' | 'animation' | 'frame'; frameIndex?: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   function addNewAction() {
@@ -80,6 +86,24 @@ export function CustomActionsView() {
     try { await runCustomActionAnimation(action.id) }
     catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)) }
     finally { setBusy(null) }
+  }
+
+  async function regenerateFrame(action: CustomAction, frameIndex: number, correction: string) {
+    setBusy({ id: action.id, phase: 'frame', frameIndex })
+    setError(null)
+    try { await regenerateCustomActionFrame(action.id, frameIndex, correction) }
+    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)) }
+    finally { setBusy(null) }
+  }
+
+  async function reorderFrames(action: CustomAction, permutation: readonly number[]) {
+    setError(null)
+    try { await reorderCustomActionFrames(action.id, permutation) }
+    catch (cause) {
+      const message = cause instanceof Error ? cause.message : String(cause)
+      setError(`影格順序調整失敗：${message}`)
+      throw cause
+    }
   }
 
   return (
@@ -251,6 +275,17 @@ export function CustomActionsView() {
                     </p>
                   </div>
                 </div>
+                {action.status === 'animated' && action.sheet && (
+                  <CustomActionFrameEditor
+                    actionId={action.id}
+                    actionName={action.name.trim() || action.id}
+                    sheet={action.sheet}
+                    disabled={Boolean(busy)}
+                    busyFrameIndex={busy?.id === action.id && busy.phase === 'frame' ? busy.frameIndex ?? null : null}
+                    onReorder={(permutation) => reorderFrames(action, permutation)}
+                    onRegenerate={(frameIndex, correction) => void regenerateFrame(action, frameIndex, correction)}
+                  />
+                )}
               </Section>
             )
           })}

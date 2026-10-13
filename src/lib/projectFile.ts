@@ -2,6 +2,7 @@ import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import { useAppStore } from '@/store'
 import { saveStore } from '@/store/persist'
+import { DEFAULT_LOOP_MODES, DEFAULT_LOOP_DURATIONS_MS } from '@/defaults'
 import type { CustomAction, Project, StateName, SpriteState } from '@/types/project'
 import { STATE_NAMES } from '@/types/project'
 
@@ -114,36 +115,35 @@ export async function loadProjectFile(file: Blob | ArrayBuffer): Promise<void> {
     return new Blob([ab], { type })
   }
 
-  const store = useAppStore.getState()
+  // Read the complete project into temporary values first. Updating Zustand
+  // one field at a time lets the autosaver persist partial imports, and the
+  // pagehide handler can then overwrite the finished project with that partial
+  // snapshot if the user refreshes while a 27 MB demo is still loading.
+  const characterRef = await readBlob('character-ref.png')
+  const backdropLight = await readBlob('backdrop-light.png')
+  const backdropDark = await readBlob('backdrop-dark.png')
+  const states = {} as Project['states']
 
-  // 1. Metadata
-  store.updateMetadata(json.metadata)
-
-  // 2. Character ref + backdrops
-  store.setCharacterRef(await readBlob('character-ref.png'))
-  store.setBackdrop('light', await readBlob('backdrop-light.png'))
-  store.setBackdrop('dark', await readBlob('backdrop-dark.png'))
-
-  // 3. Per-state
+  // Per-state sprite blobs and settings
   for (const name of STATE_NAMES) {
     const stateJson = json.states[name]
-    if (!stateJson) continue
     const sheet = await readBlob(`sprites/${name}/sheet.png`)
     const rawSheet = await readBlob(`sprites/${name}/raw-sheet.png`)
     const staticBase = await readBlob(`sprites/${name}/static-base.png`)
     const rawStaticBase = await readBlob(`sprites/${name}/raw-static-base.png`)
-    store.updateState(name, {
+
+    states[name] = {
       sheet,
       rawSheet,
       staticBase,
       rawStaticBase,
-      transform: stateJson.transform,
-      poseNote: stateJson.poseNote,
-      notes: stateJson.notes,
-      loopMode: stateJson.loopMode,
-      loopDurationMs: stateJson.loopDurationMs,
-      status: stateJson.status,
-    })
+      transform: stateJson?.transform ?? { scale: 1, offsetX: 0, offsetY: 0 },
+      poseNote: stateJson?.poseNote ?? '',
+      notes: Array.isArray(stateJson?.notes) ? stateJson.notes : Array(16).fill(''),
+      loopMode: stateJson?.loopMode ?? DEFAULT_LOOP_MODES[name],
+      loopDurationMs: stateJson?.loopDurationMs ?? DEFAULT_LOOP_DURATIONS_MS[name],
+      status: stateJson?.status ?? (sheet ? 'animated' : 'pending'),
+    }
   }
 
   const customActions: CustomAction[] = []
@@ -157,11 +157,23 @@ export async function loadProjectFile(file: Blob | ArrayBuffer): Promise<void> {
       rawStaticBase: await readBlob(`sprites/custom-actions/${action.id}/raw-static-base.png`),
     })
   }
-  store.setCustomActions(customActions)
 
-  // Imports replace many large Blobs, so don't report success until IndexedDB
-  // has committed the complete project. The normal debounced save can be lost
-  // if the user refreshes immediately after the success message appears.
+  // Publish the fully decoded project in one state update so both React and
+  // the autosaver can only observe either the old project or the complete new
+  // project, never a mixture of the two.
+  useAppStore.setState((current) => ({
+    project: {
+      ...current.project,
+      metadata: json.metadata,
+      characterRef,
+      backdropLight,
+      backdropDark,
+      states,
+      customActions,
+    },
+  }))
+
+  // Don't report success until IndexedDB has committed the complete project.
   const current = useAppStore.getState()
   try {
     await saveStore({

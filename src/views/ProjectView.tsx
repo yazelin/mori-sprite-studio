@@ -161,8 +161,10 @@ function DemoLoaderBanner() {
   const [err, setErr] = useState<string | null>(null)
   const characterRef = useAppStore((s) => s.project.characterRef)
 
-  // Only show banner if user is on a blank-ish project (no character ref uploaded)
-  if (characterRef) return null
+  // Keep the loader visible until every sprite and the IndexedDB write finish.
+  // characterRef is loaded before the rest of the project, so hiding here made
+  // an in-progress import look complete and a refresh could interrupt it.
+  if (characterRef && !loading && !err) return null
 
   async function loadDemo() {
     setLoading(true); setErr(null)

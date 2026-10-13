@@ -3,17 +3,26 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 import { useAppStore } from '@/store'
-import { loadStore, debouncedSave, flushPendingSave } from '@/store/persist'
+import { loadStore, loadProviderSettings, saveProviderSettings, debouncedSave, flushPendingSave } from '@/store/persist'
 
 async function bootstrap() {
   const persisted = await loadStore()
-  if (persisted) {
+  const localProvider = loadProviderSettings()
+  if (persisted || localProvider) {
     useAppStore.setState((s) => ({
-      project: persisted.project ?? s.project,
-      prompts: persisted.prompts ?? s.prompts,
-      provider: persisted.provider ?? s.provider,
-      chroma: persisted.chroma ?? s.chroma,
+      project: persisted?.project ?? s.project,
+      prompts: persisted?.prompts ?? s.prompts,
+      provider: localProvider ?? persisted?.provider ?? s.provider,
+      chroma: persisted?.chroma ?? s.chroma,
     }))
+  }
+
+  if (!localProvider) {
+    try {
+      saveProviderSettings(persisted?.provider ?? useAppStore.getState().provider)
+    } catch (e) {
+      console.error('provider settings save failed', e)
+    }
   }
 
   useAppStore.subscribe((s) => {

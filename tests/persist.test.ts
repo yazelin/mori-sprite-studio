@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { saveStore, loadStore, clearStore } from '@/store/persist'
+import {
+  saveStore, loadStore, clearStore,
+  loadProviderSettings, saveProviderSettings,
+} from '@/store/persist'
 
 // NOTE: Blob round-trip via fake-indexeddb is incomplete (structured clone
 // drops Blob to {}). Real browser IDB handles Blob natively via structured
@@ -10,6 +13,7 @@ import { saveStore, loadStore, clearStore } from '@/store/persist'
 describe('persist (IndexedDB-backed)', () => {
   beforeEach(async () => {
     await clearStore()
+    localStorage.clear()
   })
 
   it('returns null when nothing stored', async () => {
@@ -49,5 +53,19 @@ describe('persist (IndexedDB-backed)', () => {
     } as any)
     await clearStore()
     expect(await loadStore()).toBeNull()
+  })
+
+  it('saves provider credentials synchronously in browser storage', () => {
+    const provider = {
+      active: 'codex-image' as const,
+      codexImage: { baseUrl: 'https://images.example', apiKey: 'cimg-test', quality: 'high' as const },
+      vertexGemini: { apiKey: '', model: 'vertex-model', imageSize: '1K' as const },
+      googleGemini: { apiKey: '', model: 'gemini-model', imageSize: '2K' as const, baseUrl: '' },
+    }
+
+    saveProviderSettings(provider)
+
+    expect(loadProviderSettings()?.codexImage.apiKey).toBe('cimg-test')
+    expect(loadProviderSettings()?.active).toBe('codex-image')
   })
 })

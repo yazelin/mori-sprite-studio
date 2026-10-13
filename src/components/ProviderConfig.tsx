@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { useAppStore } from '@/store'
+import { isLocalStorageAvailable, saveProviderSettings } from '@/store/persist'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import type { ProviderName } from '@/types/provider'
+import type { ProviderName, ProviderState } from '@/types/provider'
 
 const PROVIDER_LABELS: Record<ProviderName, string> = {
   'google-gemini':   'Google Gemini Direct (AI Studio)',
@@ -17,12 +19,33 @@ export function ProviderConfig() {
   const provider = useAppStore((s) => s.provider)
   const setActive = useAppStore((s) => s.setProviderActive)
   const update = useAppStore((s) => s.updateProviderConfig)
+  const [storageError, setStorageError] = useState(() => isLocalStorageAvailable()
+    ? ''
+    : '瀏覽器目前不允許本機保存設定；請在一般瀏覽視窗中開啟本站。')
+
+  function saveCurrentProvider() {
+    try {
+      saveProviderSettings(useAppStore.getState().provider)
+      setStorageError('')
+    } catch {
+      setStorageError('瀏覽器拒絕保存設定；重整後可能會遺失。')
+    }
+  }
+
+  function updateConfig<K extends Exclude<keyof ProviderState, 'active'>>(
+    name: K,
+    patch: Partial<ProviderState[K]>,
+  ) {
+    update(name, patch)
+    saveCurrentProvider()
+  }
 
   return (
     <div className="space-y-4 w-full max-w-xl">
+      {storageError && <p role="alert" className="text-xs text-amber-800">{storageError}</p>}
       <RadioGroup
         value={provider.active}
-        onValueChange={(v) => setActive(v as ProviderName)}
+        onValueChange={(v) => { setActive(v as ProviderName); saveCurrentProvider() }}
         className="space-y-2"
       >
         {ORDER.map((name) => (
@@ -49,7 +72,7 @@ export function ProviderConfig() {
                     <Field label="Base URL">
                       <Input
                         value={provider.codexImage.baseUrl}
-                        onChange={(e) => update('codexImage', { baseUrl: e.target.value })}
+                        onChange={(e) => updateConfig('codexImage', { baseUrl: e.target.value })}
                         placeholder="https://your-codex-image-service.vercel.app"
                       />
                     </Field>
@@ -57,21 +80,21 @@ export function ProviderConfig() {
                       <Input
                         type="password"
                         value={provider.codexImage.apiKey}
-                        onChange={(e) => update('codexImage', { apiKey: e.target.value })}
+                        onChange={(e) => updateConfig('codexImage', { apiKey: e.target.value })}
                         placeholder="cimg_..."
                       />
                     </Field>
                     <Field label="Quality">
                       <Select
                         value={provider.codexImage.quality}
-                        onValueChange={(v) => update('codexImage', { quality: v as 'low' | 'medium' | 'high' | 'auto' })}
+                        onValueChange={(v) => updateConfig('codexImage', { quality: v as 'low' | 'medium' | 'high' | 'auto' })}
                       >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="auto">auto(預設,讓 service 自動選)</SelectItem>
-                          <SelectItem value="low">low(快,省 quota)</SelectItem>
+                          <SelectItem value="auto">auto（預設，讓 service 自動選）</SelectItem>
+                          <SelectItem value="low">low（快，省 quota）</SelectItem>
                           <SelectItem value="medium">medium</SelectItem>
-                          <SelectItem value="high">high(慢,品質最好)</SelectItem>
+                          <SelectItem value="high">high（慢，品質最好）</SelectItem>
                         </SelectContent>
                       </Select>
                     </Field>
@@ -109,7 +132,7 @@ export function ProviderConfig() {
                       <Field label="Base URL(選填,GenAI 相容 gateway)">
                         <Input
                           value={provider.googleGemini.baseUrl ?? ''}
-                          onChange={(e) => update('googleGemini', { baseUrl: e.target.value })}
+                          onChange={(e) => updateConfig('googleGemini', { baseUrl: e.target.value })}
                           placeholder="https://generativelanguage.googleapis.com"
                         />
                       </Field>
@@ -118,7 +141,7 @@ export function ProviderConfig() {
                       <Input
                         type="password"
                         value={provider[name === 'vertex-gemini' ? 'vertexGemini' : 'googleGemini'].apiKey}
-                        onChange={(e) => update(
+                        onChange={(e) => updateConfig(
                           name === 'vertex-gemini' ? 'vertexGemini' : 'googleGemini',
                           { apiKey: e.target.value },
                         )}
@@ -128,7 +151,7 @@ export function ProviderConfig() {
                     <Field label="Model">
                       <Input
                         value={provider[name === 'vertex-gemini' ? 'vertexGemini' : 'googleGemini'].model}
-                        onChange={(e) => update(
+                        onChange={(e) => updateConfig(
                           name === 'vertex-gemini' ? 'vertexGemini' : 'googleGemini',
                           { model: e.target.value },
                         )}
@@ -137,7 +160,7 @@ export function ProviderConfig() {
                     <Field label="Image Size">
                       <Select
                         value={provider[name === 'vertex-gemini' ? 'vertexGemini' : 'googleGemini'].imageSize}
-                        onValueChange={(v) => update(
+                        onValueChange={(v) => updateConfig(
                           name === 'vertex-gemini' ? 'vertexGemini' : 'googleGemini',
                           { imageSize: v as '1K' | '2K' | '4K' },
                         )}

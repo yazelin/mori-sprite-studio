@@ -4,7 +4,9 @@ import { STATE_NAMES, type SpriteState, type StateName } from '@/types/project'
 import {
   DEFAULT_LOOP_MODES, DEFAULT_LOOP_DURATIONS_MS,
   DEFAULT_STATE_SEMANTICS, DEFAULT_TEMPLATES, DEFAULT_CHROMA,
+  DEFAULT_PROVIDER_STATE,
 } from '@/defaults'
+import type { ProviderState } from '@/types/provider'
 import type { TemplateKey } from '@/types/prompts'
 
 const ALL_TEMPLATE_KEYS: readonly TemplateKey[] = ['B1', 'B2', 'C', 'D', 'W', 'Dr'] as const
@@ -15,8 +17,80 @@ const ALL_TEMPLATE_KEYS: readonly TemplateKey[] = ['B1', 'B2', 'C', 'D', 'W', 'D
 // for our 6 1024×1024 PNG sheets + 6 statics + 1 character ref.
 const STORAGE_KEY = 'mori-sprite-studio.v2'
 const LEGACY_LOCALSTORAGE_KEY = 'mori-sprite-studio.v1'
+const PROVIDER_LOCALSTORAGE_KEY = 'mori-sprite-studio.provider.v1'
 
 type PersistedShape = Pick<AppStore, 'project' | 'prompts' | 'provider' | 'chroma'>
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' ? value as Record<string, unknown> : {}
+}
+
+/** Read the small provider settings synchronously as a fallback to IDB. */
+export function loadProviderSettings(): ProviderState | null {
+  try {
+    const raw = window.localStorage.getItem(PROVIDER_LOCALSTORAGE_KEY)
+    if (!raw) return null
+    const parsed = asRecord(JSON.parse(raw))
+    const codexImage = asRecord(parsed.codexImage)
+    const vertexGemini = asRecord(parsed.vertexGemini)
+    const googleGemini = asRecord(parsed.googleGemini)
+    const validQuality = (value: unknown): value is ProviderState['codexImage']['quality'] =>
+      value === 'low' || value === 'medium' || value === 'high' || value === 'auto'
+    const validImageSize = (value: unknown): value is ProviderState['googleGemini']['imageSize'] =>
+      value === '1K' || value === '2K' || value === '4K'
+
+    return {
+      active: parsed.active === 'codex-image' || parsed.active === 'vertex-gemini' || parsed.active === 'google-gemini'
+        ? parsed.active
+        : DEFAULT_PROVIDER_STATE.active,
+      codexImage: {
+        baseUrl: typeof codexImage.baseUrl === 'string' ? codexImage.baseUrl : DEFAULT_PROVIDER_STATE.codexImage.baseUrl,
+        apiKey: typeof codexImage.apiKey === 'string' ? codexImage.apiKey : '',
+        quality: validQuality(codexImage.quality) ? codexImage.quality : DEFAULT_PROVIDER_STATE.codexImage.quality,
+      },
+      vertexGemini: {
+        apiKey: typeof vertexGemini.apiKey === 'string' ? vertexGemini.apiKey : '',
+        model: typeof vertexGemini.model === 'string' ? vertexGemini.model : DEFAULT_PROVIDER_STATE.vertexGemini.model,
+        imageSize: validImageSize(vertexGemini.imageSize) ? vertexGemini.imageSize : DEFAULT_PROVIDER_STATE.vertexGemini.imageSize,
+      },
+      googleGemini: {
+        apiKey: typeof googleGemini.apiKey === 'string' ? googleGemini.apiKey : '',
+        model: typeof googleGemini.model === 'string' ? googleGemini.model : DEFAULT_PROVIDER_STATE.googleGemini.model,
+        imageSize: validImageSize(googleGemini.imageSize) ? googleGemini.imageSize : DEFAULT_PROVIDER_STATE.googleGemini.imageSize,
+        baseUrl: typeof googleGemini.baseUrl === 'string' ? googleGemini.baseUrl : DEFAULT_PROVIDER_STATE.googleGemini.baseUrl,
+      },
+    }
+  } catch (e) {
+    console.error('provider settings load failed', e)
+    return null
+  }
+}
+
+/** Save provider settings synchronously so a quick refresh cannot beat IDB debounce. */
+export function saveProviderSettings(provider: ProviderState): void {
+  window.localStorage.setItem(PROVIDER_LOCALSTORAGE_KEY, JSON.stringify(provider))
+}
+
+export function isLocalStorageAvailable(): boolean {
+  try {
+    const key = `mori-sprite-studio-probe-${Date.now()}-${Math.random()}`
+    window.localStorage.setItem(key, '1')
+    window.localStorage.removeItem(key)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function saveLocalSettings(key: string, value: unknown): boolean {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value))
+    return true
+  } catch (e) {
+    console.error('local settings save failed', e)
+    return false
+  }
+}
 
 export async function saveStore(store: PersistedShape): Promise<void> {
   await set(STORAGE_KEY, store)

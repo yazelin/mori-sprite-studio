@@ -12,6 +12,7 @@ import {
   loadMoriReferenceImage,
 } from '@/lib/moriCreationProfile'
 import { useAppStore } from '@/store'
+import { isLocalStorageAvailable, saveLocalSettings } from '@/store/persist'
 import { STATE_NAMES, type CellTransform, type StateName } from '@/types/project'
 
 type GeneratedMedia = { type: 'image' | 'audio'; src: string; filename: string }
@@ -51,6 +52,7 @@ const CONNECTION_SETTINGS_STORAGE_KEY = 'mori-live-demo-gemini-web'
 const CHAT_HISTORY_STORAGE_KEY = 'mori-live-demo-chat-history-v1'
 const LARCH_TTS_DEFAULT_BASE_URL = 'https://ching-tech.ddns.net/larch-tts/'
 const TTS_SETTINGS_STORAGE_KEY = 'mori-live-demo-larch-tts'
+const SETTINGS_STORAGE_WARNING = '瀏覽器目前不允許本機保存設定；重整後可能會遺失。'
 const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
   baseUrl: DEFAULT_GEMINI_WEB_URL,
   apiKey: '',
@@ -441,6 +443,8 @@ export function LiveDemoView() {
   const [voiceError, setVoiceError] = useState('')
   const [connection, setConnection] = useState<ConnectionSettings>(loadConnectionSettings)
   const [ttsSettings, setTtsSettings] = useState<TtsSettings>(loadTtsSettings)
+  const [connectionStorageError, setConnectionStorageError] = useState(() => isLocalStorageAvailable() ? '' : SETTINGS_STORAGE_WARNING)
+  const [ttsStorageError, setTtsStorageError] = useState(() => isLocalStorageAvailable() ? '' : SETTINGS_STORAGE_WARNING)
   const [connectionSettingsOpen, setConnectionSettingsOpen] = useState(() => !connection.apiKey.trim())
   const [showApiKey, setShowApiKey] = useState(false)
   const [showTtsApiKey, setShowTtsApiKey] = useState(false)
@@ -555,21 +559,23 @@ export function LiveDemoView() {
     })
   }, [messages, messagesReady])
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(CONNECTION_SETTINGS_STORAGE_KEY, JSON.stringify(connection))
-    } catch {
-      // Keep the form usable when browser storage is unavailable.
+  function updateConnectionSettings(next: ConnectionSettings) {
+    setConnection(next)
+    if (saveLocalSettings(CONNECTION_SETTINGS_STORAGE_KEY, next)) {
+      setConnectionStorageError('')
+    } else {
+      setConnectionStorageError(SETTINGS_STORAGE_WARNING)
     }
-  }, [connection])
+  }
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(TTS_SETTINGS_STORAGE_KEY, JSON.stringify(ttsSettings))
-    } catch {
-      // Keep settings editable when browser storage is unavailable.
+  function updateTtsSettings(next: TtsSettings) {
+    setTtsSettings(next)
+    if (saveLocalSettings(TTS_SETTINGS_STORAGE_KEY, next)) {
+      setTtsStorageError('')
+    } else {
+      setTtsStorageError(SETTINGS_STORAGE_WARNING)
     }
-  }, [ttsSettings])
+  }
 
   useEffect(() => () => {
     if (activityTimerRef.current !== undefined) window.clearTimeout(activityTimerRef.current)
@@ -1034,7 +1040,7 @@ export function LiveDemoView() {
               <div className="min-w-0 flex-1">
                 <h3 className="text-xs font-semibold text-stone-800">Gemini-Web 連線設定</h3>
                 <p className={`mt-0.5 text-[11px] ${connection.apiKey.trim() ? 'text-emerald-700' : 'text-amber-700'}`}>
-                  {connection.apiKey.trim() ? 'API Key 已儲存；可使用聊天、生圖與音樂' : '填入測試用 API Key 後即可使用聊天、生圖與音樂'}
+                  {connection.apiKey.trim() ? 'API Key 已設定；可使用聊天、生圖與音樂' : '填入測試用 API Key 後即可使用聊天、生圖與音樂'}
                 </p>
               </div>
               <button
@@ -1049,6 +1055,7 @@ export function LiveDemoView() {
 
             {connectionSettingsOpen && (
               <div className="pointer-events-none max-h-[38vh] space-y-3 overflow-y-auto px-4 pb-4">
+                {connectionStorageError && <p role="alert" className="pointer-events-auto text-[11px] text-rose-700">{connectionStorageError}</p>}
                 <label className="pointer-events-auto block space-y-1.5">
                   <span className="text-[11px] font-medium text-stone-700">Gemini-Web Base URL</span>
                   <input
@@ -1056,7 +1063,7 @@ export function LiveDemoView() {
                     value={connection.baseUrl}
                     onChange={(event) => {
                       const baseUrl = event.currentTarget.value
-                      setConnection((current) => ({ ...current, baseUrl }))
+                      updateConnectionSettings({ ...connection, baseUrl })
                     }}
                     placeholder={DEFAULT_GEMINI_WEB_URL}
                     autoComplete="url"
@@ -1073,7 +1080,7 @@ export function LiveDemoView() {
                       value={connection.apiKey}
                       onChange={(event) => {
                         const apiKey = event.currentTarget.value
-                        setConnection((current) => ({ ...current, apiKey }))
+                        updateConnectionSettings({ ...connection, apiKey })
                       }}
                       placeholder="貼上 gemini-web 管理頁建立的測試 key"
                       autoComplete="off"
@@ -1098,7 +1105,7 @@ export function LiveDemoView() {
                   <button
                     type="button"
                     onClick={() => {
-                      setConnection(DEFAULT_CONNECTION_SETTINGS)
+                      updateConnectionSettings(DEFAULT_CONNECTION_SETTINGS)
                       setShowApiKey(false)
                     }}
                     className="pointer-events-auto shrink-0 rounded-md px-2 py-1 text-[10px] font-medium text-stone-500 transition-colors hover:bg-white hover:text-stone-800"
@@ -1111,6 +1118,7 @@ export function LiveDemoView() {
                   <div>
                     <h3 className="text-[11px] font-semibold text-stone-800">Mori 語音回覆｜Larch-TTS</h3>
                     <p className="mt-1 text-[10px] leading-relaxed text-stone-500">選一種女聲後按「試聽」比較；未填 API Key 時播放預錄試聽檔，填入後會即時試聽。回覆泡泡的播放鍵使用目前選擇並即時配音；設定留在這個瀏覽器，TTS 請求會經 Studio 轉送。回覆配音未設定 URL 或 API Key 時，Mori 會播放 error 動作。</p>
+                    {ttsStorageError && <p role="alert" className="mt-1 text-[11px] text-rose-700">{ttsStorageError}</p>}
                   </div>
 
                   <label className="block space-y-1.5">
@@ -1120,7 +1128,7 @@ export function LiveDemoView() {
                       value={ttsSettings.baseUrl}
                       onChange={(event) => {
                         const baseUrl = event.currentTarget.value
-                        setTtsSettings((current) => ({ ...current, baseUrl }))
+                        updateTtsSettings({ ...ttsSettings, baseUrl })
                       }}
                       placeholder={LARCH_TTS_DEFAULT_BASE_URL}
                       autoComplete="url"
@@ -1137,7 +1145,7 @@ export function LiveDemoView() {
                         value={ttsSettings.apiKey}
                         onChange={(event) => {
                           const apiKey = event.currentTarget.value
-                          setTtsSettings((current) => ({ ...current, apiKey }))
+                          updateTtsSettings({ ...ttsSettings, apiKey })
                         }}
                         placeholder="貼上 Larch-TTS API Key"
                         autoComplete="off"
@@ -1163,7 +1171,7 @@ export function LiveDemoView() {
                         onChange={(event) => {
                           const voice = event.currentTarget.value
                           stopTtsPlayback()
-                          setTtsSettings((current) => ({ ...current, voice }))
+                          updateTtsSettings({ ...ttsSettings, voice })
                         }}
                         disabled={Boolean(loadingTtsKey)}
                         className="h-9 w-full rounded-lg border border-stone-200 bg-white px-2 text-xs text-stone-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
@@ -1193,7 +1201,7 @@ export function LiveDemoView() {
                       type="button"
                       onClick={() => {
                         stopTtsPlayback()
-                        setTtsSettings(DEFAULT_TTS_SETTINGS)
+                        updateTtsSettings(DEFAULT_TTS_SETTINGS)
                         setShowTtsApiKey(false)
                         setVoiceError('')
                       }}

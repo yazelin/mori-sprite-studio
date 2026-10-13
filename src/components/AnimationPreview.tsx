@@ -46,6 +46,7 @@ export function AnimationPreview({
     let cancelled = false
     let bitmap: ImageBitmap | null = null
     let rafId: number | null = null
+    let drawErrorReported = false
 
     createImageBitmap(sheet).then((bmp) => {
       if (cancelled) { bmp.close?.(); return }
@@ -53,61 +54,76 @@ export function AnimationPreview({
     })
 
     const start = performance.now()
-    const frameDuration = Math.max(1, durationMs / 16)
+    const loopDurationMs = Number.isFinite(durationMs) && durationMs > 0 ? durationMs : 3000
+    const frameDuration = loopDurationMs / 16
 
     function tick(now: number) {
       if (cancelled) return
-      const canvas = canvasRef.current
-      if (canvas && bitmap) {
-        const ctx = canvas.getContext('2d')
-        if (ctx) {
-          const t = transformRef.current
-          const elapsed = paused ? 0 : (now - start) % durationMs
-          const frameIdx = Math.floor(elapsed / frameDuration) % 16
-          const col = frameIdx % 4
-          const row = Math.floor(frameIdx / 4)
-          const cellW = bitmap.width / 4
-          const cellH = bitmap.height / 4
-          ctx.clearRect(0, 0, canvas.width, canvas.height)
-          ctx.imageSmoothingEnabled = true
-          ctx.imageSmoothingQuality = 'high'
+      try {
+        const canvas = canvasRef.current
+        if (canvas && bitmap) {
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            const t = transformRef.current
+            const elapsed = paused ? 0 : (now - start) % loopDurationMs
+            const frameIdx = Math.floor(elapsed / frameDuration) % 16
+            const col = frameIdx % 4
+            const row = Math.floor(frameIdx / 4)
+            const cellW = bitmap.width / 4
+            const cellH = bitmap.height / 4
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+            ctx.imageSmoothingEnabled = true
+            ctx.imageSmoothingQuality = 'high'
 
-          // Apply transform: scale around canvas centre + offset
-          // offsetX/Y are in source-pixel units (cellW=256), scale to canvas dest
-          const offsetScaleFactor = canvas.width / cellW
-          ctx.save()
-          ctx.translate(
-            canvas.width / 2 + t.offsetX * offsetScaleFactor,
-            canvas.height / 2 + t.offsetY * offsetScaleFactor,
-          )
-          ctx.scale(t.scale, t.scale)
-          ctx.drawImage(
-            bitmap,
-            col * cellW, row * cellH, cellW, cellH,
-            -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height,
-          )
-          ctx.restore()
-
-          // Reference guides overlay
-          if (showGuidesRef.current) {
+            // Apply transform: scale around canvas centre + offset
+            // offsetX/Y are in source-pixel units (cellW=256), scale to canvas dest
+            const offsetScaleFactor = canvas.width / cellW
             ctx.save()
-            ctx.strokeStyle = 'rgba(16, 185, 129, 0.45)' // emerald
-            ctx.setLineDash([4, 3])
-            ctx.lineWidth = 1
-            const w = canvas.width, h = canvas.height
-            // Vertical center
-            ctx.beginPath(); ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h); ctx.stroke()
-            // Horizontal center
-            ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke()
-            // Upper third (~ "eye line" target)
-            ctx.beginPath(); ctx.moveTo(0, h / 3); ctx.lineTo(w, h / 3); ctx.stroke()
-            // Lower third (~ "chin / body bottom" target)
-            ctx.beginPath(); ctx.moveTo(0, h * 2 / 3); ctx.lineTo(w, h * 2 / 3); ctx.stroke()
-            ctx.restore()
+            try {
+              ctx.translate(
+                canvas.width / 2 + t.offsetX * offsetScaleFactor,
+                canvas.height / 2 + t.offsetY * offsetScaleFactor,
+              )
+              ctx.scale(t.scale, t.scale)
+              ctx.drawImage(
+                bitmap,
+                col * cellW, row * cellH, cellW, cellH,
+                -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height,
+              )
+            } finally {
+              ctx.restore()
+            }
+
+            // Reference guides overlay
+            if (showGuidesRef.current) {
+              ctx.save()
+              try {
+                ctx.strokeStyle = 'rgba(16, 185, 129, 0.45)' // emerald
+                ctx.setLineDash([4, 3])
+                ctx.lineWidth = 1
+                const w = canvas.width, h = canvas.height
+                // Vertical center
+                ctx.beginPath(); ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h); ctx.stroke()
+                // Horizontal center
+                ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke()
+                // Upper third (~ "eye line" target)
+                ctx.beginPath(); ctx.moveTo(0, h / 3); ctx.lineTo(w, h / 3); ctx.stroke()
+                // Lower third (~ "chin / body bottom" target)
+                ctx.beginPath(); ctx.moveTo(0, h * 2 / 3); ctx.lineTo(w, h * 2 / 3); ctx.stroke()
+              } finally {
+                ctx.restore()
+              }
+            }
           }
         }
+      } catch (error) {
+        if (!drawErrorReported) {
+          console.warn('AnimationPreview frame draw failed; retrying.', error)
+          drawErrorReported = true
+        }
+      } finally {
+        if (!cancelled) rafId = requestAnimationFrame(tick)
       }
-      rafId = requestAnimationFrame(tick)
     }
     rafId = requestAnimationFrame(tick)
 

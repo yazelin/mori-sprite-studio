@@ -19,11 +19,7 @@ const LEGACY_LOCALSTORAGE_KEY = 'mori-sprite-studio.v1'
 type PersistedShape = Pick<AppStore, 'project' | 'prompts' | 'provider' | 'chroma'>
 
 export async function saveStore(store: PersistedShape): Promise<void> {
-  try {
-    await set(STORAGE_KEY, store)
-  } catch (e) {
-    console.error('persist save failed', e)
-  }
+  await set(STORAGE_KEY, store)
 }
 
 export async function loadStore(): Promise<Partial<PersistedShape> | null> {
@@ -179,5 +175,7 @@ export function flushPendingSave(): void {
   saveTimer = null
   const store = pendingStore
   pendingStore = null
-  if (store) void saveStore(store)
+  if (store) {
+    void saveStore(store).catch((e) => console.error('persist save failed', e))
+  }
 }

@@ -1,6 +1,7 @@
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import { useAppStore } from '@/store'
+import { saveStore } from '@/store/persist'
 import type { CustomAction, Project, StateName, SpriteState } from '@/types/project'
 import { STATE_NAMES } from '@/types/project'
 
@@ -157,6 +158,22 @@ export async function loadProjectFile(file: Blob | ArrayBuffer): Promise<void> {
     })
   }
   store.setCustomActions(customActions)
+
+  // Imports replace many large Blobs, so don't report success until IndexedDB
+  // has committed the complete project. The normal debounced save can be lost
+  // if the user refreshes immediately after the success message appears.
+  const current = useAppStore.getState()
+  try {
+    await saveStore({
+      project: current.project,
+      prompts: current.prompts,
+      provider: current.provider,
+      chroma: current.chroma,
+    })
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e)
+    throw new Error(`專案已載入，但寫入瀏覽器儲存空間失敗：${detail}`)
+  }
 }
 
 /**

@@ -161,6 +161,16 @@ function DemoLoaderBanner() {
   const [err, setErr] = useState<string | null>(null)
   const characterRef = useAppStore((s) => s.project.characterRef)
 
+  useEffect(() => {
+    if (!loading) return
+    const confirmLeaveDuringImport = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', confirmLeaveDuringImport)
+    return () => window.removeEventListener('beforeunload', confirmLeaveDuringImport)
+  }, [loading])
+
   // Keep the loader visible until every sprite and the IndexedDB write finish.
   // characterRef is loaded before the rest of the project, so hiding here made
   // an in-progress import look complete and a refresh could interrupt it.

@@ -51,6 +51,28 @@ function initialPrompts(): PromptsState {
 
 export type View = { kind: 'project' } | { kind: 'state'; name: StateName } | { kind: 'custom-actions' } | { kind: 'backdrop' } | { kind: 'preview' } | { kind: 'export' } | { kind: 'live-demo' }
 
+const LAST_VIEW_STORAGE_KEY = 'mori-sprite-studio-last-view'
+
+function loadInitialView(): View {
+  try {
+    return typeof window !== 'undefined' && window.sessionStorage.getItem(LAST_VIEW_STORAGE_KEY) === 'live-demo'
+      ? { kind: 'live-demo' }
+      : { kind: 'project' }
+  } catch {
+    return { kind: 'project' }
+  }
+}
+
+function rememberView(view: View) {
+  try {
+    if (typeof window === 'undefined') return
+    if (view.kind === 'live-demo') window.sessionStorage.setItem(LAST_VIEW_STORAGE_KEY, 'live-demo')
+    else window.sessionStorage.removeItem(LAST_VIEW_STORAGE_KEY)
+  } catch {
+    // Keep navigation usable when session storage is unavailable.
+  }
+}
+
 interface UIState {
   view: View
   selectedCell: number | null
@@ -90,9 +112,12 @@ export const useAppStore = create<AppStore>((set) => ({
   prompts: initialPrompts(),
   provider: { ...DEFAULT_PROVIDER_STATE },
   chroma: { ...DEFAULT_CHROMA },
-  ui: { view: { kind: 'project' }, selectedCell: null },
+  ui: { view: loadInitialView(), selectedCell: null },
 
-  setView: (view) => set((s) => ({ ui: { ...s.ui, view, selectedCell: null } })),
+  setView: (view) => {
+    rememberView(view)
+    set((s) => ({ ui: { ...s.ui, view, selectedCell: null } }))
+  },
   selectCell: (cell) => set((s) => ({ ui: { ...s.ui, selectedCell: cell } })),
 
   setCharacterRef: (blob) =>

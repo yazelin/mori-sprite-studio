@@ -47,7 +47,7 @@ describe('exportPack', () => {
 
     const manifestStr = await zip.file('manifest.json')!.async('string')
     const manifest = JSON.parse(manifestStr)
-    expect(manifest.schema_version).toBe('1.0')
+    expect(manifest.schema_version).toBe('1.1')
     expect(manifest.package_name).toBe('mori')
   })
 

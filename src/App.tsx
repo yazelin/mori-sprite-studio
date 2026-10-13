@@ -8,6 +8,7 @@ import { BackdropView } from '@/views/BackdropView'
 import { PreviewView } from '@/views/PreviewView'
 import { ExportView } from '@/views/ExportView'
 import { LiveDemoView } from '@/views/LiveDemoView'
+import { CustomActionsView } from '@/views/CustomActionsView'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -56,6 +57,7 @@ export default function App() {
         <div className={isLiveDemo ? 'min-h-0 flex-1' : 'mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-10'}>
           {view.kind === 'project' && <ProjectView />}
           {view.kind === 'state' && <StateView name={view.name} />}
+          {view.kind === 'custom-actions' && <CustomActionsView />}
           {view.kind === 'backdrop' && <BackdropView />}
           {view.kind === 'preview' && <PreviewView />}
           {view.kind === 'export' && <ExportView />}

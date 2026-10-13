@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Home, Download, Leaf, ImagePlus, Eye, MessageCircle, MonitorDown, ExternalLink, Coffee } from 'lucide-react'
+import { Home, Download, Leaf, ImagePlus, Eye, MessageCircle, MonitorDown, ExternalLink, Coffee, Sparkles } from 'lucide-react'
 import { useAppStore } from '@/store'
 import {
   REQUIRED_STATE_NAMES, OPTIONAL_STATE_NAMES,
@@ -28,6 +28,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const view = useAppStore((s) => s.ui.view)
   const setView = useAppStore((s) => s.setView)
   const states = useAppStore((s) => s.project.states)
+  const customActionCount = useAppStore((s) => s.project.customActions?.length ?? 0)
   const characterRef = useAppStore((s) => s.project.characterRef)
   const [refUrl, setRefUrl] = useState<string | null>(null)
 
@@ -86,6 +87,13 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             />
           )
         })}
+        <SectionLabel>Custom actions</SectionLabel>
+        <Item
+          active={view.kind === 'custom-actions'}
+          onClick={() => { setView({ kind: 'custom-actions' }); onNavigate?.() }}
+          icon={<Sparkles size={16} strokeWidth={1.75} />}
+          label={`自訂動作${customActionCount ? ` (${customActionCount})` : ''}`}
+        />
         <SectionLabel>Extras</SectionLabel>
         <Item active={view.kind === 'backdrop'} onClick={() => { setView({ kind: 'backdrop' }); onNavigate?.() }} icon={<ImagePlus size={16} strokeWidth={1.75} />} label="角色背板" />
         <Item active={view.kind === 'preview'} onClick={() => { setView({ kind: 'preview' }); onNavigate?.() }} icon={<Eye size={16} strokeWidth={1.75} />} label="桌面預覽" />

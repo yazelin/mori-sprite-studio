@@ -18,7 +18,7 @@ AI 驅動。純瀏覽器。透明背景。多種匯出格式。
 
 ## 這個工具做什麼
 
-給它**一張你的角色 ref 圖**，它就會幫你產生 [mori-desktop](https://github.com/yazelin/mori-desktop) 使用的完整 sprite 動畫包 — **6 個必要 + 2 個可選 state**，每個都是 1024×1024 的 4×4 sprite sheet，可在 mori-desktop 浮動視窗播放。
+給它**一張你的角色 ref 圖**，它就會幫你產生 [mori-desktop](https://github.com/yazelin/mori-desktop) 使用的 sprite 動畫包 — **6 個必要 state、2 個可選 state，以及任意自訂動作**，每個都是 1024×1024 的 4×4 sprite sheet。
 
 | 必要(6) | 可選(2) |
 |---|---|
@@ -55,6 +55,10 @@ AI 驅動。純瀏覽器。透明背景。多種匯出格式。
        ▼
 [手調過的 gait cycle]
        │
+       │ (可新增自訂動作)
+       ▼
+[base 姿勢 → 自訂 4×4 action sheet]
+       │
        │ (bake transforms + zip)
        ▼
 [mori.moripack.zip]        →    mori-desktop
@@ -70,7 +74,8 @@ AI 驅動。純瀏覽器。透明背景。多種匯出格式。
 4. **可選的 walking + dragging** — 走獨立 W/Dr pipeline(不 pre-tile,因為步行循環需要每格都不同 pose)。「反向順序」+「換位模式」buttons 讓你手動排序到走路看起來對為止。
 5. **細調** — 每格獨立重生、loop 設定、跨 state normalize 尺寸、scale / offset sliders、原始 sheet 上傳 / 下載 Photoshop round-trip。
 6. **角色背板（可選）** — 上傳 Light + Dark 兩張背板。用**桌面預覽**分頁查看所有 state 疊在背板上的樣子，可切換 shape / theme。
-7. **匯出** `.moripack.zip` 給 mori-desktop,或每 state 單獨匯出 APNG / GIF / WebM 給其他平台。
+7. **建立自訂動作（選用）** — 填寫動作描述，先生成 base 姿勢，再生成 4×4 動畫；可選播放一次或循環。
+8. **匯出** `.moripack.zip` 給 Player 或 mori-desktop,或每 state 單獨匯出 APNG / GIF / WebM 給其他平台。
 
 ![State 編輯器](docs/assets/screen-02-state.png)
 
@@ -91,6 +96,11 @@ AI 驅動。純瀏覽器。透明背景。多種匯出格式。
 - Template 內含明確 gait/swing cycle 結構(16-frame breakdown:cell 1 = 左腳前、cell 7 = 右腳前 等等)
 - 強 identity lock:「character design / hair / clothes / art style 16 cells 都鎖住,**只**讓腿、手、 body tilt 變化」
 - Walking sprite 設計面**右** — mori-desktop engine 用 `scaleX(-1)` 鏡像向左
+
+**自訂動作**
+- 可建立揮手、跳舞、打哈欠等額外動作；每個動作有獨立 base、動作描述和 4×4 動畫。
+- 播放方式可選 one-shot 或 loop，並可調整整段動畫時間。
+- 完成的動作會寫入 `.moripack` 的 `custom_actions` 清單；Mori Pet Player 可設定手動、點擊、閒置或隨機觸發。
 
 **手動 cell 排序(生成後微調)**
 - **反向順序** — 按一下即可反轉 16 cells（修正「動畫看起來在後退」）
@@ -123,7 +133,7 @@ AI 驅動。純瀏覽器。透明背景。多種匯出格式。
 - Loop preview 上有參考線疊圖對齊用
 
 **匯出**
-- `.moripack.zip` — mori-desktop 用的角色包(manifest + 6 必要 sheet + 0/1/2 可選 walking/dragging + 2 背板)
+- `.moripack.zip` — manifest 1.1 角色包，包含 6 必要 sheet、0/1/2 個 walking/dragging、完成的自訂動作與 2 張背板
 - 每 state:APNG(透明,LINE/Discord)、GIF(相容性最廣,1-bit alpha)、WebM(VP9 + alpha,OBS overlay)
 - 原始 sheet 下載(1024×1024 PNG)外部編輯用
 - `.moriproject.zip` 存讀檔 — 完整作者狀態（sheets + raw + 設定），之後可載回繼續編輯，或分享給人

@@ -1,4 +1,4 @@
-import type { Project } from '@/types/project'
+import { MAX_CUSTOM_ACTIONS, type Project } from '@/types/project'
 import { STATE_NAMES, REQUIRED_STATE_NAMES, isOptionalState } from '@/types/project'
 
 export interface ValidationResult {
@@ -47,6 +47,27 @@ export function validateProject(p: Project): ValidationResult {
     const dur = p.states[n].loopDurationMs
     if (dur < 100 || dur > 30000) {
       warnings.push(`${n} loopDurationMs ${dur} 超出 100-30000 範圍`)
+    }
+  }
+
+  const customActions = p.customActions ?? []
+  if (customActions.length > MAX_CUSTOM_ACTIONS) {
+    blocking.push(`自訂動作最多 ${MAX_CUSTOM_ACTIONS} 個`)
+  }
+  const actionIds = new Set<string>()
+  for (const action of customActions) {
+    if (!/^[a-z0-9][a-z0-9_-]{0,47}$/.test(action.id)) {
+      blocking.push(`自訂動作「${action.name || action.id}」的識別碼格式不正確`)
+    }
+    if (actionIds.has(action.id)) blocking.push(`自訂動作識別碼重複：${action.id}`)
+    actionIds.add(action.id)
+    if (action.sheet && action.status === 'animated' && !action.name.trim()) {
+      blocking.push(`已完成的自訂動作 ${action.id} 需要名稱`)
+    } else if (action.name.trim() && (!action.sheet || action.status !== 'animated')) {
+      warnings.push(`自訂動作「${action.name}」尚未完成動畫，不會匯出到 moripack`)
+    }
+    if (action.loopDurationMs < 250 || action.loopDurationMs > 60000) {
+      blocking.push(`自訂動作「${action.name || action.id}」播放時間須在 250-60000 毫秒之間`)
     }
   }
 

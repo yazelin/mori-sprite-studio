@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Project, SpriteState, StateName } from '@/types/project'
+import type { CustomAction, Project, SpriteState, StateName } from '@/types/project'
 import type { ProviderState } from '@/types/provider'
 import type { PromptsState } from '@/types/prompts'
 import type { ChromaState } from '@/types/chroma'
@@ -35,6 +35,7 @@ function initialProject(): Project {
   return {
     characterRef: null,
     states,
+    customActions: [],
     metadata: { ...DEFAULT_METADATA, tags: [...DEFAULT_METADATA.tags] },
     backdropDark: null,
     backdropLight: null,
@@ -48,7 +49,7 @@ function initialPrompts(): PromptsState {
   }
 }
 
-export type View = { kind: 'project' } | { kind: 'state'; name: StateName } | { kind: 'backdrop' } | { kind: 'preview' } | { kind: 'export' } | { kind: 'live-demo' }
+export type View = { kind: 'project' } | { kind: 'state'; name: StateName } | { kind: 'custom-actions' } | { kind: 'backdrop' } | { kind: 'preview' } | { kind: 'export' } | { kind: 'live-demo' }
 
 interface UIState {
   view: View
@@ -68,6 +69,10 @@ export interface AppStore {
   setBackdrop: (which: 'dark' | 'light', blob: Blob | null) => void
   updateMetadata: (patch: Partial<Project['metadata']>) => void
   updateState: (name: StateName, patch: Partial<SpriteState>) => void
+  addCustomAction: (action: CustomAction) => void
+  updateCustomAction: (id: string, patch: Partial<CustomAction>) => void
+  removeCustomAction: (id: string) => void
+  setCustomActions: (actions: CustomAction[]) => void
   setStateNote: (name: StateName, index: number, note: string) => void
   setStateSemantics: (name: StateName, value: string) => void
   setTemplate: (key: keyof PromptsState['templates'], value: string) => void
@@ -111,6 +116,30 @@ export const useAppStore = create<AppStore>((set) => ({
         states: { ...s.project.states, [name]: { ...s.project.states[name], ...patch } },
       },
     })),
+
+  addCustomAction: (action) =>
+    set((s) => ({ project: { ...s.project, customActions: [...(s.project.customActions ?? []), action] } })),
+
+  updateCustomAction: (id, patch) =>
+    set((s) => ({
+      project: {
+        ...s.project,
+        customActions: (s.project.customActions ?? []).map((action) =>
+          action.id === id ? { ...action, ...patch } : action,
+        ),
+      },
+    })),
+
+  removeCustomAction: (id) =>
+    set((s) => ({
+      project: {
+        ...s.project,
+        customActions: (s.project.customActions ?? []).filter((action) => action.id !== id),
+      },
+    })),
+
+  setCustomActions: (actions) =>
+    set((s) => ({ project: { ...s.project, customActions: actions } })),
 
   setStateNote: (name, index, note) =>
     set((s) => {

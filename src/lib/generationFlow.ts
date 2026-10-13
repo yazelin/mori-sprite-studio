@@ -352,4 +352,112 @@ export async function runGenerationWithPrompt(
   }
 }
 
+/** Generate a neutral base pose for a user-authored action. */
+export async function runCustomActionBase(actionId: string): Promise<void> {
+  const store = useAppStore.getState()
+  const project = store.project
+  const action = (project.customActions ?? []).find((item) => item.id === actionId)
+  if (!action) throw new Error('找不到這個自訂動作')
+  if (!project.characterRef) throw new Error('請先在專案設定上傳角色參考圖')
+  if (!action.name.trim() || !action.description.trim()) throw new Error('請先填寫動作名稱和描述')
+
+  const vars = {
+    state_name: action.name.trim() || 'custom action',
+    state_semantics: action.description.trim() || 'A clear neutral pose that can transition into the requested action.',
+    pose_note: action.poseNote.trim() || 'Show the full character centered, with a clear silhouette.',
+  }
+  const prompt = appendChromaSuffix(render(store.prompts.templates.B2, vars), store.chroma)
+  const chromaHex = chromaInfo(store.chroma).hex
+  const references: Blob[] = [project.characterRef]
+  for (const name of STATE_NAMES) {
+    const staticBase = project.states[name]?.staticBase
+    if (staticBase) references.push(await fillBgWithChroma(staticBase, chromaHex))
+  }
+
+  const provider = buildProvider(store.provider)
+  const raw = await provider.generateImage({ prompt, references, outputSize: '1024x1024' })
+  const cleaned = await applyChroma(raw)
+  const rawStaticBase = await cropToSize(raw, 256, 256)
+  const staticNoErode = await cropToSize(cleaned, 256, 256)
+  const erodePx = store.chroma.edgeErosionPx
+  const staticBase = erodePx > 0 ? await erodeSingleCellEdges(staticNoErode, erodePx) : staticNoErode
+  const sheet = await buildPlaceholderSheet(staticBase)
+
+  useAppStore.getState().updateCustomAction(actionId, {
+    staticBase,
+    rawStaticBase,
+    sheet,
+    rawSheet: null,
+    status: 'placeholder',
+  })
+  announceGenerationFinished()
+}
+
+/** Animate a custom action from its generated base with action-specific motion rules. */
+export async function runCustomActionAnimation(actionId: string): Promise<void> {
+  const store = useAppStore.getState()
+  const project = store.project
+  const action = (project.customActions ?? []).find((item) => item.id === actionId)
+  if (!action) throw new Error('找不到這個自訂動作')
+  if (!action.staticBase) throw new Error('請先生成這個動作的 base')
+  if (!project.characterRef) throw new Error('請先在專案設定上傳角色參考圖')
+  if (!action.name.trim() || !action.description.trim()) throw new Error('請先填寫動作名稱和描述')
+
+  const chromaHex = chromaInfo(store.chroma).hex
+  const referenceSheet = await buildPlaceholderSheetWithChromaBg(action.staticBase, chromaHex)
+  const references: Blob[] = [referenceSheet]
+  for (const name of STATE_NAMES) {
+    const staticBase = project.states[name]?.staticBase
+    if (staticBase) references.push(await fillBgWithChroma(staticBase, chromaHex))
+  }
+  references.push(project.characterRef)
+
+  const animationTemplate = `Create a 1024×1024 sprite sheet containing a 4×4 grid of sixteen 256×256 frames, in row-major order.
+
+Animate the custom action "{{action_name}}" from the supplied base-pose grid.
+Action description: {{action_description}}
+Starting-pose guidance: {{pose_note}}
+Playback mode: {{playback_mode}}
+{{playback_instructions}}
+
+The first reference is a grid of sixteen identical copies of the same base pose. Treat it as the exact starting pose and preserve its framing. Other references show the canonical character identity.
+
+Across the sixteen frames, make the described action clearly readable. Use visible, smooth progression in the body, arms, hands, legs, head, and expression when appropriate; do not reduce the action to tiny breathing changes or sixteen nearly identical poses. Keep the character centered at a consistent scale, fully inside each cell with comfortable margins.
+
+Preserve the exact same character in every frame: face, hair, clothing, colors, proportions, accessories, and art style. Do not add or remove props, clothing, or accessories. Do not change camera angle or crop the character. Do not draw cell borders, gutters, labels, or frame numbers.
+
+Fill the background with the selected solid chroma-key color. No scenery, ground plane, or shadows.`
+  const playbackInstructions = action.loopMode === 'loop'
+    ? 'Create a continuous repeating gesture. Frame 1 begins at the supplied base pose; frame 16 must connect smoothly back to frame 1. Show the action throughout the loop, with natural pauses only when they fit the described action.'
+    : 'Create a one-shot motion arc. Frame 1 begins at the supplied base pose, the middle frames perform the described action, and frame 16 shows its natural ending pose. The Player returns to the normal pet state after the sheet plays once.'
+  const rendered = render(animationTemplate, {
+    action_name: action.name.trim(),
+    action_description: action.description.trim(),
+    pose_note: action.poseNote.trim() || 'Use the supplied base pose as the starting pose.',
+    playback_mode: action.loopMode,
+    playback_instructions: playbackInstructions,
+  })
+  const prompt = appendChromaSuffix(rendered, store.chroma)
+  const provider = buildProvider(store.provider)
+  const raw = await provider.generateImage({ prompt, references, outputSize: '1024x1024' })
+  const cleaned = await applyChroma(raw)
+  const sized = await cropToSize(cleaned, 1024, 1024)
+  const erodePx = store.chroma.edgeErosionPx
+  const sheet = erodePx > 0 ? await erodeCellEdges(sized, erodePx) : sized
+  const rawSheet = await cropToSize(raw, 1024, 1024)
+
+  useAppStore.getState().updateCustomAction(actionId, {
+    sheet,
+    rawSheet,
+    status: 'animated',
+  })
+  announceGenerationFinished()
+}
+
+function announceGenerationFinished() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('generation-finished'))
+  }
+}
+
 export { OUTPUT_SIZE }

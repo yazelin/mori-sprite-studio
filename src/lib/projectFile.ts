@@ -1,7 +1,7 @@
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import { useAppStore } from '@/store'
-import type { Project, StateName, SpriteState } from '@/types/project'
+import type { CustomAction, Project, StateName, SpriteState } from '@/types/project'
 import { STATE_NAMES } from '@/types/project'
 
 /**
@@ -39,6 +39,7 @@ interface ProjectJson {
   savedAt: string
   metadata: Project['metadata']
   states: Record<StateName, Omit<SpriteState, 'sheet' | 'rawSheet' | 'staticBase' | 'rawStaticBase'>>
+  customActions?: Array<Omit<CustomAction, 'sheet' | 'rawSheet' | 'staticBase' | 'rawStaticBase'>>
 }
 
 export async function buildProjectFile(project: Project): Promise<Blob> {
@@ -49,6 +50,7 @@ export async function buildProjectFile(project: Project): Promise<Blob> {
     savedAt: new Date().toISOString(),
     metadata: project.metadata,
     states: {} as ProjectJson['states'],
+    customActions: [],
   }
 
   for (const name of STATE_NAMES) {
@@ -66,6 +68,18 @@ export async function buildProjectFile(project: Project): Promise<Blob> {
     if (s.rawSheet) zip.file(`sprites/${name}/raw-sheet.png`, await s.rawSheet.arrayBuffer())
     if (s.staticBase) zip.file(`sprites/${name}/static-base.png`, await s.staticBase.arrayBuffer())
     if (s.rawStaticBase) zip.file(`sprites/${name}/raw-static-base.png`, await s.rawStaticBase.arrayBuffer())
+  }
+
+  for (const action of project.customActions ?? []) {
+    if (!/^[a-z0-9][a-z0-9_-]{0,47}$/.test(action.id)) {
+      throw new Error(`Invalid custom action id: ${action.id}`)
+    }
+    const { sheet, rawSheet, staticBase, rawStaticBase, ...metadata } = action
+    json.customActions!.push(metadata)
+    if (sheet) zip.file(`sprites/custom-actions/${action.id}/sheet.png`, await sheet.arrayBuffer())
+    if (rawSheet) zip.file(`sprites/custom-actions/${action.id}/raw-sheet.png`, await rawSheet.arrayBuffer())
+    if (staticBase) zip.file(`sprites/custom-actions/${action.id}/static-base.png`, await staticBase.arrayBuffer())
+    if (rawStaticBase) zip.file(`sprites/custom-actions/${action.id}/raw-static-base.png`, await rawStaticBase.arrayBuffer())
   }
 
   zip.file('project.json', JSON.stringify(json, null, 2))
@@ -130,6 +144,19 @@ export async function loadProjectFile(file: Blob | ArrayBuffer): Promise<void> {
       status: stateJson.status,
     })
   }
+
+  const customActions: CustomAction[] = []
+  for (const action of json.customActions ?? []) {
+    if (!/^[a-z0-9][a-z0-9_-]{0,47}$/.test(action.id)) continue
+    customActions.push({
+      ...action,
+      sheet: await readBlob(`sprites/custom-actions/${action.id}/sheet.png`),
+      rawSheet: await readBlob(`sprites/custom-actions/${action.id}/raw-sheet.png`),
+      staticBase: await readBlob(`sprites/custom-actions/${action.id}/static-base.png`),
+      rawStaticBase: await readBlob(`sprites/custom-actions/${action.id}/raw-static-base.png`),
+    })
+  }
+  store.setCustomActions(customActions)
 }
 
 /**

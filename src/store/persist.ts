@@ -115,6 +115,25 @@ function migrate(data: Partial<PersistedShape>): Partial<PersistedShape> {
   if (project.backdropDark === undefined) project.backdropDark = null
   if (project.backdropLight === undefined) project.backdropLight = null
   if (!project.states) project.states = {}
+  if (!Array.isArray(project.customActions)) project.customActions = []
+  project.customActions = project.customActions
+    .filter((action: any) => action && typeof action.id === 'string')
+    .map((action: any) => ({
+      id: action.id,
+      name: typeof action.name === 'string' ? action.name : '自訂動作',
+      description: typeof action.description === 'string' ? action.description : '',
+      poseNote: typeof action.poseNote === 'string' ? action.poseNote : '',
+      staticBase: action.staticBase ?? null,
+      rawStaticBase: action.rawStaticBase ?? null,
+      sheet: action.sheet ?? null,
+      rawSheet: action.rawSheet ?? null,
+      transform: action.transform ?? { scale: 1, offsetX: 0, offsetY: 0 },
+      loopMode: action.loopMode === 'loop' ? 'loop' : 'one-shot',
+      loopDurationMs: Number.isFinite(action.loopDurationMs) ? action.loopDurationMs : 1800,
+      status: ['pending', 'placeholder', 'animated'].includes(action.status)
+        ? action.status
+        : action.sheet ? 'animated' : 'pending',
+    }))
   // SpriteState fields
   for (const name of STATE_NAMES) {
     let s = project.states[name] as any

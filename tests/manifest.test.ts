@@ -27,9 +27,9 @@ function makeProject(metadata: Partial<ProjectMetadata> = {}): Project {
 }
 
 describe('buildManifest', () => {
-  it('produces a schema-compliant v1.0 manifest', () => {
+  it('produces a schema-compliant v1.1 manifest', () => {
     const m = buildManifest(makeProject())
-    expect(m.schema_version).toBe('1.0')
+    expect(m.schema_version).toBe('1.1')
     expect(m.package_name).toBe('mori')
     expect(m.display_name).toBe('Mori')
     expect(m.version).toBe('1.0.0')

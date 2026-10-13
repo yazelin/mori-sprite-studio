@@ -26,6 +26,8 @@ export function ExportView() {
   const manifest = buildManifest(project)
   const animatedCount = STATE_NAMES.filter((n) => project.states[n].status === 'animated').length
   const placeholderCount = STATE_NAMES.filter((n) => project.states[n].status === 'placeholder').length
+  const customActions = project.customActions ?? []
+  const customActionIds = new Set(manifest.custom_actions.map((action) => action.id))
 
   async function handleExport() {
     setError(null); setDownloading(true)
@@ -39,13 +41,13 @@ export function ExportView() {
       <header className="space-y-1.5">
         <h1 className="text-2xl font-semibold text-stone-900 tracking-tight">匯出</h1>
         <p className="text-sm text-muted-foreground">
-          匯出符合 <code className="font-mono text-xs text-stone-700">character-pack.md v1.0</code> 的 .moripack.zip,可直接被 mori-desktop import。
+          匯出符合 character-pack.md 1.x 的 schema 1.1 .moripack.zip。Mori Desktop 可匯入基本狀態；自訂動作則可在 Mori Pet Player 播放。
         </p>
       </header>
 
       <Section
         title="完成度"
-        subtitle={`${animatedCount}/6 已動畫化,${placeholderCount}/6 還只是 placeholder`}
+        subtitle={`${animatedCount}/6 個固定 state 已動畫化，${placeholderCount}/6 還是 placeholder；${customActionIds.size}/${customActions.length} 個自訂動作會匯出`}
         icon={<CheckCheck {...ICON_PROPS} />}
       >
         <div className="space-y-1">
@@ -73,6 +75,27 @@ export function ExportView() {
           })}
         </div>
       </Section>
+
+      {customActions.length > 0 && (
+        <Section title="自訂動作" subtitle="只有完成動畫的動作會寫入 moripack。" icon={<CheckCircle2 {...ICON_PROPS} />}>
+          <div className="space-y-1">
+            {customActions.map((action) => {
+              const included = customActionIds.has(action.id)
+              return (
+                <div key={action.id} className="flex flex-wrap items-center gap-3 py-2 px-2 rounded-md hover:bg-stone-50/80">
+                  <span className="flex-1 min-w-0 font-medium text-stone-800 truncate">{action.name || '未命名動作'}</span>
+                  <span className={cn(
+                    'text-xs px-2 py-0.5 rounded-full border',
+                    included ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800',
+                  )}>
+                    {included ? '會匯出' : action.status === 'pending' ? '尚未生成' : '需重新生成動畫'}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </Section>
+      )}
 
       {validation.blocking.length > 0 && (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-5 space-y-2">
@@ -116,7 +139,7 @@ export function ExportView() {
           <Download size={18} strokeWidth={1.75} />
           {downloading ? '打包中…' : `匯出 ${project.metadata.packageName}.moripack.zip`}
         </Button>
-        {error && <p className="text-sm text-red-600">⚠ {error}</p>}
+        {error && <p className="inline-flex items-center gap-1 text-sm text-red-600"><AlertTriangle size={14} aria-hidden="true" />{error}</p>}
       </div>
     </div>
   )

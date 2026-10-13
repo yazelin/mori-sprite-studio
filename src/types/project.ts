@@ -75,6 +75,25 @@ export interface SpriteState {
   status: SheetStatus
 }
 
+/** A user-authored action that can be played by Mori Pet Player. */
+export interface CustomAction {
+  /** Stable, filesystem-safe id used by the .moripack asset path. */
+  id: string
+  name: string
+  description: string
+  poseNote: string
+  staticBase: Blob | null
+  rawStaticBase: Blob | null
+  sheet: Blob | null
+  rawSheet: Blob | null
+  transform: CellTransform
+  loopMode: 'loop' | 'one-shot'
+  loopDurationMs: number
+  status: SheetStatus
+}
+
+export const MAX_CUSTOM_ACTIONS = 20
+
 export interface ProjectMetadata {
   packageName: string
   displayName: string
@@ -88,6 +107,8 @@ export interface ProjectMetadata {
 export interface Project {
   characterRef: Blob | null
   states: Record<StateName, SpriteState>
+  /** Absent on older .moriproject files; stores always migrate it to []. */
+  customActions?: CustomAction[]
   metadata: ProjectMetadata
   /**
    * Optional per-character backdrop images, packaged at the .moripack

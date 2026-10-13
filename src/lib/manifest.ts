@@ -16,8 +16,20 @@ export function buildManifest(project: Project): ManifestV1 {
     loopModes[n] = project.states[n].loopMode
     loopDurations[n] = project.states[n].loopDurationMs
   }
+  const customActions = (project.customActions ?? [])
+    .filter((action) => /^[a-z0-9][a-z0-9_-]{0,47}$/.test(action.id)
+      && action.name.trim()
+      && action.sheet !== null
+      && action.status === 'animated')
+    .map((action) => ({
+      id: action.id,
+      display_name: action.name.trim(),
+      playback: action.loopMode,
+      duration_ms: action.loopDurationMs,
+      sprite_path: `sprites/actions/${action.id}.png`,
+    }))
   return {
-    schema_version: '1.0',
+    schema_version: '1.1',
     package_name: project.metadata.packageName,
     display_name: project.metadata.displayName,
     version: project.metadata.version,
@@ -29,6 +41,7 @@ export function buildManifest(project: Project): ManifestV1 {
     optional_states: [...shippedOptional],
     loop_modes: loopModes,
     loop_durations_ms: loopDurations,
+    custom_actions: customActions,
     sprite_spec: {
       format: 'PNG-32',
       grid: '4x4',

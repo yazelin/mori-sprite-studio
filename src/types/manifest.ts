@@ -1,7 +1,7 @@
 import type { StateName } from './project'
 
 export interface ManifestV1 {
-  schema_version: '1.0'
+  schema_version: '1.1'
   package_name: string
   display_name: string
   version: string
@@ -13,6 +13,13 @@ export interface ManifestV1 {
   optional_states: string[]
   loop_modes: Record<StateName, 'loop' | 'one-shot'>
   loop_durations_ms: Record<StateName, number>
+  custom_actions: Array<{
+    id: string
+    display_name: string
+    playback: 'loop' | 'one-shot'
+    duration_ms: number
+    sprite_path: string
+  }>
   sprite_spec: {
     format: 'PNG-32'
     grid: '4x4'

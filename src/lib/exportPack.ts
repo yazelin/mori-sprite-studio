@@ -24,6 +24,17 @@ export async function buildPackBlob(project: Project): Promise<Blob> {
     sprites.file(`${name}.png`, buf)
   }
 
+  if (manifest.custom_actions.length > 0) {
+    const actionsFolder = sprites.folder('actions')
+    if (!actionsFolder) throw new Error('failed to create sprites/actions/ folder in zip')
+    for (const exported of manifest.custom_actions) {
+      const action = (project.customActions ?? []).find((item) => item.id === exported.id)
+      if (!action?.sheet) continue
+      const baked = await bakeTransformIntoSheet(action.sheet, action.transform)
+      actionsFolder.file(`${action.id}.png`, await baked.arrayBuffer())
+    }
+  }
+
   // Optional backdrops at zip root (per mori-desktop PR #107):
   // mori-desktop's floating widget reads backdrop-{dark,light}.png from
   // the character pack root if present, falling back to user global or

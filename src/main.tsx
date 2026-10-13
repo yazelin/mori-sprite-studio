@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 import { useAppStore } from '@/store'
-import { loadStore, debouncedSave } from '@/store/persist'
+import { loadStore, debouncedSave, flushPendingSave } from '@/store/persist'
 
 async function bootstrap() {
   const persisted = await loadStore()
@@ -23,6 +23,11 @@ async function bootstrap() {
       provider: s.provider,
       chroma: s.chroma,
     })
+  })
+
+  window.addEventListener('pagehide', flushPendingSave)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushPendingSave()
   })
 
   ReactDOM.createRoot(document.getElementById('root')!).render(

@@ -165,10 +165,19 @@ export async function clearStore(): Promise<void> {
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null
+let pendingStore: PersistedShape | null = null
 
 export function debouncedSave(store: PersistedShape, delayMs = 300): void {
+  pendingStore = store
   if (saveTimer) clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => {
-    void saveStore(store)
-  }, delayMs)
+  saveTimer = setTimeout(flushPendingSave, delayMs)
+}
+
+/** Persist the latest state immediately when the page is hidden or closed. */
+export function flushPendingSave(): void {
+  if (saveTimer) clearTimeout(saveTimer)
+  saveTimer = null
+  const store = pendingStore
+  pendingStore = null
+  if (store) void saveStore(store)
 }

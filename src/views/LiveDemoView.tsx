@@ -1118,7 +1118,10 @@ export function LiveDemoView() {
                     <input
                       type="url"
                       value={ttsSettings.baseUrl}
-                      onChange={(event) => setTtsSettings((current) => ({ ...current, baseUrl: event.currentTarget.value }))}
+                      onChange={(event) => {
+                        const baseUrl = event.currentTarget.value
+                        setTtsSettings((current) => ({ ...current, baseUrl }))
+                      }}
                       placeholder={LARCH_TTS_DEFAULT_BASE_URL}
                       autoComplete="url"
                       spellCheck={false}
@@ -1132,7 +1135,10 @@ export function LiveDemoView() {
                       <input
                         type={showTtsApiKey ? 'text' : 'password'}
                         value={ttsSettings.apiKey}
-                        onChange={(event) => setTtsSettings((current) => ({ ...current, apiKey: event.currentTarget.value }))}
+                        onChange={(event) => {
+                          const apiKey = event.currentTarget.value
+                          setTtsSettings((current) => ({ ...current, apiKey }))
+                        }}
                         placeholder="貼上 Larch-TTS API Key"
                         autoComplete="off"
                         spellCheck={false}
@@ -1155,8 +1161,9 @@ export function LiveDemoView() {
                       <select
                         value={ttsSettings.voice}
                         onChange={(event) => {
+                          const voice = event.currentTarget.value
                           stopTtsPlayback()
-                          setTtsSettings((current) => ({ ...current, voice: event.currentTarget.value }))
+                          setTtsSettings((current) => ({ ...current, voice }))
                         }}
                         disabled={Boolean(loadingTtsKey)}
                         className="h-9 w-full rounded-lg border border-stone-200 bg-white px-2 text-xs text-stone-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"

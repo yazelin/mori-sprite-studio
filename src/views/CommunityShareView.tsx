@@ -112,7 +112,7 @@ export function CommunityShareView() {
           <li>從 Idle 第一格產生的透明 PNG 預覽圖。</li>
         </ul>
         <p className="mt-3 text-sm text-muted-foreground">不會上傳角色參考原圖、編輯用專案檔、prompt、API key 或本機設定。</p>
-        <p className="mt-2 text-xs text-muted-foreground">單包上限 40 MB；每個網路每日最多分享 5 件。你可在展示頁下架自己分享的作品。</p>
+        <p className="mt-2 text-xs text-muted-foreground">單包上限 40 MB；每個網路每天最多分享 5 件，依台灣時間每日 00:00 重置。下架作品不會補回當日名額。</p>
       </Section>
 
       <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm leading-6 text-emerald-950">

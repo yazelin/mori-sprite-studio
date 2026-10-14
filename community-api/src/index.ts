@@ -215,6 +215,17 @@ function reverseTimestamp(timestamp: number): string {
   return String(9_999_999_999_999 - timestamp).padStart(13, '0')
 }
 
+function taipeiDateKey(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date)
+  const part = (type: 'year' | 'month' | 'day') => parts.find((item) => item.type === type)?.value ?? ''
+  return `${part('year')}-${part('month')}-${part('day')}`
+}
+
 async function listWorks(request: Request, url: URL, env: Env): Promise<Response> {
   const limit = Math.min(36, Math.max(1, Number(url.searchParams.get('limit')) || 24))
   const cursor = url.searchParams.get('cursor') || undefined
@@ -239,7 +250,7 @@ async function uploadWork(request: Request, env: Env): Promise<Response> {
   const origin = request.headers.get('Origin') ?? ''
   if (origin && !isAllowedOrigin(origin)) return error(request, '這個來源目前不能上傳社群作品。', 403)
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown'
-  const rateKey = `rate:${await hash(ip)}`
+  const rateKey = `rate:${await hash(ip)}:${taipeiDateKey()}`
   const existingCount = Number(await env.COMMUNITY_INDEX.get(rateKey) || '0')
   if (existingCount >= MAX_UPLOADS_PER_DAY) return error(request, '這個網路今天已分享多件作品，明天再試。', 429)
 
@@ -295,7 +306,7 @@ async function uploadWork(request: Request, env: Env): Promise<Response> {
     const catalogJson = JSON.stringify(record)
     await env.COMMUNITY_PACKS.put(catalogKey, catalogJson, { httpMetadata: { contentType: 'application/json; charset=utf-8' } })
     await env.COMMUNITY_PACKS.put(byIdKey, catalogJson, { httpMetadata: { contentType: 'application/json; charset=utf-8' } })
-    await env.COMMUNITY_INDEX.put(rateKey, String(existingCount + 1), { expirationTtl: 86_400 })
+    await env.COMMUNITY_INDEX.put(rateKey, String(existingCount + 1), { expirationTtl: 2 * 86_400 })
   } catch {
     await Promise.allSettled([
       env.COMMUNITY_PACKS.delete(packKey),

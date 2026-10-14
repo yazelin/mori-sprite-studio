@@ -5,6 +5,7 @@ import { IDENTITY_TRANSFORM } from '@/types/project'
 interface Props {
   sheet: Blob | null
   durationMs: number
+  playback?: 'loop' | 'one-shot'
   size?: number
   paused?: boolean
   /** Per-state transform (scale + offset) baked into render. Defaults to identity. */
@@ -28,7 +29,7 @@ interface Props {
  * durationMs = total time for full 16-frame loop.
  */
 export function AnimationPreview({
-  sheet, durationMs, size = 256, paused = false,
+  sheet, durationMs, playback = 'loop', size = 256, paused = false,
   transform = IDENTITY_TRANSFORM,
   showGuides = false,
   fitParent = false,
@@ -65,7 +66,12 @@ export function AnimationPreview({
           const ctx = canvas.getContext('2d')
           if (ctx) {
             const t = transformRef.current
-            const elapsed = paused ? 0 : (now - start) % loopDurationMs
+            const elapsedSinceStart = now - start
+            const elapsed = paused
+              ? 0
+              : playback === 'one-shot'
+                ? Math.min(elapsedSinceStart, loopDurationMs - 1)
+                : elapsedSinceStart % loopDurationMs
             const frameIdx = Math.floor(elapsed / frameDuration) % 16
             const col = frameIdx % 4
             const row = Math.floor(frameIdx / 4)
@@ -132,7 +138,7 @@ export function AnimationPreview({
       if (rafId !== null) cancelAnimationFrame(rafId)
       bitmap?.close?.()
     }
-  }, [sheet, durationMs, paused])
+  }, [sheet, durationMs, playback, paused])
 
   if (!hasSheet) {
     return (

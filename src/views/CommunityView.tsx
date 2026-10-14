@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Download, LoaderCircle, RefreshCw, Search, Trash2, UsersRound } from 'lucide-react'
+import { AlertTriangle, Download, LoaderCircle, Play, RefreshCw, Search, Trash2, UsersRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { CommunityPackPreviewDialog } from '@/components/CommunityPackPreviewDialog'
 import { communityCoverUrl, communityPackUrl, formatPackSize, getOwnerToken, listCommunityWorks, removeCommunityWork, type CommunityWork } from '@/lib/community'
 
 export function CommunityView() {
@@ -11,6 +12,7 @@ export function CommunityView() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [previewWork, setPreviewWork] = useState<CommunityWork | null>(null)
 
   async function loadFirstPage() {
     setLoading(true)
@@ -125,9 +127,14 @@ export function CommunityView() {
                     <span className="truncate" title={work.license}>{work.license}</span>
                     <span className="shrink-0">{formatPackSize(work.packSize)}</span>
                   </div>
-                  <a href={communityPackUrl(work.id)} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2">
-                    <Download size={16} />下載 .moripack
-                  </a>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" className="gap-2 px-2 text-xs sm:text-sm" onClick={() => setPreviewWork(work)}>
+                      <Play size={15} />預覽全部動作
+                    </Button>
+                    <a href={communityPackUrl(work.id)} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-emerald-700 px-2 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 sm:text-sm">
+                      <Download size={15} />下載 .moripack
+                    </a>
+                  </div>
                 </div>
               </article>
             ))}
@@ -135,6 +142,7 @@ export function CommunityView() {
           {nextCursor && !query.trim() && <div className="flex justify-center pt-2"><Button variant="outline" disabled={loadingMore} onClick={() => void loadMore()} className="gap-2">{loadingMore && <LoaderCircle size={16} className="animate-spin" />}載入更多作品</Button></div>}
         </>
       )}
+      <CommunityPackPreviewDialog work={previewWork} open={Boolean(previewWork)} onOpenChange={(open) => { if (!open) setPreviewWork(null) }} />
     </div>
   )
 }

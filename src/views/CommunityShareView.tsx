@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { AlertTriangle, CheckCircle2, FileArchive, Share2, UsersRound } from 'lucide-react'
 import { useAppStore } from '@/store'
-import { REQUIRED_STATE_NAMES } from '@/types/project'
+import { OPTIONAL_STATE_NAMES, REQUIRED_STATE_NAMES } from '@/types/project'
 import { validateProject } from '@/lib/validation'
 import { shareProject, type CommunityWork } from '@/lib/community'
+import { buildManifest } from '@/lib/manifest'
 import { Button } from '@/components/ui/button'
 import { Section } from '@/components/Section'
 
@@ -11,6 +12,9 @@ export function CommunityShareView() {
   const project = useAppStore((s) => s.project)
   const setView = useAppStore((s) => s.setView)
   const validation = useMemo(() => validateProject(project), [project])
+  const manifest = useMemo(() => buildManifest(project), [project])
+  const includedCustomActionIds = useMemo(() => new Set(manifest.custom_actions.map((action) => action.id)), [manifest])
+  const customActions = project.customActions ?? []
   const incomplete = REQUIRED_STATE_NAMES.filter((name) => !project.states[name].sheet || project.states[name].status !== 'animated')
   const [agreed, setAgreed] = useState(false)
   const [sharing, setSharing] = useState(false)
@@ -43,7 +47,7 @@ export function CommunityShareView() {
         </p>
       </header>
 
-      <Section title="準備分享" subtitle="社群收錄六個基本狀態，以及有完成動畫的自訂動作。" icon={<FileArchive size={18} strokeWidth={1.75} />}>
+      <Section title="準備分享" subtitle="六個基本狀態必須完成；Walking、Dragging 有圖片就會一起打包，自訂動作則需完成動畫。" icon={<FileArchive size={18} strokeWidth={1.75} />}>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {REQUIRED_STATE_NAMES.map((name) => {
             const ready = Boolean(project.states[name].sheet) && project.states[name].status === 'animated'
@@ -55,6 +59,43 @@ export function CommunityShareView() {
               </div>
             )
           })}
+        </div>
+        <div className="mt-5 space-y-2">
+          <h3 className="text-sm font-medium text-stone-800">選配狀態</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {OPTIONAL_STATE_NAMES.map((name) => {
+              const state = project.states[name]
+              const included = manifest.optional_states.includes(name)
+              return (
+                <div key={name} className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2.5 text-sm">
+                  <span className={included ? 'text-emerald-600' : 'text-stone-400'}>{included ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}</span>
+                  <span className="capitalize">{name}</span>
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {included ? state.status === 'animated' ? '會打包' : '會打包（尚未動畫化）' : '尚無圖片，不會打包'}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+        <div className="mt-5 space-y-2">
+          <h3 className="text-sm font-medium text-stone-800">自訂動作</h3>
+          {customActions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">目前沒有自訂動作。</p>
+          ) : (
+            <div className="space-y-2">
+              {customActions.map((action) => {
+                const included = includedCustomActionIds.has(action.id)
+                return (
+                  <div key={action.id} className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2.5 text-sm">
+                    <span className={included ? 'text-emerald-600' : 'text-amber-600'}>{included ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}</span>
+                    <span className="min-w-0 flex-1 truncate">{action.name.trim() || '未命名動作'}</span>
+                    <span className="text-xs text-muted-foreground">{included ? '會打包' : '動畫未完成，不會打包'}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
         {validation.blocking.length > 0 && (
           <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">

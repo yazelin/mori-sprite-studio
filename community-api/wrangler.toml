@@ -1,0 +1,13 @@
+name = "mori-sprite-community-api"
+main = "src/index.ts"
+compatibility_date = "2026-10-14"
+workers_dev = true
+account_id = "986aa90dfb437b247dcb8e1819c9b525"
+
+[[r2_buckets]]
+binding = "COMMUNITY_PACKS"
+bucket_name = "mori-sprite-community"
+
+[[kv_namespaces]]
+binding = "COMMUNITY_INDEX"
+id = "8f884938c82e44939dcace1e6085dd03"

@@ -49,15 +49,17 @@ function initialPrompts(): PromptsState {
   }
 }
 
-export type View = { kind: 'project' } | { kind: 'state'; name: StateName } | { kind: 'custom-actions' } | { kind: 'backdrop' } | { kind: 'preview' } | { kind: 'export' } | { kind: 'live-demo' }
+export type View = { kind: 'project' } | { kind: 'state'; name: StateName } | { kind: 'custom-actions' } | { kind: 'backdrop' } | { kind: 'preview' } | { kind: 'export' } | { kind: 'live-demo' } | { kind: 'community-share' } | { kind: 'community' }
 
 const LAST_VIEW_STORAGE_KEY = 'mori-sprite-studio-last-view'
 
 function loadInitialView(): View {
   try {
-    return typeof window !== 'undefined' && window.sessionStorage.getItem(LAST_VIEW_STORAGE_KEY) === 'live-demo'
-      ? { kind: 'live-demo' }
-      : { kind: 'project' }
+    const saved = typeof window !== 'undefined' ? window.sessionStorage.getItem(LAST_VIEW_STORAGE_KEY) : null
+    if (saved === 'live-demo') return { kind: 'live-demo' }
+    if (saved === 'community') return { kind: 'community' }
+    if (saved === 'community-share') return { kind: 'community-share' }
+    return { kind: 'project' }
   } catch {
     return { kind: 'project' }
   }
@@ -66,7 +68,7 @@ function loadInitialView(): View {
 function rememberView(view: View) {
   try {
     if (typeof window === 'undefined') return
-    if (view.kind === 'live-demo') window.sessionStorage.setItem(LAST_VIEW_STORAGE_KEY, 'live-demo')
+    if (view.kind === 'live-demo' || view.kind === 'community' || view.kind === 'community-share') window.sessionStorage.setItem(LAST_VIEW_STORAGE_KEY, view.kind)
     else window.sessionStorage.removeItem(LAST_VIEW_STORAGE_KEY)
   } catch {
     // Keep navigation usable when session storage is unavailable.

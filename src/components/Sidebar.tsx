@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Home, Download, Leaf, ImagePlus, Eye, MessageCircle, MonitorDown, ExternalLink, Coffee, Sparkles } from 'lucide-react'
+import { Home, Download, Leaf, ImagePlus, Eye, MessageCircle, MonitorDown, ExternalLink, Coffee, Sparkles, Share2, UsersRound } from 'lucide-react'
 import { useAppStore } from '@/store'
 import {
   REQUIRED_STATE_NAMES, OPTIONAL_STATE_NAMES,
@@ -100,6 +100,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <SectionLabel>Output</SectionLabel>
         <Item active={view.kind === 'live-demo'} onClick={() => { setView({ kind: 'live-demo' }); onNavigate?.() }} icon={<MessageCircle size={16} strokeWidth={1.75} />} label="Live Demo" />
         <Item active={view.kind === 'export'} onClick={() => { setView({ kind: 'export' }); onNavigate?.() }} icon={<Download size={16} strokeWidth={1.75} />} label="匯出 .moripack" />
+        <Item active={view.kind === 'community-share'} onClick={() => { setView({ kind: 'community-share' }); onNavigate?.() }} icon={<Share2 size={16} strokeWidth={1.75} />} label="分享至社群" />
+        <Item active={view.kind === 'community'} onClick={() => { setView({ kind: 'community' }); onNavigate?.() }} icon={<UsersRound size={16} strokeWidth={1.75} />} label="社群展示" />
         <a
           href="https://yazelin.github.io/mori-pet-player/"
           target="_blank"

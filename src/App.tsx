@@ -9,6 +9,8 @@ import { PreviewView } from '@/views/PreviewView'
 import { ExportView } from '@/views/ExportView'
 import { LiveDemoView } from '@/views/LiveDemoView'
 import { CustomActionsView } from '@/views/CustomActionsView'
+import { CommunityShareView } from '@/views/CommunityShareView'
+import { CommunityView } from '@/views/CommunityView'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -62,6 +64,8 @@ export default function App() {
           {view.kind === 'preview' && <PreviewView />}
           {view.kind === 'export' && <ExportView />}
           {view.kind === 'live-demo' && <LiveDemoView />}
+          {view.kind === 'community-share' && <CommunityShareView />}
+          {view.kind === 'community' && <CommunityView />}
         </div>
       </main>
     </div>

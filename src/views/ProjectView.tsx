@@ -10,7 +10,6 @@ import { NormalizeConfig } from '@/components/NormalizeConfig'
 import { GenerateButton } from '@/components/GenerateButton'
 import { Section } from '@/components/Section'
 import { PromptEditorModal, type PromptEditorContext } from '@/components/PromptEditorModal'
-import { runGeneration, runGenerationWithPrompt, buildPromptContext } from '@/lib/generationFlow'
 
 const ICON_PROPS = { size: 18, strokeWidth: 1.75 } as const
 
@@ -32,20 +31,31 @@ export function ProjectView() {
 
   async function runB1() {
     setError(null); setGenerating(true)
-    try { await runGeneration('B1') }
+    try {
+      const { runGeneration } = await import('@/lib/generationFlow')
+      await runGeneration('B1')
+    }
     catch (e) { setError(e instanceof Error ? e.message : String(e)) }
     finally { setGenerating(false) }
   }
 
-  function openB1PromptEditor() {
-    const { vars, opLabel } = buildPromptContext('B1')
-    setModalContext({ templateKey: 'B1', vars, opLabel })
-    setModalOpen(true)
+  async function openB1PromptEditor() {
+    try {
+      const { buildPromptContext } = await import('@/lib/generationFlow')
+      const { vars, opLabel } = buildPromptContext('B1')
+      setModalContext({ templateKey: 'B1', vars, opLabel })
+      setModalOpen(true)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
   }
 
   async function runB1WithCustomPrompt(prompt: string) {
     setError(null); setGenerating(true)
-    try { await runGenerationWithPrompt('B1', prompt) }
+    try {
+      const { runGenerationWithPrompt } = await import('@/lib/generationFlow')
+      await runGenerationWithPrompt('B1', prompt)
+    }
     catch (e) { setError(e instanceof Error ? e.message : String(e)) }
     finally { setGenerating(false) }
   }

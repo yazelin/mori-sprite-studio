@@ -1,16 +1,7 @@
-import { useState } from 'react'
-import { Menu } from 'lucide-react'
+import { lazy, Suspense, useState } from 'react'
+import { LoaderCircle, Menu } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Sidebar } from '@/components/Sidebar'
-import { ProjectView } from '@/views/ProjectView'
-import { StateView } from '@/views/StateView'
-import { BackdropView } from '@/views/BackdropView'
-import { PreviewView } from '@/views/PreviewView'
-import { ExportView } from '@/views/ExportView'
-import { LiveDemoView } from '@/views/LiveDemoView'
-import { CustomActionsView } from '@/views/CustomActionsView'
-import { CommunityShareView } from '@/views/CommunityShareView'
-import { CommunityView } from '@/views/CommunityView'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -20,6 +11,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+
+const ProjectView = lazy(() => import('@/views/ProjectView').then((module) => ({ default: module.ProjectView })))
+const StateView = lazy(() => import('@/views/StateView').then((module) => ({ default: module.StateView })))
+const BackdropView = lazy(() => import('@/views/BackdropView').then((module) => ({ default: module.BackdropView })))
+const PreviewView = lazy(() => import('@/views/PreviewView').then((module) => ({ default: module.PreviewView })))
+const ExportView = lazy(() => import('@/views/ExportView').then((module) => ({ default: module.ExportView })))
+const LiveDemoView = lazy(() => import('@/views/LiveDemoView').then((module) => ({ default: module.LiveDemoView })))
+const CustomActionsView = lazy(() => import('@/views/CustomActionsView').then((module) => ({ default: module.CustomActionsView })))
+const CommunityShareView = lazy(() => import('@/views/CommunityShareView').then((module) => ({ default: module.CommunityShareView })))
+const CommunityView = lazy(() => import('@/views/CommunityView').then((module) => ({ default: module.CommunityView })))
 
 export default function App() {
   const view = useAppStore((s) => s.ui.view)
@@ -57,15 +58,17 @@ export default function App() {
         </header>
 
         <div className={isLiveDemo ? 'min-h-0 flex-1' : 'mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-10'}>
-          {view.kind === 'project' && <ProjectView />}
-          {view.kind === 'state' && <StateView name={view.name} />}
-          {view.kind === 'custom-actions' && <CustomActionsView />}
-          {view.kind === 'backdrop' && <BackdropView />}
-          {view.kind === 'preview' && <PreviewView />}
-          {view.kind === 'export' && <ExportView />}
-          {view.kind === 'live-demo' && <LiveDemoView />}
-          {view.kind === 'community-share' && <CommunityShareView />}
-          {view.kind === 'community' && <CommunityView />}
+          <Suspense fallback={<div className="flex min-h-64 items-center justify-center gap-2 text-sm text-muted-foreground"><LoaderCircle size={18} className="animate-spin" />正在載入頁面…</div>}>
+            {view.kind === 'project' && <ProjectView />}
+            {view.kind === 'state' && <StateView name={view.name} />}
+            {view.kind === 'custom-actions' && <CustomActionsView />}
+            {view.kind === 'backdrop' && <BackdropView />}
+            {view.kind === 'preview' && <PreviewView />}
+            {view.kind === 'export' && <ExportView />}
+            {view.kind === 'live-demo' && <LiveDemoView />}
+            {view.kind === 'community-share' && <CommunityShareView />}
+            {view.kind === 'community' && <CommunityView />}
+          </Suspense>
         </div>
       </main>
     </div>

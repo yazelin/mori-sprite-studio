@@ -6,7 +6,12 @@ import { useAppStore } from '@/store'
 import { loadStore, loadProviderSettings, saveProviderSettings, debouncedSave, flushPendingSave } from '@/store/persist'
 
 async function bootstrap() {
+  const bootStatus = document.getElementById('boot-status')
+  const slowLoadTimer = window.setTimeout(() => {
+    if (bootStatus) bootStatus.textContent = '正在讀取本機專案資料…'
+  }, 1500)
   const persisted = await loadStore()
+  window.clearTimeout(slowLoadTimer)
   const localProvider = loadProviderSettings()
   if (persisted || localProvider) {
     useAppStore.setState((s) => ({
